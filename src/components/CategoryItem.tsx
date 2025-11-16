@@ -1,4 +1,4 @@
-import { ImageWithFallback } from "./figma/ImageWithFallback";
+import { ImageWithFallback } from "./common/ImageWithFallback";
 import { categoryIcons, categoryFallbackIcons } from "../constants/categoryIcons";
 import { Category } from "../types";
 

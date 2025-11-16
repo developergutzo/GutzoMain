@@ -674,16 +674,13 @@ export function ProfilePanel({ isOpen, onClose, onLogout, content, userInfo, onV
 
   return (
     <>
-      {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-black/50 z-40 transition-opacity duration-300"
-        onClick={onClose}
-      />
-      
       {/* Panel */}
-      <div className={`fixed top-0 right-0 h-full w-[95%] max-w-lg lg:w-[50%] lg:max-w-[600px] bg-white shadow-2xl z-50 transform transition-transform duration-300 ${
-        isOpen ? 'translate-x-0' : 'translate-x-full'
-      }`}>
+      <div 
+        className={`fixed top-0 right-0 h-full w-[95%] bg-white shadow-2xl z-50 transform transition-transform duration-300 ${
+          isOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+        style={{ maxWidth: '600px' }}
+      >
         {/* Close Button */}
         <div className="absolute top-4 left-4 z-10">
           <button

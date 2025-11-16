@@ -19,6 +19,7 @@ export function AddressListPanel({
   console.log('Rendering AddressListPanel, isOpen:', isOpen);
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [loading, setLoading] = useState(false);
+  const [userPhone, setUserPhone] = useState<string>('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -40,6 +41,7 @@ export function AddressListPanel({
         if (authData) {
           const parsed = JSON.parse(authData);
           userPhone = parsed.phone || '';
+          setUserPhone(userPhone);
           console.log('[AddressListPanel] userPhone for address fetch:', userPhone);
         }
       } catch (err) {
@@ -51,7 +53,7 @@ export function AddressListPanel({
         setLoading(false);
         return;
       }
-      const response = await AddressApi.getUserAddresses(userPhone);
+  const response = await AddressApi.getUserAddresses(userPhone);
       console.log('[AddressListPanel] Raw API response:', response);
       if (response.success && response.data) {
         console.log('[AddressListPanel] Setting addresses:', response.data);
@@ -68,7 +70,7 @@ export function AddressListPanel({
 
   const handleSetDefault = async (addressId: string) => {
     try {
-      const response = await AddressApi.setDefaultAddress(addressId);
+      const response = await AddressApi.setDefaultAddress(addressId, userPhone);
       
       if (response.success) {
         await loadAddresses(); // Refresh list

@@ -11,7 +11,7 @@ export function saveInstantOrder(
   const order: InstantOrder = {
     id: `INS_${Date.now()}`,
     vendorName: vendor.name,
-    vendorPhone: vendor.contact_whatsapp,
+    vendorPhone: vendor.contact_whatsapp || '',
     productName: product.name,
     productImage: product.image_url || '',
     quantity,
@@ -94,7 +94,7 @@ export function saveSubscriptionOrder(
     id: paymentResult.subscriptionId,
     subscriptionId: paymentResult.subscriptionId,
     vendorName: vendor.name,
-    vendorPhone: vendor.contact_whatsapp,
+    vendorPhone: vendor.contact_whatsapp || '',
     productName: product.name,
     productImage: product.image_url || '',
     mealSlots: subscriptionData.mealSlots,

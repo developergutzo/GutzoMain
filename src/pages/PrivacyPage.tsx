@@ -1,6 +1,6 @@
-import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { ArrowLeft, Eye, Lock, UserCheck, Database, Phone } from "lucide-react";
+import { Eye, Lock, UserCheck, Database, Phone } from "lucide-react";
+import { ImageWithFallback } from "../components/common/ImageWithFallback";
 import { useRouter } from "../components/Router";
 import { useEffect } from "react";
 
@@ -18,18 +18,21 @@ export function PrivacyPage() {
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              onClick={() => navigate('/')}
-              className="hover:bg-gray-100"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Gutzo
-            </Button>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-gutzo-primary" style={{ fontFamily: 'Poppins' }}>
-                Gutzo
-              </h1>
+              <div className="flex-shrink-0">
+                <button
+                  type="button"
+                  aria-label="Go to homepage"
+                  onClick={() => navigate('/')}
+                  className="p-0 bg-transparent border-0 inline-flex items-center cursor-pointer hover:opacity-90 active:scale-95 transition-transform"
+                >
+                  <ImageWithFallback
+                    src="https://35-194-40-59.nip.io/service/storage/v1/object/public/Gutzo/GUTZO.svg"
+                    alt="Gutzo - Healthy Feels Good"
+                    className="h-32 w-auto sm:h-36 md:h-40"
+                  />
+                </button>
+              </div>
               <span className="text-gray-400">|</span>
               <span className="text-gray-600">Privacy Policy</span>
             </div>

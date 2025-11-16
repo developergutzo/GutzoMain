@@ -1,12 +1,12 @@
 import { Button } from "./ui/button";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
+import { ImageWithFallback } from "./common/ImageWithFallback";
 
 interface HeroProps {
   onScrollToListings: () => void;
 }
 
 export function Hero({ onScrollToListings }: HeroProps) {
-  const heroImageUrl = "https://images.unsplash.com/photo-1614648692330-eb129aeb6880?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoZWFsdGh5JTIwY29sb3JmdWwlMjBtZWFsJTIwYm93bCUyMG92ZXJoZWFkfGVufDF8fHx8MTc1NjI5MzEwMHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral";
+  const heroImageUrl = "https://images.unsplash.com/photo-1614648692330-eb129aeb6880?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoZWFsdGh5JTIwY29sb3JmdWwlMjBtZWFsJTIwYm93bCUyMG92ZXJoZWFkfGVufDF8fHx8MTc1NjI5MzEwMHww&ixlib=rb-4.1.0&q=80&w=1080";
 
   return (
     <section className="relative min-h-[240px] lg:min-h-[280px] flex items-center justify-center overflow-hidden">
@@ -18,8 +18,6 @@ export function Hero({ onScrollToListings }: HeroProps) {
           className="w-full h-full object-cover"
         />
       </div>
-      
-
       
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">

@@ -154,9 +154,33 @@ export function PhoneSignIn({
 
   if (isPanel) {
     return (
-      <div className="space-y-6 max-w-sm">
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
+      <div style={{ 
+        width: '100%', 
+        maxWidth: '450px',
+        display: 'block',
+        margin: '0',
+        padding: '0',
+        position: 'relative',
+        left: '0'
+      }}>
+        <form onSubmit={handleSubmit} style={{ 
+          width: '100%',
+          maxWidth: '450px',
+          display: 'block',
+          margin: '0',
+          padding: '0',
+          position: 'relative',
+          left: '0'
+        }}>
+          <div style={{ 
+            width: '100%',
+            maxWidth: '450px',
+            marginBottom: '1.25rem',
+            marginLeft: '0',
+            marginRight: '0',
+            position: 'relative',
+            left: '0'
+          }}>
             <AuthInput
               label="Phone Number"
               type="tel"
@@ -169,59 +193,51 @@ export function PhoneSignIn({
               maxLength={11} // 10 digits + 1 space
               autoComplete="tel"
               aria-describedby={error ? "phone-error" : undefined}
-              className="!py-6 !min-h-[72px] text-lg border-2 !border-gray-300 focus:!border-gutzo-primary focus:!ring-gutzo-primary"
+              className="!py-6 !min-h-[72px] text-lg border-2 !border-gray-300 focus:!border-gutzo-primary focus:!ring-gutzo-primary !text-left"
+              style={{ textAlign: 'left' }}
               disabled={otpSent}
             />
           </div>
 
           {/* Progressive OTP Disclosure */}
           {otpSent && (
-            <div className="space-y-4 animate-in slide-in-from-top-4 duration-300">
-              {/* OTP Information */}
-              <div className="text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mb-3">
-                  <MessageCircle className="w-6 h-6 text-gutzo-primary" />
-                </div>
-                <p className="text-sm text-gray-600">
-                  We've sent a 6-digit code to{" "}
-                  <span className="font-medium text-gray-900">+91 {maskedPhone}</span>
-                </p>
+            <div style={{ 
+              width: '100%',
+              maxWidth: '450px',
+              display: 'block',
+              margin: '0',
+              marginBottom: '1.25rem'
+            }}>
+              {/* OTP Input - Same as Phone Number Field */}
+              <div style={{ marginBottom: '1rem', maxWidth: '450px' }}>
+                <AuthInput
+                  label="Enter OTP"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={otp.join('')}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                    const newOtp = value.split('').concat(Array(6).fill('')).slice(0, 6);
+                    setOtp(newOtp);
+                    setOtpError('');
+                  }}
+                  onPaste={(e) => {
+                    e.preventDefault();
+                    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+                    const newOtp = pastedData.split('').concat(Array(6).fill('')).slice(0, 6);
+                    setOtp(newOtp);
+                    setOtpError('');
+                  }}
+                  placeholder="Enter 6-digit OTP"
+                  error={otpError}
+                  maxLength={6}
+                  className="!py-6 !min-h-[72px] text-lg border-2 !border-gray-300 focus:!border-gutzo-primary focus:!ring-gutzo-primary"
+                />
               </div>
-
-              {/* OTP Input Grid */}
-              <div className="flex justify-center space-x-3">
-                {otp.map((digit, index) => (
-                  <input
-                    key={index}
-                    ref={el => inputRefs.current[index] = el}
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    value={digit}
-                    onChange={(e) => handleOTPInputChange(index, e.target.value)}
-                    onKeyDown={(e) => handleOTPKeyDown(index, e)}
-                    onPaste={index === 0 ? handleOTPPaste : undefined}
-                    className={`
-                      w-10 h-12 text-center text-lg font-semibold
-                      border border-gray-200 rounded-xl
-                      focus:outline-none focus:ring-2 focus:ring-gutzo-primary focus:border-transparent
-                      transition-all duration-200
-                      ${otpError ? 'border-red-300' : ''}
-                      ${digit ? 'border-gutzo-primary bg-green-50' : ''}
-                      touch-manipulation
-                    `}
-                    maxLength={1}
-                    aria-label={`OTP digit ${index + 1}`}
-                  />
-                ))}
-              </div>
-
-              {otpError && (
-                <p className="text-sm text-red-600 text-center">{otpError}</p>
-              )}
 
               {/* Resend Section */}
-              <div className="text-center">
+              <div style={{ textAlign: 'left', marginLeft: '0' }}>
                 {timeLeft > 0 ? (
                   <p className="text-sm text-gray-600">
                     Resend code in{" "}
@@ -241,7 +257,7 @@ export function PhoneSignIn({
                 )}
               </div>
 
-              {/* WhatsApp Info */}
+              {/* WhatsApp Info with Phone Number */}
               <div className="p-3 bg-green-50 rounded-xl border border-green-100">
                 <div className="flex items-start space-x-3">
                   <MessageCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
@@ -250,7 +266,7 @@ export function PhoneSignIn({
                       Check WhatsApp
                     </p>
                     <p className="text-xs text-green-700">
-                      The OTP has been sent to your WhatsApp. Please check your messages.
+                      The OTP has been sent to your WhatsApp <span className="font-medium">+91 {maskedPhone}</span>. Please check your messages.
                     </p>
                   </div>
                 </div>
@@ -258,21 +274,29 @@ export function PhoneSignIn({
             </div>
           )}
 
-          <AuthButton 
-            type="submit" 
-            loading={loading}
-            className="!bg-gutzo-primary hover:!bg-gutzo-primary-hover !py-4 !min-h-[56px] text-base font-semibold text-center"
-          >
-            {otpSent ? (
-              "Verify OTP"
+          <div style={{ 
+            width: '100%',
+            maxWidth: '450px',
+            margin: '0',
+            marginTop: '1.25rem'
+          }}>
+            <AuthButton 
+              type="submit" 
+              loading={loading}
+              className="!bg-gutzo-primary hover:!bg-gutzo-primary-hover !py-4 !min-h-[56px] text-base font-semibold text-center"
+              style={{ width: '100%', margin: '0' }}
+            >
+              {otpSent ? (
+                "Verify OTP"
             ) : (
               "Proceed"
             )}
-          </AuthButton>
+            </AuthButton>
+          </div>
         </form>
 
         {onSwitchToSignup && !otpSent && (
-          <div className="text-center mt-6">
+          <div className="text-left mt-6">
 
           </div>
         )}
@@ -352,18 +376,6 @@ export function PhoneSignIn({
               </div>
             </div>
           </div>
-
-          {/* Terms - Mobile Optimized */}
-          <p className="text-xs text-gray-500 text-center mt-5 sm:mt-6 leading-relaxed">
-            By continuing, you agree to our{" "}
-            <a href="/T&C" className="text-[#0B5F3B] hover:underline font-medium">
-              Terms of Service
-            </a>{" "}
-            and{" "}
-            <a href="/privacy_policy" className="text-[#0B5F3B] hover:underline font-medium">
-              Privacy Policy
-            </a>
-          </p>
         </div>
 
         {/* Illustration placeholder - Hidden on small screens to save space */}

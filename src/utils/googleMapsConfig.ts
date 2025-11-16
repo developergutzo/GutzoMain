@@ -15,8 +15,8 @@ export function getGoogleMapsApiKey(): string | null {
   // Since the user mentioned it's already provided in Figma Make
   
   // Try Deno first (Figma Make's primary runtime)
-  if (typeof Deno !== 'undefined' && (Deno as any).env?.get) {
-    const denoKey = (Deno as any).env.get('GOOGLE_MAPS_API_KEY');
+  if (typeof (globalThis as any).Deno !== 'undefined' && (globalThis as any).Deno?.env?.get) {
+    const denoKey = (globalThis as any).Deno.env.get('GOOGLE_MAPS_API_KEY');
     if (denoKey && denoKey !== 'YOUR_GOOGLE_MAPS_API_KEY_HERE') {
       return denoKey;
     }

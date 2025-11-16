@@ -2,9 +2,11 @@
 import React, { useState, useEffect } from "react";
 import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight } from "lucide-react";
 import { Button } from "./ui/button";
+import { Sheet, SheetContent } from "./ui/sheet";
 import { useCart } from "../contexts/CartContext";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
+import { ImageWithFallback } from "./common/ImageWithFallback";
 import { apiService } from "../utils/api";
+import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 
 
 
@@ -17,7 +19,7 @@ interface CartPanelProps {
 }
 
 export function CartPanel({ isOpen, onClose, isAuthenticated = false, onShowLogin, onShowCheckout }: CartPanelProps) {
-
+  const { isMobile } = useResponsiveLayout();
   const { items, totalItems, totalAmount, updateQuantityOptimistic, removeItem, clearCart, clearGuestCart } = useCart();
 
   const [syncedItems, setSyncedItems] = useState<typeof items>(items);
@@ -106,74 +108,53 @@ export function CartPanel({ isOpen, onClose, isAuthenticated = false, onShowLogi
 
   if (!isOpen) return null;
 
-  return (
-    <>
-      {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden product-details-backdrop"
-        onClick={onClose}
-      />
-      
-      {/* Desktop Backdrop */}
-      <div 
-        className="hidden lg:block fixed inset-0 bg-black/10 backdrop-blur-sm z-40 product-details-backdrop"
-        onClick={onClose}
-      />
+  // Cart content - shared between mobile and desktop
+  const cartContent = (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="p-6 pb-4 border-b border-gray-100 flex-shrink-0">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-2xl font-bold text-gray-900">
+            Your Cart {totalItems > 0 && `(${totalItems} items)`}
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+          >
+            <X className="h-5 w-5 text-gray-500" />
+          </button>
+        </div>
+        {totalItems > 0 && (
+          <button
+            onClick={handleClearCart}
+            className="text-red-600 hover:text-red-700 transition-colors text-sm"
+          >
+            Clear All
+          </button>
+        )}
+      </div>
 
-      {/* Panel */}
-      <div className={`
-        fixed inset-y-0 right-0 z-50 bg-white shadow-xl transform transition-transform duration-300 ease-in-out
-        w-[95%] max-w-lg lg:w-[50%] lg:max-w-[600px]
-        product-details-panel
-        ${isOpen ? 'translate-x-0' : 'translate-x-full'}
-      `}>
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white sticky top-0 z-10">
-            <div className="flex items-center space-x-3">
-              <h2 className="font-semibold text-gray-900">
-                Your Cart {totalItems > 0 && `(${totalItems} items)`}
-              </h2>
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-6">
+        {syncedItems.length === 0 ? (
+          /* Empty Cart State */
+          <div className="flex flex-col items-center justify-center h-full px-6 py-16 text-center">
+            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+              <ShoppingBag className="h-10 w-10 text-gray-400" />
             </div>
-            <div className="flex items-center space-x-2">
-              {totalItems > 0 && (
-                <button
-                  onClick={handleClearCart}
-                  className="text-red-600 hover:text-red-700 transition-colors text-sm px-2 py-1"
-                >
-                  Clear All
-                </button>
-              )}
-              <button
-                onClick={onClose}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X className="h-5 w-5 text-gray-600" />
-              </button>
-            </div>
+            <h3 className="font-semibold text-gray-900 mb-2">Your cart is empty</h3>
+            <p className="text-gray-600 mb-6 text-sm">
+              Add some delicious healthy meals to get started
+            </p>
+            <Button
+              onClick={onClose}
+              className="bg-gutzo-primary hover:bg-gutzo-primary-hover text-white"
+            >
+              Browse Restaurants
+            </Button>
           </div>
-
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto">
-            {syncedItems.length === 0 ? (
-              /* Empty Cart State */
-              <div className="flex flex-col items-center justify-center h-full px-6 py-16 text-center">
-                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
-                  <ShoppingBag className="h-10 w-10 text-gray-400" />
-                </div>
-                <h3 className="font-semibold text-gray-900 mb-2">Your cart is empty</h3>
-                <p className="text-gray-600 mb-6 text-sm">
-                  Add some delicious healthy meals to get started
-                </p>
-                <Button
-                  onClick={onClose}
-                  className="bg-gutzo-primary hover:bg-gutzo-primary-hover text-white"
-                >
-                  Browse Restaurants
-                </Button>
-              </div>
-            ) : (
-              <div className="p-4 space-y-6">
+        ) : (
+          <div className="space-y-6">
                 {/* Cart Items by Vendor */}
                 {Object.values(itemsByVendor).map((group) => (
                   <div key={group.vendor.id} className="bg-gray-50 rounded-xl p-4">
@@ -275,72 +256,113 @@ export function CartPanel({ isOpen, onClose, isAuthenticated = false, onShowLogi
             )}
           </div>
 
-          {/* Footer with Order Summary */}
-          {syncedItems.length > 0 && (
-            <div className="border-t border-gray-200 bg-white p-4 space-y-4">
-              {/* Order Summary */}
-              <div className="space-y-2 text-sm">
-                {(() => {
-                  // Compute values once for clarity and consistency
-                  const subtotal = syncedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-                  const deliveryFee = DELIVERY_FEE;
-                  const platformFee = PLATFORM_FEE;
-                  // Included GST: items at 5%
-                  const includedGstItems = subtotal - (subtotal / (1 + ITEMS_GST_RATE));
-                  // Included GST in fees at 18%
-                  const includedGstDelivery = deliveryFee - (deliveryFee / (1 + FEES_GST_RATE));
-                  const includedGstPlatform = platformFee - (platformFee / (1 + FEES_GST_RATE));
-                  const includedGstFees = includedGstDelivery + includedGstPlatform;
-                  const total = subtotal + deliveryFee + platformFee; // All values are GST-inclusive as per rules
-                  return (
-                    <>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Items ({totalItems})</span>
-                        <span className="text-gray-900">₹{subtotal.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Delivery Fee (incl. 18% GST)</span>
-                        <span className="text-gray-900">₹{deliveryFee.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Platform Fee (incl. 18% GST)</span>
-                        <span className="text-gray-900">₹{platformFee.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">GST included in items @5%</span>
-                        <span className="text-gray-900">₹{includedGstItems.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">GST included in fees @18%</span>
-                        <span className="text-gray-900">₹{includedGstFees.toFixed(2)}</span>
-                      </div>
-                      <div className="border-t border-gray-200 pt-2">
-                        <div className="flex justify-between font-medium">
-                          <span className="text-gray-900">Total</span>
-                          <span className="text-gutzo-primary">₹{total.toFixed(2)}</span>
-                        </div>
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
+      {/* Footer with Order Summary */}
+      {syncedItems.length > 0 && (
+        <div className="border-t border-gray-200 bg-white p-6 flex-shrink-0 space-y-4">
+          {/* Order Summary */}
+          <div className="space-y-2 text-sm">
+            {(() => {
+              // Compute values once for clarity and consistency
+              const subtotal = syncedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+              const deliveryFee = DELIVERY_FEE;
+              const platformFee = PLATFORM_FEE;
+              // Included GST: items at 5%
+              const includedGstItems = subtotal - (subtotal / (1 + ITEMS_GST_RATE));
+              // Included GST in fees at 18%
+              const includedGstDelivery = deliveryFee - (deliveryFee / (1 + FEES_GST_RATE));
+              const includedGstPlatform = platformFee - (platformFee / (1 + FEES_GST_RATE));
+              const includedGstFees = includedGstDelivery + includedGstPlatform;
+              const total = subtotal + deliveryFee + platformFee; // All values are GST-inclusive as per rules
+              return (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Items ({totalItems})</span>
+                    <span className="text-gray-900">₹{subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Delivery Fee (incl. 18% GST)</span>
+                    <span className="text-gray-900">₹{deliveryFee.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Platform Fee (incl. 18% GST)</span>
+                    <span className="text-gray-900">₹{platformFee.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">GST included in items @5%</span>
+                    <span className="text-gray-900">₹{includedGstItems.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">GST included in fees @18%</span>
+                    <span className="text-gray-900">₹{includedGstFees.toFixed(2)}</span>
+                  </div>
+                  <div className="border-t border-gray-200 pt-2">
+                    <div className="flex justify-between font-medium">
+                      <span className="text-gray-900">Total</span>
+                      <span className="text-gutzo-primary">₹{total.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
 
-              <Button
-                onClick={handleProceedToCheckout}
-                className="w-full bg-gutzo-primary hover:bg-gutzo-primary-hover text-white h-11 flex items-center justify-center space-x-2"
-              >
-                <span>Proceed to Checkout</span>
-                <ArrowRight className="h-4 w-4" />
-              </Button>
+          <Button
+            onClick={handleProceedToCheckout}
+            className="w-full bg-gutzo-primary hover:bg-gutzo-primary-hover text-white h-11 flex items-center justify-center space-x-2"
+          >
+            <span>Proceed to Checkout</span>
+            <ArrowRight className="h-4 w-4" />
+          </Button>
 
-              <p className="text-xs text-gray-500 text-center">
-                By placing this order, you agree to our Terms & Conditions
-              </p>
-            </div>
-          )}
+          <p className="text-xs text-gray-500 text-center">
+            By placing this order, you agree to our Terms & Conditions
+          </p>
         </div>
-      </div>
+      )}
+    </div>
+  );
 
+  return (
+    <>
+      {/* MOBILE: Bottom Sheet */}
+      {isMobile ? (
+        <Sheet open={isOpen} onOpenChange={onClose}>
+          <SheetContent
+            side="bottom"
+            className="rounded-t-3xl p-0 w-full max-w-full left-0 right-0"
+            style={{ top: '80px', bottom: 0, height: 'calc(100vh - 80px)' }}
+          >
+            <style>{`
+              [data-slot="sheet-content"] > button[class*="absolute"] {
+                display: none !important;
+              }
+            `}</style>
+            {cartContent}
+          </SheetContent>
+        </Sheet>
+      ) : (
+        /* DESKTOP: Right Panel */
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            right: 0,
+            height: '100%',
+            width: '95%',
+            maxWidth: '600px',
+            backgroundColor: 'white',
+            boxShadow: '-10px 0 40px rgba(0, 0, 0, 0.2)',
+            zIndex: 50,
+            transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
+            transition: 'transform 300ms ease-in-out',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'stretch'
+          }}
+        >
+          {cartContent}
+        </div>
+      )}
     </>
   );
 }

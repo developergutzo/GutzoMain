@@ -175,9 +175,9 @@ export function SignUp({
 
   if (isPanel) {
     return (
-      <div className="space-y-6 max-w-sm">
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
+      <div style={{ width: '100%', maxWidth: '450px', display: 'block', margin: '0', padding: '0' }}>
+        <form onSubmit={handleSubmit} style={{ width: '100%', maxWidth: '450px', display: 'block', margin: '0', padding: '0' }}>
+          <div style={{ width: '100%', maxWidth: '450px', marginBottom: '1.25rem' }}>
             <AuthInput
               label="Phone Number"
               type="tel"
@@ -194,7 +194,7 @@ export function SignUp({
             />
           </div>
 
-          <div>
+          <div style={{ width: '100%', maxWidth: '450px', marginBottom: '1.25rem' }}>
             <AuthInput
               label="Full Name"
               type="text"
@@ -207,7 +207,7 @@ export function SignUp({
             />
           </div>
 
-          <div>
+          <div style={{ width: '100%', maxWidth: '450px', marginBottom: '1.25rem' }}>
             <AuthInput
               label="Email"
               type="email"
@@ -223,7 +223,7 @@ export function SignUp({
 
           {/* Progressive OTP Disclosure */}
           {otpSent && (
-            <div className="animate-in slide-in-from-top-4 duration-300">
+            <div style={{ width: '100%', maxWidth: '450px', marginBottom: '1.25rem' }}>
               <AuthInput
                 label="OTP"
                 type="text"
@@ -244,13 +244,16 @@ export function SignUp({
             </div>
           )}
 
-          <AuthButton 
-            type="submit" 
-            loading={loading}
-            className="!bg-gutzo-primary hover:!bg-gutzo-primary-hover !py-4 !min-h-[56px] text-base font-semibold text-center"
-          >
-            {otpSent ? "Verify OTP" : "Continue"}
-          </AuthButton>
+          <div style={{ width: '100%', maxWidth: '450px', marginTop: '1.25rem' }}>
+            <AuthButton 
+              type="submit" 
+              loading={loading}
+              className="!bg-gutzo-primary hover:!bg-gutzo-primary-hover !py-4 !min-h-[56px] text-base font-semibold text-center"
+              style={{ width: '100%' }}
+            >
+              {otpSent ? "Verify OTP" : "Continue"}
+            </AuthButton>
+          </div>
         </form>
 
 

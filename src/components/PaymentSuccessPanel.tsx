@@ -46,11 +46,11 @@ export function PaymentSuccessPanel({
             vendorName: vendor.name,
             vendorPhone: vendor.contact_whatsapp,
             cartItems: instantOrderData.cartItems.map(cartItem => ({
-              productName: cartItem.product.name,
-              productImage: cartItem.product.image_url || '',
+              productName: (cartItem.name || cartItem.product?.description) as string,
+              productImage: cartItem.product?.image || '',
               quantity: cartItem.quantity,
-              price: cartItem.product.price,
-              total: cartItem.product.price * cartItem.quantity
+              price: cartItem.price,
+              total: cartItem.price * cartItem.quantity
             })),
             totalPrice: instantOrderData.totalPrice,
             status: 'confirmed' as const,
@@ -73,7 +73,7 @@ export function PaymentSuccessPanel({
   if (!isOpen || (!subscriptionData && !instantOrderData) || !product || !vendor || !paymentResult) return null;
 
   const formatMealSlots = () => {
-    if (!subscriptionData.mealSlots.length) return '';
+    if (!subscriptionData || !subscriptionData.mealSlots || !subscriptionData.mealSlots.length) return '';
     return subscriptionData.mealSlots
       .map(slot => {
         const customTime = subscriptionData.customTimes?.[slot];
@@ -83,6 +83,7 @@ export function PaymentSuccessPanel({
   };
 
   const getFrequencyDisplay = () => {
+    if (!subscriptionData) return '';
     switch (subscriptionData.frequency) {
       case 'Daily':
         return 'Every day';
@@ -242,7 +243,7 @@ export function PaymentSuccessPanel({
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Quantity:</span>
-                      <span className="font-medium text-gray-900">{instantOrderData!.quantity} bowl{instantOrderData!.quantity > 1 ? 's' : ''}</span>
+                      <span className="font-medium text-gray-900">{instantOrderData!.cartItems.reduce((sum, it) => sum + it.quantity, 0)} bowl{instantOrderData!.cartItems.reduce((sum, it) => sum + it.quantity, 0) > 1 ? 's' : ''}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Estimated delivery:</span>

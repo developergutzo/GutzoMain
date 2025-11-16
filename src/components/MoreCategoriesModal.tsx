@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { Search, X, CheckCircle } from "lucide-react";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
+import { ImageWithFallback } from "./common/ImageWithFallback";
 import { categoryIcons, categoryFallbackIcons } from "../constants/categoryIcons";
 
 interface MoreCategoriesModalProps {

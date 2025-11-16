@@ -2,7 +2,7 @@ import { useState } from "react";
 import { PhoneSignIn } from "./PhoneSignIn";
 import { OTPVerification } from "./OTPVerification";
 import { AuthSuccess } from "./AuthSuccess";
-import { toast } from "sonner@2.0.3";
+import { toast } from "sonner";
 
 const VITE_SUPABASE_FUNCTION_URL = import.meta.env.VITE_SUPABASE_FUNCTION_URL;
 const VITE_SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;

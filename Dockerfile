@@ -1,37 +1,29 @@
-# Stage 1: Build the React application
 FROM node:18-alpine AS build
-
-# Set the working directory
 WORKDIR /app
-
-# Copy package.json and package-lock.json
 COPY package*.json ./
-
-# Install dependencies
-RUN npm install
-
-# Copy the rest of the application source code
+RUN npm ci
 COPY . .
 
-# Declare build arguments for environment variables
-ARG VITE_SUPABASE_URL
-ARG VITE_SUPABASE_ANON_KEY
+# Set environment variables directly (will be baked into the build)
+ENV VITE_SUPABASE_URL="https://35-194-40-59.nip.io/service"
+ENV VITE_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE"
+ENV VITE_SUPABASE_FUNCTION_URL="https://35-194-40-59.nip.io/deno"
 
-# Set environment variables from build arguments so Vite can use them
-ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
-ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
-
-# Build the project. Vite will replace the env variables with the actual values.
 RUN npm run build
 
-# Stage 2: Serve the static files with Nginx
 FROM nginx:stable-alpine
-
-# Copy the build output from the build stage to the Nginx html directory
+RUN apk add --no-cache gettext
+COPY nginx.conf /etc/nginx/templates/default.conf.template
 COPY --from=build /app/build /usr/share/nginx/html
 
-# Expose port 80 for Nginx
-EXPOSE 80
+RUN echo '#!/bin/sh' > /docker-entrypoint.sh && \
+    echo 'export PORT=${PORT:-8080}' >> /docker-entrypoint.sh && \
+    echo 'envsubst "\$PORT" < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf' >> /docker-entrypoint.sh && \
+    echo 'exec nginx -g "daemon off;"' >> /docker-entrypoint.sh && \
+    chmod +x /docker-entrypoint.sh
 
-# Start Nginx when the container launches
-CMD ["nginx", "-g", "daemon off;"]
+EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-8080}/ || exit 1
+
+ENTRYPOINT ["/docker-entrypoint.sh"]

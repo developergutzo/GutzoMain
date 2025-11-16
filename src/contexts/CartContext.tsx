@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect, useCallback, useRef } from 'react';
 import { Product, Vendor } from '../types';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { apiService } from '../utils/api';
 import { useAuth } from './AuthContext';
 
@@ -50,7 +50,7 @@ type CartAction =
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_MIGRATION_STATUS'; payload: 'none' | 'pending' | 'completed' | 'failed' }
   | { type: 'CLEAR_CART' }
-  | { type: 'LOAD_CART'; payload: Omit<CartState, 'optimisticUpdates' | 'migrationStatus'> }
+  | { type: 'LOAD_CART'; payload: Partial<Omit<CartState, 'optimisticUpdates' | 'migrationStatus'>> }
   | { type: 'MERGE_CART'; payload: { items: CartItem[] } };
 
 interface CartContextType extends CartState {
@@ -340,13 +340,17 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         optimisticUpdates: new Map()
       };
 
-    case 'LOAD_CART':
+    case 'LOAD_CART': {
+      const payload = action.payload || {};
       return {
-        ...action.payload,
+        items: payload.items ?? [],
+        totalItems: payload.totalItems ?? 0,
+        totalAmount: payload.totalAmount ?? 0,
         optimisticUpdates: new Map(),
         isLoading: false,
         migrationStatus: 'none'
       };
+    }
 
     default:
       return state;
@@ -621,8 +625,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Check if user has existing cart in database using apiService
-      let existingCartData = { items: [], totalItems: 0, totalAmount: 0 };
+  // Check if user has existing cart in database using apiService
+  let existingCartData: { items: CartItem[]; totalItems: number; totalAmount: number } = { items: [], totalItems: 0, totalAmount: 0 };
       try {
         const existingCartResponse = await apiService.getUserCart(userId);
         existingCartData = transformCartFromAPI(existingCartResponse);
@@ -644,8 +648,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           existingItems: existingCartData.items.length
         });
         
-        // Merge carts manually to get the final result
-        const mergedItems = [...existingCartData.items];
+  // Merge carts manually to get the final result
+  const mergedItems: CartItem[] = [...existingCartData.items];
         
         guestCart.items.forEach((guestItem: any) => {
           const existingIndex = mergedItems.findIndex((item: any) => item.productId === guestItem.productId);

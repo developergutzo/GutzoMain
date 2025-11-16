@@ -5,7 +5,7 @@ import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Separator } from './ui/separator';
-import { ImageWithFallback } from './figma/ImageWithFallback';
+import { ImageWithFallback } from './common/ImageWithFallback';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../utils/api';
@@ -68,10 +68,12 @@ interface OrdersPanelProps {
       estimatedDelivery: string;
     };
   } | null;
+  realOrders?: any[];
+  isLoading?: boolean;
 }
 
 
-export function OrdersPanel({ className = "", onViewOrderDetails, recentOrderData }: OrdersPanelProps) {
+export function OrdersPanel({ className = "", onViewOrderDetails, recentOrderData, realOrders, isLoading }: OrdersPanelProps) {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedOrderIds, setExpandedOrderIds] = useState<Set<string>>(new Set());

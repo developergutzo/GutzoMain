@@ -3,10 +3,10 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerClose } from "./ui/drawer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
+import { ImageWithFallback } from "./common/ImageWithFallback";
 import { useState, useEffect, useRef } from "react";
 import { apiService } from "../utils/api";
-import { toast } from "sonner@2.0.3";
+import { toast } from "sonner";
 import { Vendor, Product } from "../types";
 import { normalizeCategory } from "../utils/vendors";
 
@@ -104,8 +104,8 @@ export function MenuDrawer({ vendor, isOpen, onClose, selectedCategory, loadProd
     const message = `Hi ${vendor.name}, I'd like to order ${item.name} (₹${item.price}) via Gutzo marketplace`;
     const encodedMessage = encodeURIComponent(message);
     // Remove any special characters from phone number and ensure it starts with country code
-    const phoneNumber = vendor.contact_whatsapp.replace(/[^\d+]/g, '');
-    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+  const phoneNumber = (vendor.contact_whatsapp || '').replace(/[^\d+]/g, '');
+  const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
     
     window.open(whatsappUrl, '_blank');
   };

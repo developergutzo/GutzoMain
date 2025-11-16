@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Minus, ShoppingCart, Clock, MapPin, ArrowLeft, CreditCard, Smartphone, Wallet, CheckCircle } from 'lucide-react';
-import { toast } from "sonner@2.0.3";
+import { toast } from "sonner";
 import { Button } from './ui/button';
 // ...existing code...
 import { Badge } from './ui/badge';
 import { Card, CardContent } from './ui/card';
 import { Separator } from './ui/separator';
 import { Input } from './ui/input';
-import { ImageWithFallback } from './figma/ImageWithFallback';
-import { Product, Vendor } from '../types';
+import { ImageWithFallback } from './common/ImageWithFallback';
+import { Product, Vendor } from '../types/index';
 import { apiService } from '../utils/api';
 
 export interface CartItem {
@@ -134,7 +134,18 @@ export function InstantOrderPanel({
           id: firstItem.vendorId,
           name: firstItem.vendor.name,
           image: firstItem.vendor.image,
-          products: []
+          description: '',
+          location: '',
+          rating: 0,
+          deliveryTime: '',
+          minimumOrder: 0,
+          deliveryFee: 0,
+          cuisineType: '',
+          phone: '',
+          isActive: true,
+          isFeatured: false,
+          created_at: new Date().toISOString(),
+          tags: []
         } as Vendor);
       } else if (product && vendor) {
         // Single product order
@@ -151,7 +162,7 @@ export function InstantOrderPanel({
             image: vendor.image
           },
           product: {
-            image: product.image_url,
+            image: product.image,
             description: product.description,
             category: product.category
           }
@@ -280,14 +291,14 @@ export function InstantOrderPanel({
 
   return (
     <>
-      {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[55]"
-        onClick={onClose}
-      />
-      
       {/* Panel */}
-      <div className="fixed top-0 right-0 h-full w-[95%] max-w-lg lg:w-[50%] lg:max-w-[600px] bg-white shadow-2xl z-[60] transform transition-transform duration-300 product-details-panel">
+      <div 
+        className="fixed top-0 right-0 h-full w-[95%] bg-white shadow-2xl z-[60] transform transition-transform duration-300 product-details-panel"
+        style={{ 
+          maxWidth: '600px',
+          transform: isOpen ? 'translateX(0)' : 'translateX(100%)'
+        }}
+      >
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-gutzo-primary/15 to-gutzo-highlight/20">

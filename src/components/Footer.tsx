@@ -1,87 +1,139 @@
-import { Instagram, Linkedin } from "lucide-react";
+import { Instagram, Facebook } from "lucide-react";
 import { Button } from "./ui/button";
 import { useRouter } from "./Router";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
+import { ImageWithFallback } from "./common/ImageWithFallback";
 
 export function Footer() {
   const { navigate } = useRouter();
   return (
     <footer className="bg-gray-900 text-white py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-          <div>
-            <ImageWithFallback
-              src="https://34-133-149-133.nip.io/service/storage/v1/object/public/Gutzo/GUTZO.svg"
-              //src="http://192.168.1.39:54321/storage/v1/object/public/Gutzo/GUTZO.svg"
-              //src="https://jrpiqxajjpyxiitweoqc.supabase.co/storage/v1/object/public/Gutzo%20Logo/GUTZO.svg"
-              alt="Gutzo - Healthy Feels Good"
-              className="h-16 w-auto mb-4"
-            />
-            <p className="text-gray-400 max-w-md">
+      <div className="px-4 sm:px-6 lg:px-8">
+  <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:flex-wrap lg:flex-nowrap items-start justify-between gap-8 sm:gap-12 lg:gap-16 mt-8 sm:mt-12 lg:mt-16 pb-40 sm:pb-56 lg:pb-72">
+          
+          <div className="w-full sm:w-[calc(50%-1.5rem)] lg:w-[280px] lg:flex-shrink-0">
+            <button
+              type="button"
+              aria-label="Go to homepage"
+              onClick={() => navigate('/')}
+              className="p-0 bg-transparent border-0 inline-flex items-center cursor-pointer hover:opacity-90 active:scale-95 transition-transform interactive mb-3 sm:mb-4"
+            >
+              <ImageWithFallback
+                src="https://35-194-40-59.nip.io/service/storage/v1/object/public/Gutzo/GUTZO.svg"
+                //src="http://192.168.1.39:54321/storage/v1/object/public/Gutzo/GUTZO.svg"
+                //src="https://jrpiqxajjpyxiitweoqc.supabase.co/storage/v1/object/public/Gutzo%20Logo/GUTZO.svg"
+                alt="Gutzo - Healthy Feels Good"
+                className="h-12 sm:h-14 lg:h-16 w-auto"
+              />
+            </button>
+            <p className="text-gray-400 text-sm leading-relaxed">
               Connecting you with the healthiest kitchens in Coimbatore.
             </p>
           </div>
           
-          <div>
-            <h3 className="font-semibold text-white mb-4">Legal</h3>
-            <div className="space-y-2">
+          <div className="w-full sm:w-[calc(50%-1.5rem)] lg:w-auto lg:flex-1">
+            <h3 className="font-semibold text-white mb-3 sm:mb-4 text-base">Company</h3>
+            <div className="space-y-2 sm:space-y-3">
+              <button 
+                onClick={() => navigate('/about')}
+                className="block text-gray-400 hover:text-white transition-colors text-sm text-left whitespace-nowrap interactive"
+              >
+                About Us
+              </button>
+              <button 
+                onClick={() => navigate('/contact')}
+                className="block text-gray-400 hover:text-white transition-colors text-sm text-left whitespace-nowrap interactive"
+              >
+                Contact Us
+              </button>
+            </div>
+          </div>
+          
+          <div className="w-full sm:w-[calc(50%-1.5rem)] lg:w-auto lg:flex-1">
+            <h3 className="font-semibold text-white mb-3 sm:mb-4 text-base">Legal</h3>
+            <div className="space-y-2 sm:space-y-3">
               <button 
                 onClick={() => navigate('/T&C')}
-                className="block text-gray-400 hover:text-white transition-colors text-sm text-left"
+                className="block text-gray-400 hover:text-white transition-colors text-sm text-left whitespace-nowrap interactive"
               >
                 Terms & Conditions
               </button>
               <button 
                 onClick={() => navigate('/refund_policy')}
-                className="block text-gray-400 hover:text-white transition-colors text-sm text-left"
+                className="block text-gray-400 hover:text-white transition-colors text-sm text-left whitespace-nowrap interactive"
               >
                 Refund Policy
               </button>
               <button 
                 onClick={() => navigate('/privacy_policy')}
-                className="block text-gray-400 hover:text-white transition-colors text-sm text-left"
+                className="block text-gray-400 hover:text-white transition-colors text-sm text-left whitespace-nowrap interactive"
               >
                 Privacy Policy
               </button>
             </div>
           </div>
           
-          <div>
-            <h3 className="font-semibold text-white mb-4">Follow Us</h3>
-            <div className="flex gap-4">
-              <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white p-2">
-                <Instagram className="h-5 w-5" />
+          <div className="w-full sm:w-[calc(50%-1.5rem)] lg:w-auto lg:flex-1">
+            <h3 className="font-semibold text-white mb-3 sm:mb-4 text-base">Follow Us</h3>
+            <div className="flex gap-3 sm:gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-gray-400 p-0 interactive group focus-visible:ring-2 focus-visible:ring-white/20 cursor-pointer"
+                aria-label="Instagram"
+              >
+                <div className="w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200 ease-out group-hover:bg-white/10">
+                  <Instagram className="h-5 w-5 transition-transform duration-200 ease-out group-hover:scale-105 group-hover:brightness-125" />
+                </div>
                 <span className="sr-only">Instagram</span>
               </Button>
-              <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white p-2">
-                <Linkedin className="h-5 w-5" />
-                <span className="sr-only">LinkedIn</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-gray-400 p-0 interactive group focus-visible:ring-2 focus-visible:ring-white/20 cursor-pointer"
+                aria-label="Facebook"
+              >
+                <div className="w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200 ease-out group-hover:bg-white/10">
+                  <Facebook className="h-5 w-5 transition-transform duration-200 ease-out group-hover:scale-105 group-hover:brightness-125" />
+                </div>
+                <span className="sr-only">Facebook</span>
               </Button>
             </div>
           </div>
         </div>
         
-        <div className="border-t border-gray-800 pt-8">
-          <div className="flex flex-col md:flex-row justify-between items-center text-center md:text-left">
-            <p className="text-gray-400 text-sm">
+  <div className="max-w-7xl mx-auto border-t border-gray-800 pt-8 sm:pt-12 lg:pt-16 mt-72 sm:mt-80 lg:mt-96">
+          <div className="flex flex-col sm:flex-row justify-between items-center text-center sm:text-left gap-4">
+            <p className="text-gray-400 text-xs sm:text-sm">
               © 2025 Gutzo. All rights reserved.
             </p>
-            <div className="flex flex-wrap justify-center gap-4 mt-4 md:mt-0">
+            <div className="flex flex-wrap justify-center sm:justify-end gap-3 sm:gap-4">
+              <button 
+                onClick={() => navigate('/about')}
+                className="text-gray-500 hover:text-gray-400 text-xs transition-colors interactive"
+              >
+                About
+              </button>
+              <button 
+                onClick={() => navigate('/contact')}
+                className="text-gray-500 hover:text-gray-400 text-xs transition-colors interactive"
+              >
+                Contact
+              </button>
               <button 
                 onClick={() => navigate('/T&C')}
-                className="text-gray-500 hover:text-gray-400 text-xs transition-colors"
+                className="text-gray-500 hover:text-gray-400 text-xs transition-colors interactive"
               >
                 Terms
               </button>
               <button 
                 onClick={() => navigate('/refund_policy')}
-                className="text-gray-500 hover:text-gray-400 text-xs transition-colors"
+                className="text-gray-500 hover:text-gray-400 text-xs transition-colors interactive"
               >
                 Refund
               </button>
               <button 
                 onClick={() => navigate('/privacy_policy')}
-                className="text-gray-500 hover:text-gray-400 text-xs transition-colors"
+                className="text-gray-500 hover:text-gray-400 text-xs transition-colors interactive"
               >
                 Privacy
               </button>

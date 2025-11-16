@@ -105,7 +105,9 @@ function extractAddressComponents(components: AddressComponent[]): Partial<Detai
 
 // Geocode coordinates to get detailed address information
 export async function reverseGeocode(lat: number, lng: number): Promise<DetailedAddress | null> {
-  if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY === "YOUR_GOOGLE_MAPS_API_KEY_HERE") {
+  // Avoid comparing two different string literals (TS may flag that as always-false).
+  // Check for falsy or obviously-placeholder keys instead.
+  if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.includes('YOUR_GOOGLE')) {
     console.warn('🚫 Google Maps API key not available for geocoding');
     return null;
   }
@@ -151,7 +153,7 @@ export async function reverseGeocode(lat: number, lng: number): Promise<Detailed
 
 // Forward geocode an address to get coordinates and detailed components
 export async function forwardGeocode(address: string): Promise<DetailedAddress | null> {
-  if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY === "YOUR_GOOGLE_MAPS_API_KEY_HERE") {
+  if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.includes('YOUR_GOOGLE')) {
     console.warn('🚫 Google Maps API key not available for geocoding');
     return null;
   }

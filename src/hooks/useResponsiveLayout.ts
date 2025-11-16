@@ -5,7 +5,7 @@ export function useResponsiveLayout() {
 
   useEffect(() => {
     const checkScreenSize = () => {
-      setIsMobile(window.innerWidth < 1024);
+      setIsMobile(window.innerWidth < 768);
     };
 
     // Check on mount

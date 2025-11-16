@@ -167,7 +167,7 @@ export function GoogleMapPicker({
       });
     }
 
-    if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY === "YOUR_GOOGLE_MAPS_API_KEY_HERE") {
+    if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.includes('YOUR_GOOGLE')) {
       console.log('❌ No valid Google Maps API key found');
       setMapError("Google Maps API key not configured");
       setShowManualEntry(true);
@@ -185,7 +185,7 @@ export function GoogleMapPicker({
           if (window.google?.maps) {
             console.log('✅ Existing Google Maps script loaded');
             setIsMapLoaded(true);
-            resolve();
+            resolve(undefined);
           } else {
             setTimeout(checkLoaded, 100);
           }
@@ -221,7 +221,7 @@ export function GoogleMapPicker({
         
         // Add mobile-specific delay
         const delay = isMobile ? 500 : 100;
-        setTimeout(() => {
+          setTimeout(() => {
           isScriptLoaded = true;
           isScriptLoading = false;
           setIsMapLoaded(true);
@@ -231,7 +231,7 @@ export function GoogleMapPicker({
           // Clean up callback after use
           delete (window as any)[callbackName];
           
-          resolve();
+          resolve(undefined);
         }, delay);
       };
       
@@ -323,7 +323,7 @@ export function GoogleMapPicker({
               try {
                 const geocoder = new google.maps.Geocoder();
                 const geocodeResult = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
-                  geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+                  geocoder.geocode({ location: { lat, lng } }, (results: any, status: any) => {
                     if (status === 'OK' && results && results.length > 0) {
                       resolve(results);
                     } else {
@@ -497,7 +497,7 @@ export function GoogleMapPicker({
           if (window.google?.maps) {
             const geocoder = new google.maps.Geocoder();
             const geocodeResult = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
-              geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+              geocoder.geocode({ location: { lat, lng } }, (results: any, status: any) => {
                 if (status === 'OK' && results && results.length > 0) {
                   resolve(results);
                 } else {
@@ -724,7 +724,7 @@ export function GoogleMapPicker({
           if (window.google?.maps) {
             const geocoder = new google.maps.Geocoder();
             const geocodeResult = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
-              geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+              geocoder.geocode({ location: { lat, lng } }, (results: any, status: any) => {
                 if (status === 'OK' && results && results.length > 0) {
                   resolve(results);
                 } else {
@@ -1044,9 +1044,7 @@ export function GoogleMapPicker({
           <div className="p-3 bg-gray-50 rounded-lg">
             <p className="text-sm font-medium text-gray-900 mb-1">Selected Location:</p>
             <p className="text-sm text-gray-600">
-              {currentLocation.address && !currentLocation.address.includes(',') 
-                ? 'Getting address...' 
-                : currentLocation.address || 'Loading location...'}
+              {currentLocation?.address ? (!currentLocation.address.includes(',') ? 'Getting address...' : currentLocation.address) : 'Loading location...'}
             </p>
           </div>
         )} */} 
@@ -1056,9 +1054,7 @@ export function GoogleMapPicker({
           <div className="p-3 bg-gray-50 rounded-lg">
             <p className="text-sm font-medium text-gray-900 mb-1">Selected Location:</p>
             <p className="text-sm text-gray-600">
-              {currentLocation.address && !currentLocation.address.includes(',') 
-                ? 'Getting address...' 
-                : currentLocation.address || 'Loading location...'}
+              {currentLocation?.address ? (!currentLocation.address.includes(',') ? 'Getting address...' : currentLocation.address) : 'Loading location...'}
             </p>
           </div>
         )}

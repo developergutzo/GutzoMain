@@ -5,7 +5,6 @@ import { VendorCard } from "./components/VendorCard";
 import { ResponsiveProductDetails } from "./components/ResponsiveProductDetailsFixed";
 import { VendorSkeleton } from "./components/VendorSkeleton";
 import { VendorCartStrip } from "./components/VendorCartStrip";
-import { ComingSoon } from "./components/ComingSoon";
 import { Footer } from "./components/Footer";
 import { WhatsAppSupport } from "./components/WhatsAppSupport";
 import { LocationGate } from "./components/LocationGate";
@@ -21,10 +20,12 @@ import { InstantOrderPanel } from "./components/InstantOrderPanel";
 import { TermsPage } from "./pages/TermsPage";
 import { RefundPage } from "./pages/RefundPage";
 import { PrivacyPage } from "./pages/PrivacyPage";
+import { ContactPage } from "./pages/ContactPage";
+import { AboutPage } from "./pages/AboutPage";
 import PaymentStatusPage from "./pages/PaymentStatusPage";
 import { Toaster } from "./components/ui/sonner";
 import { Loader2, MapPin, Plus } from "lucide-react";
-import { Vendor } from "./types";
+import { Vendor } from "./types/index";
 import { useVendors } from "./hooks/useVendors";
 import { filterVendors, extractCategoriesFromVendors } from "./utils/vendors";
 import { useCart } from "./contexts/CartContext";
@@ -40,6 +41,7 @@ function AppContent() {
   const { isAuthenticated, isLoading: authLoading, user, login, logout } = useAuth();
   
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [isMenuDrawerOpen, setIsMenuDrawerOpen] = useState(false);
   const [showLocationGate, setShowLocationGate] = useState(false);
@@ -75,6 +77,25 @@ function AppContent() {
     console.log('AppContent: showAddressPanel changed:', showAddressPanel);
   }, [showAddressPanel]);
 
+  // Disable body scroll when any right panel is open
+  useEffect(() => {
+    if (showLoginPanel || showProfilePanel || showCartPanel || showCheckoutPanel || showAddressPanel) {
+      // Prevent scrolling on the body
+      document.body.style.overflow = 'hidden';
+      document.body.style.paddingRight = '0px'; // Prevent layout shift
+    } else {
+      // Re-enable scrolling
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+    };
+  }, [showLoginPanel, showProfilePanel, showCartPanel, showCheckoutPanel, showAddressPanel]);
+
   // Authentication is now handled by AuthContext
   // The old manual validation logic has been replaced with a robust AuthContext system
 
@@ -102,7 +123,21 @@ function AppContent() {
     selectedCategory
   });
   
-  const filteredVendors = filterVendors(vendors, selectedCategory);
+  // Filter vendors by category first, then by search query
+  let filteredVendors = filterVendors(vendors, selectedCategory);
+  
+  // Apply search filter if there's a search query
+  if (searchQuery.trim()) {
+    filteredVendors = filteredVendors.filter(vendor => {
+      const searchLower = searchQuery.toLowerCase();
+      // Search in vendor name
+      if (vendor.name.toLowerCase().includes(searchLower)) return true;
+      // Search in vendor cuisine/tags
+      if (vendor.tags?.some((tag: string) => tag.toLowerCase().includes(searchLower))) return true;
+      // You can add more search fields here like description, etc.
+      return false;
+    });
+  }
 
   const handleCategoryChange = (category: string) => {
     console.log('Category changed to:', category);
@@ -313,33 +348,37 @@ function AppContent() {
 
   if (currentRoute === '/T&C') {
     return (
-      <div style={{ minHeight: '100vh' }}>
-        <TermsPage />
-      </div>
+      <TermsPage />
     );
   }
 
   if (currentRoute === '/refund_policy') {
     return (
-      <div style={{ minHeight: '100vh' }}>
-        <RefundPage />
-      </div>
+      <RefundPage />
     );
   }
 
   if (currentRoute === '/privacy_policy') {
     return (
-      <div style={{ minHeight: '100vh' }}>
-        <PrivacyPage />
-      </div>
+      <PrivacyPage />
     );
   }
 
   if (currentRoute === '/payment-status') {
     return (
-      <div style={{ minHeight: '100vh' }}>
-        <PaymentStatusPage />
-      </div>
+      <PaymentStatusPage />
+    );
+  }
+
+  if (currentRoute === '/contact') {
+    return (
+      <ContactPage />
+    );
+  }
+
+  if (currentRoute === '/about') {
+    return (
+      <AboutPage />
     );
   }
 
@@ -351,13 +390,32 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 relative">
+      {/* Overlay for right panels - Dark overlay like Swiggy */}
+      {(showLoginPanel || showProfilePanel || showCartPanel || showCheckoutPanel || showAddressPanel) && (
+        <div 
+          className="fixed inset-0 z-40 transition-all duration-300 ease-out"
+          style={{ 
+            backgroundColor: 'rgba(0, 0, 0, 0.5)'
+          }}
+          onClick={() => {
+            if (showLoginPanel) handleCloseAuth();
+            if (showProfilePanel) handleCloseProfile();
+            if (showCartPanel) handleCloseCart();
+            if (showCheckoutPanel) handleCloseCheckout();
+            if (showAddressPanel) setShowAddressPanel(false);
+          }}
+        />
+      )}
+      
       <Header 
         onShowLogin={handleShowLogin}
         onLogout={handleLogout}
         onShowProfile={handleShowProfile}
         onShowCart={handleShowCart}
         onShowAddressList={handleShowAddressList}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
       />
 
       <div ref={filterRef}>
@@ -442,10 +500,9 @@ function AppContent() {
             </div>
           </div>
         )}
-      </main>
+  </main>
 
-      <ComingSoon />
-      <Footer />
+  <Footer />
 
       <WhatsAppSupport />
 

@@ -3,10 +3,11 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerClose } from "./ui/drawer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
+import { ImageWithFallback } from "./common/ImageWithFallback";
 import { useState, useEffect, useRef } from "react";
 import { apiService } from "../utils/api";
-import { toast } from "sonner@2.0.3";
+import { toast } from "sonner";
+import { saveInstantOrder } from '../utils/orders';
 import { Vendor, Product } from "../types";
 import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { useProductSubscriptions } from "../hooks/useProductSubscriptions";
@@ -74,7 +75,7 @@ export function ResponsiveProductDetails({
         console.log('Loading subscription availability for products...');
         const subscriptionMap = new Map<string, boolean>();
         
-        await Promise.all(items.map(async (item) => {
+  await Promise.all(items.map(async (item: Product) => {
           try {
             const subscription = await getProductSubscription(item.id);
             // For now, enable subscription for all products for testing
@@ -159,7 +160,7 @@ export function ResponsiveProductDetails({
     setSelectedProductForInstantOrder(item);
     setShowInstantOrderPanel(true);
 
-    const phoneNumber = vendor.contact_whatsapp.replace(/[^\d+]/g, '');
+  const phoneNumber = (vendor.contact_whatsapp || '').replace(/[^\d+]/g, '');
 
     
     // Save the instant order
@@ -170,7 +171,8 @@ export function ResponsiveProductDetails({
       console.error('Error saving instant order:', error);
     }
     
-    window.open(whatsappUrl, '_blank');
+  const whatsappUrl = '';
+  window.open(whatsappUrl, '_blank');
   };
 
   const handleSubscribeClick = (item: Product) => {
@@ -374,7 +376,7 @@ export function ResponsiveProductDetails({
                 <MenuItemsList 
                   items={globallyFilteredItems} 
                   vendor={vendor} 
-                  onWhatsAppOrder={handleWhatsAppOrder}
+                  onWhatsAppOrder={handleInstantOrder}
                   onSubscribeClick={handleSubscribeClick}
                   onSubscriptionToggle={handleSubscriptionToggle}
                   getSubscriptionStatus={getSubscriptionStatus}

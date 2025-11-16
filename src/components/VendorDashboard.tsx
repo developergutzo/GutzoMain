@@ -7,7 +7,7 @@ import { VendorRegistrationForm } from "./VendorRegistrationForm";
 import { ProductManagementForm } from "./ProductManagementForm";
 import { VendorOnboardingGuide } from "./VendorOnboardingGuide";
 import { apiService } from "../utils/api";
-import { toast } from "sonner@2.0.3";
+import { toast } from "sonner";
 import { 
   Store, 
   Package, 

@@ -4,7 +4,8 @@ import { PhoneSignIn } from "./PhoneSignIn";
 import { SignUp } from "./SignUp";
 import { OTPVerification } from "./OTPVerification";
 import { toast } from "sonner";
-import { supabase } from "../../utils/supabase/client"; // Correctly import the central supabase client
+import { supabase } from "../../utils/supabase/client";
+import { Sheet, SheetContent } from "../ui/sheet";
 
 type AuthStep = 'signup' | 'login';
 type AuthMode = 'signup' | 'login';
@@ -23,6 +24,17 @@ export function LoginPanel({ isOpen, onClose, onAuthComplete }: LoginPanelProps)
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  // Track window size for mobile/desktop detection
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Reset all auth states when panel opens
   useEffect(() => {
@@ -248,102 +260,194 @@ export function LoginPanel({ isOpen, onClose, onAuthComplete }: LoginPanelProps)
 
   if (!isOpen) return null;
 
+  const loginContent = (
+    <>
+      {currentStep === 'login' && (
+        <div style={{ width: '100%', display: 'block' }}>
+          <PhoneSignIn
+            onSendOTP={handleSendOTP}
+            onVerifyOTP={handleVerifyOTP}
+            onResendOTP={handleResendOTP}
+            loading={loading}
+            resendLoading={resendLoading}
+            onClose={handleClose}
+            onSwitchToSignup={handleSwitchToSignup}
+            otpSent={otpSent}
+            isPanel={true}
+          />
+        </div>
+      )}
+
+      {currentStep === 'signup' && (
+        <div style={{ width: '100%', display: 'block' }}>
+          <SignUp
+            onSignUp={handleSignUp}
+            onVerifyOTP={handleVerifyOTP}
+            onResendOTP={handleResendOTP}
+            loading={loading}
+            resendLoading={resendLoading}
+            onSwitchToLogin={handleSwitchToLogin}
+            preFilledPhone={phoneNumber}
+            otpSent={otpSent}
+            isPanel={true}
+          />
+        </div>
+      )}
+    </>
+  );
+
   return (
     <>
-      {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-black/50 z-40 transition-opacity duration-300"
-        onClick={handleClose}
-      />
-      
-      {/* Panel */}
-      <div className={`fixed top-0 right-0 h-full w-[95%] max-w-lg lg:w-[50%] lg:max-w-[600px] bg-white shadow-2xl z-50 transform transition-transform duration-300 ${
-        isOpen ? 'translate-x-0' : 'translate-x-full'
-      }`}>
-        {/* Close Button */}
-        <div className="absolute top-4 left-4 z-10">
+      {/* MOBILE: Bottom Sheet - Only renders when isMobile is true */}
+      {isMobile ? (
+        <Sheet open={isOpen} onOpenChange={onClose}>
+          <SheetContent
+            side="bottom"
+            className="rounded-t-3xl p-0 w-full max-w-full left-0 right-0"
+            style={{ top: '80px', bottom: 0, height: 'calc(100vh - 80px)' }}
+          >
+            <style>{`
+              [data-slot="sheet-content"] > button[class*="absolute"] {
+                display: none !important;
+              }
+            `}</style>
+            
+            <div className="flex flex-col h-full">
+              {/* Header */}
+              <div className="p-6 pb-4 border-b border-gray-100 flex-shrink-0">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    {currentStep === 'login' ? 'Login' : 'Sign up'}
+                  </h2>
+                  <button
+                    onClick={handleClose}
+                    className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                  >
+                    <X className="h-5 w-5 text-gray-500" />
+                  </button>
+                </div>
+                {currentStep === 'login' && (
+                  <p className="text-gray-600 text-sm">
+                    or <button onClick={handleSwitchToSignup} className="text-gutzo-primary font-semibold hover:underline">create an account</button>
+                  </p>
+                )}
+                {currentStep === 'signup' && (
+                  <p className="text-gray-600 text-sm">
+                    or <button onClick={handleSwitchToLogin} className="text-gutzo-primary font-semibold hover:underline">login to your account</button>
+                  </p>
+                )}
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto p-6">
+                {loginContent}
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+      ) : (
+        /* DESKTOP: Right Panel - Only renders when isMobile is false */
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            right: 0,
+            height: '100%',
+            width: '95%',
+            maxWidth: '600px',
+            backgroundColor: 'white',
+            boxShadow: '-10px 0 40px rgba(0, 0, 0, 0.2)',
+            zIndex: 50,
+            transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
+            transition: 'transform 300ms ease-in-out',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'stretch'
+          }}
+        >
+          {/* Close Button */}
           <button
             onClick={handleClose}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+            aria-label="Close login panel"
+            style={{
+              position: 'absolute',
+              top: '1.5rem',
+              right: '1.5rem',
+              zIndex: 10
+            }}
           >
-            <X className="h-5 w-5 text-gray-500" />
+            <X className="h-6 w-6 text-gray-500" />
           </button>
-        </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto relative">
-          {currentStep === 'login' && (
-            <div className="p-6 pl-16 pr-6 pt-20 relative min-h-full flex flex-col">
-              {/* Login Content */}
-              <div className="flex-1 flex flex-col justify-center max-w-sm">
-                <div className="mb-8">
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">Login</h1>
-                  <p className="text-gray-600">
+          {/* Scrollable Content */}
+          <div style={{ 
+            height: '100%', 
+            overflowY: 'auto',
+            display: 'block',
+            width: '100%'
+          }}>
+            <div style={{ 
+              padding: '2rem',
+              paddingLeft: '2rem',
+              paddingRight: '2rem',
+              paddingTop: '5rem',
+              margin: '0',
+              marginLeft: '0',
+              marginRight: 'auto',
+              maxWidth: '100%',
+              width: '100%'
+            }}>
+              {/* Header */}
+              <div style={{ textAlign: 'left', marginBottom: '2rem' }}>
+                <h1 style={{ 
+                  fontSize: '1.875rem',
+                  fontWeight: 'bold',
+                  color: '#111827',
+                  marginBottom: '0.5rem',
+                  textAlign: 'left'
+                }}>
+                  {currentStep === 'login' ? 'Login' : 'Sign up'}
+                </h1>
+                {currentStep === 'login' && (
+                  <p style={{ color: '#4B5563', textAlign: 'left' }}>
                     or <button onClick={handleSwitchToSignup} className="text-gutzo-primary font-semibold hover:underline">create an account</button>
                   </p>
-                </div>
-                
-                <PhoneSignIn
-                  onSendOTP={handleSendOTP}
-                  onVerifyOTP={handleVerifyOTP}
-                  onResendOTP={handleResendOTP}
-                  loading={loading}
-                  resendLoading={resendLoading}
-                  onClose={handleClose}
-                  onSwitchToSignup={handleSwitchToSignup}
-                  otpSent={otpSent}
-                  isPanel={true}
-                />
-              </div>
-            </div>
-          )}
-
-          {currentStep === 'signup' && (
-            <div className="p-6 pl-16 pr-6 pt-20 relative min-h-full flex flex-col">
-              {/* SignUp Content */}
-              <div className="flex-1 flex flex-col justify-center max-w-sm">
-                <div className="mb-8">
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">Sign up</h1>
-                  <p className="text-gray-600 mb-1">
-                    {phoneNumber ? 'Complete your account setup with WhatsApp OTP verification' : 'Join Gutzo to start ordering - we\'ll send a WhatsApp OTP to verify your number'}
-                  </p>
-                  <p className="text-gray-600">
+                )}
+                {currentStep === 'signup' && (
+                  <p style={{ color: '#4B5563', textAlign: 'left' }}>
                     or <button onClick={handleSwitchToLogin} className="text-gutzo-primary font-semibold hover:underline">login to your account</button>
                   </p>
-                </div>
-                
-                <SignUp
-                  onSignUp={handleSignUp}
-                  onVerifyOTP={handleVerifyOTP}
-                  onResendOTP={handleResendOTP}
-                  loading={loading}
-                  resendLoading={resendLoading}
-                  onSwitchToLogin={handleSwitchToLogin}
-                  preFilledPhone={phoneNumber}
-                  otpSent={otpSent}
-                  isPanel={true}
-                />
+                )}
+              </div>
+
+              {/* Form Content */}
+              <div style={{ width: '100%', textAlign: 'left', margin: '0' }}>
+                {loginContent}
+              </div>
+
+              {/* Footer - Terms and Privacy */}
+              <div style={{ 
+                marginTop: '2rem',
+                paddingTop: '1.5rem',
+                borderTop: '1px solid #F3F4F6',
+                textAlign: 'left'
+              }}>
+                <p style={{ fontSize: '0.75rem', color: '#6B7280', textAlign: 'left' }}>
+                  By continuing, I accept the{" "}
+                  <a href="/T&C" className="text-gutzo-primary hover:underline">
+                    Terms & Conditions
+                  </a>{" "}
+                  &{" "}
+                  <a href="/privacy_policy" className="text-gutzo-primary hover:underline">
+                    Privacy Policy
+                  </a>
+                </p>
               </div>
             </div>
-          )}
-        </div>
-
-        {/* Footer - Terms and Privacy */}
-        <div className="p-6 pl-16 pr-6 border-t border-gray-100 bg-gray-50">
-          <div className="max-w-sm">
-            <p className="text-xs text-gray-500">
-              By continuing, I accept the{" "}
-              <a href="/T&C" className="text-gutzo-primary hover:underline">
-                Terms & Conditions
-              </a>{" "}
-              &{" "}
-              <a href="/privacy_policy" className="text-gutzo-primary hover:underline">
-                Privacy Policy
-              </a>
-            </p>
           </div>
         </div>
-      </div>
+      )}
     </>
   );
 }

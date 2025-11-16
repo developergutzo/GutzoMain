@@ -49,7 +49,7 @@ interface Address {
 interface AddressModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave?: () => Promise<void>;
+  onSave?: (address: any) => Promise<void>;
 }
 
 // Helper functions moved outside component scope
@@ -703,7 +703,7 @@ export function AddressModal({
       if (result.success) {
         console.log('✅ Address saved successfully');
         // Only trigger onSave to update UI (fetch latest addresses), not to create another address
-        if (onSave) await onSave();
+        if (onSave) await onSave(addressPayload);
         // Reset and close
         handleClose();
       } else {

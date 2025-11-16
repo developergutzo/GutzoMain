@@ -5,7 +5,7 @@ import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { toast } from "sonner@2.0.3";
+import { toast } from "sonner";
 import { apiService } from "../utils/api";
 import { Store, Phone, MapPin, Star, Upload, Image as ImageIcon } from "lucide-react";
 

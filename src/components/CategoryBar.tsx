@@ -43,9 +43,11 @@ function FilterPill({ category, isSelected, onClick, isMobile = false }: FilterP
   return (
     <button
       onClick={onClick}
+      aria-label={`${categoryInfo.label} category`}
       className={`
         flex items-center gap-2 px-4 py-2.5 rounded-full font-medium transition-all duration-200 
         ${isMobile ? 'flex-shrink-0 text-sm' : 'text-sm md:text-base'}
+        interactive
         ${isSelected 
           ? 'bg-gutzo-selected text-white shadow-md transform scale-105' 
           : 'bg-white text-gray-700 border border-gray-200 hover:border-gutzo-primary hover:bg-gutzo-primary/5 hover:text-gutzo-primary'
@@ -170,7 +172,7 @@ export function CategoryBar({
   if (allCategories.length === 0) return null;
 
   return (
-    <div className="sticky top-16 z-40 bg-white border-b border-gray-100 shadow-sm">
+    <div className="sticky top-16 z-10 bg-white border-b border-gray-100 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6">
         {/* Section Header */}
         <div className="flex items-center justify-between mb-6">

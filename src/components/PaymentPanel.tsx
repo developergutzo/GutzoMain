@@ -4,7 +4,7 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
 import { Separator } from './ui/separator';
-import { ImageWithFallback } from './figma/ImageWithFallback';
+import { ImageWithFallback } from './common/ImageWithFallback';
 import { Product, Vendor } from '../types';
 import { SubscriptionData } from './SubscriptionPanel';
 import { InstantOrderData, CartItem } from './InstantOrderPanel';
@@ -75,29 +75,35 @@ export function PaymentPanel({
 
   if (!isOpen || (!subscriptionData && !instantOrderData) || !product || !vendor) return null;
 
+  // Narrow types for the remainder of this render path so we can access properties
+  const sub = subscriptionData as NonNullable<typeof subscriptionData>;
+  const io = instantOrderData as NonNullable<typeof instantOrderData>;
+  const prod = product as NonNullable<typeof product>;
+  const vend = vendor as NonNullable<typeof vendor>;
+
   const isSubscription = !!subscriptionData;
-  const orderAmount = isSubscription ? subscriptionData!.totalPrice : (instantOrderData!.totalPrice + 5); // +5 for packaging
+  const orderAmount = isSubscription ? sub.totalPrice : (io.totalPrice + 5); // +5 for packaging
 
   const formatMealSlots = () => {
-    if (!subscriptionData.mealSlots.length) return '';
-    return subscriptionData.mealSlots
+    if (!sub.mealSlots?.length) return '';
+    return sub.mealSlots
       .map(slot => {
-        const customTime = subscriptionData.customTimes?.[slot];
+        const customTime = sub.customTimes?.[slot];
         return customTime ? `${slot} (${customTime})` : slot;
       })
       .join(', ');
   };
 
   const getFrequencyDisplay = () => {
-    switch (subscriptionData.frequency) {
+    switch (sub.frequency) {
       case 'Daily':
         return 'Every day';
       case 'Weekly':
-        return subscriptionData.weeklyDays?.join('–') || 'Weekly';
+        return sub.weeklyDays?.join('–') || 'Weekly';
       case 'Custom':
-        return `${subscriptionData.customDates?.length || 0} selected dates`;
+        return `${sub.customDates?.length || 0} selected dates`;
       default:
-        return subscriptionData.frequency;
+        return sub.frequency;
     }
   };
 
@@ -235,54 +241,54 @@ export function PaymentPanel({
                 </div>
               </div>
 
-              {isSubscription ? (
+                {isSubscription ? (
                 <div className="bg-white rounded-xl border border-gray-200 p-4">
                   <div className="flex gap-4">
                     <div className="w-16 h-16 flex-shrink-0 relative overflow-hidden rounded-xl">
                       <ImageWithFallback
-                        src={product?.image || ''}
-                        alt={product?.name || ''}
+                        src={prod?.image || ''}
+                        alt={prod?.name || ''}
                         className="w-full h-full object-cover"
                       />
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900 mb-2">{product.name}</h3>
+                      <h3 className="font-semibold text-gray-900 mb-2">{prod.name}</h3>
                       <div className="space-y-1 text-sm text-gray-600">
                         <p>Meal slots: {formatMealSlots()}</p>
                         <p>Frequency: {getFrequencyDisplay()}</p>
-                        <p>Duration: {subscriptionData!.duration}</p>
-                        <p>Quantity: {subscriptionData!.quantity} bowl{subscriptionData!.quantity > 1 ? 's' : ''}</p>
+                        <p>Duration: {sub.duration}</p>
+                        <p>Quantity: {sub.quantity} bowl{sub.quantity > 1 ? 's' : ''}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-lg font-bold text-gutzo-selected">₹{product.price}</div>
+                      <div className="text-lg font-bold text-gutzo-selected">₹{prod.price}</div>
                       <div className="text-xs text-gray-500">per bowl</div>
                     </div>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {instantOrderData!.cartItems.map((cartItem) => (
-                    <div key={cartItem.product.id} className="bg-white rounded-xl border border-gray-200 p-4">
+                  {io.cartItems.map((cartItem) => (
+                    <div key={cartItem.id || cartItem.productId} className="bg-white rounded-xl border border-gray-200 p-4">
                       <div className="flex gap-4">
                         <div className="w-16 h-16 flex-shrink-0 relative overflow-hidden rounded-xl">
                           <ImageWithFallback
                             src={cartItem.product?.image || ''}
-                            alt={cartItem.product?.name || ''}
+                            alt={cartItem.name}
                             className="w-full h-full object-cover"
                           />
                         </div>
                         <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900 mb-1">{cartItem.product.name}</h3>
-                          <p className="text-xs text-gray-600">{vendor.name}</p>
+                          <h3 className="font-semibold text-gray-900 mb-1">{cartItem.name}</h3>
+                          <p className="text-xs text-gray-600">{vend.name}</p>
                           <div className="mt-2 text-sm">
                             <span className="text-gray-600">Quantity: </span>
                             <span className="font-medium">{cartItem.quantity}</span>
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-lg font-bold text-gutzo-selected">₹{(cartItem.product.price * cartItem.quantity).toLocaleString()}</div>
-                          <div className="text-xs text-gray-500">₹{cartItem.product.price} × {cartItem.quantity}</div>
+                          <div className="text-lg font-bold text-gutzo-selected">₹{(cartItem.price * cartItem.quantity).toLocaleString()}</div>
+                          <div className="text-xs text-gray-500">₹{cartItem.price} × {cartItem.quantity}</div>
                         </div>
                       </div>
                     </div>

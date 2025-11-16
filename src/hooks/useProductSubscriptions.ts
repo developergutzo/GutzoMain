@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { toast } from "sonner@2.0.3";
+import { toast } from "sonner";
 import { ProductSubscription } from "../types";
 import { apiService } from "../utils/api";
 
