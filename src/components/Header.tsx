@@ -280,19 +280,13 @@ export function Header({ onShowLogin, onLogout, onShowProfile, onShowCart, onSho
             </button>
 
             {/* Search Icon - Opens Bottom Sheet */}
-              {/**
-               * Mobile: Search Icon (show only on mobile)
-               * This flow is commented out as per request. Uncomment to re-enable in the future.
-               */}
-              {/*
-              <button 
-                className="p-2 cursor-pointer hover:bg-gray-100 rounded-full transition-colors active:scale-95"
+              <button
+                className="h-10 w-10 min-w-[40px] min-h-[40px] max-w-[40px] max-h-[40px] rounded-full flex items-center justify-center bg-gray-100 border border-gray-200 p-0 m-0 focus:outline-none"
                 onClick={handleMobileSearchClick}
                 aria-label="Search"
               >
-                <Search className="h-5 w-5 text-gray-600" />
+                <Search className="w-5 h-5 text-gray-600" />
               </button>
-              */}
           </div>
         </div>
         )}
