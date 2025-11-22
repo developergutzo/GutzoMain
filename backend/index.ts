@@ -1883,6 +1883,7 @@ async function getUserIdFromPhone(phone) {
     console.warn(`No user found in users table for phone: ${phone}`);
     return null;
   }
+  console.warn(`Found user ID ${user.id} for phone ${phone}`);
   return user.id;
 }
 // Get user addresses
@@ -1998,6 +1999,7 @@ app.post('/gutzo-api/user-addresses', async (c)=>{
       longitude: longitude || null,
       is_default: isDefault || false
     };
+    console.log('📍 Inserting address data:', addressData);
     const { data, error } = await supabase.from('user_addresses').insert(addressData).select().single();
     if (error) {
       console.error('❌ Error creating address:', error);

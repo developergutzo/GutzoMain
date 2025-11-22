@@ -4,7 +4,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 
 // HARDCODED GOOGLE MAPS API KEY - Replace with your actual key
-const GOOGLE_MAPS_API_KEY = "AIzaSyBQOKhRC4lyStNP8x8L9SiUbvV581dKOSM"; // Replace with your actual API key
+const GOOGLE_MAPS_API_KEY = "AIzaSyCHTG5c0iMf2Sme31nBFDKXxOm460AGZlA"; // Replace with your actual API key
 
 interface GoogleMapPickerProps {
   onLocationSelect: (location: { lat: number; lng: number; address: string }) => void;
