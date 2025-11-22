@@ -15,9 +15,8 @@ export default function PaymentStatusPage() {
 
 
   useEffect(() => {
-    console.log('PhonePe payment status response1:');
-    // PhonePe redirects ba
-    // ck with merchantTransactionId in query or we used our own orderId
+    console.log('Payment status response1:');
+    // Payment gateway redirects back with merchantTransactionId in query or we used our own orderId
     const params = new URLSearchParams(window.location.search);
     const txnId = params.get('transactionId') || params.get('merchantTransactionId') || params.get('orderId');
     const fallback = sessionStorage.getItem('last_order_id') || '';
@@ -34,9 +33,9 @@ export default function PaymentStatusPage() {
     let startTime = Date.now();
     async function poll() {
       try {
-        const res = await apiService.getPhonePePaymentStatus(id);
-        const result = res?.data || res; // handle either shape
-  console.log('PhonePe payment status response:', JSON.stringify(result, null, 2));
+    const res = await apiService.getPhonePePaymentStatus(id);
+    const result = res?.data || res; // handle either shape
+  console.log('Payment status response:', JSON.stringify(result, null, 2));
         const code = result?.code || result?.data?.code;
         const state = result?.state || result?.data?.state;
         // Treat code SUCCESS or state COMPLETED/SUCCESS as payment success
@@ -71,7 +70,7 @@ export default function PaymentStatusPage() {
 
                   const trueTotal = subtotal + DELIVERY_FEE + PLATFORM_FEE;
 
-                  // Extract PhonePe transaction ID from payment status response
+                  // Extract payment transaction ID from payment status response
                   let paymentId = null;
                   // Prefer transactionId from paymentDetails[0] if available
                   if (Array.isArray(result?.paymentDetails) && result.paymentDetails.length > 0) {
@@ -95,7 +94,7 @@ export default function PaymentStatusPage() {
                     taxes: Number(totalGst.toFixed(2)),
                     gst_items: Number(includedGstItems.toFixed(2)),
                     gst_fees: Number(includedGstFees.toFixed(2)),
-                    paymentId, // Store PhonePe transaction ID
+                    paymentId, // Store payment transaction ID
                     // Add more fields as needed (address, etc.)
                   };
                   const resp = await apiService.saveOrder(payload);

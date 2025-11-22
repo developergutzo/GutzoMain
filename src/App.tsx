@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Header } from "./components/Header";
 import { CategoryBar } from "./components/CategoryBar";
+import { Inspiration } from "./components/Inspiration";
 import { VendorCard } from "./components/VendorCard";
 import { ResponsiveProductDetails } from "./components/ResponsiveProductDetailsFixed";
 import { VendorSkeleton } from "./components/VendorSkeleton";
@@ -23,6 +24,7 @@ import { PrivacyPage } from "./pages/PrivacyPage";
 import { ContactPage } from "./pages/ContactPage";
 import { AboutPage } from "./pages/AboutPage";
 import PaymentStatusPage from "./pages/PaymentStatusPage";
+import PhonePeComingSoon from "./pages/PaytmComingSoon";
 import { Toaster } from "./components/ui/sonner";
 import { Loader2, MapPin, Plus } from "lucide-react";
 import { Vendor } from "./types/index";
@@ -370,6 +372,12 @@ function AppContent() {
     );
   }
 
+  if (currentRoute === '/phonepe-soon') {
+    return (
+      <PhonePeComingSoon />
+    );
+  }
+
   if (currentRoute === '/contact') {
     return (
       <ContactPage />
@@ -408,6 +416,7 @@ function AppContent() {
         />
       )}
       
+
       <Header 
         onShowLogin={handleShowLogin}
         onLogout={handleLogout}
@@ -418,33 +427,30 @@ function AppContent() {
         onSearchChange={setSearchQuery}
       />
 
-      <div ref={filterRef}>
-        <CategoryBar
-          selectedCategory={selectedCategory}
-          availableCategories={availableCategories}
-          onCategoryChange={handleCategoryChange}
-        />
-      </div>
+      {/* Inspiration Section (Zomato-style) */}
+  <Inspiration onOptionClick={setSelectedCategory} />
+
+
 
       {/* Vendor Listings */}
-      <main
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8"
-        ref={listingsRef}
-      >
+        <main
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8"
+          ref={listingsRef}
+        >
         {/* Section Header */}
         {!loading && filteredVendors.length > 0 && (
           <div className="mb-6">
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-xl md:text-2xl font-semibold text-gray-900">
+              <h2
+                className="text-left font-semibold text-3xl md:text-4xl lg:text-5xl tracking-tight w-full"
+                style={{ fontFamily: 'Poppins', letterSpacing: '-0.01em', fontWeight: 500, color: '#111' }}
+              >
                 {selectedCategory === "All" 
-                  ? `${filteredVendors.length} restaurants to explore` 
+                  ? "Explore Delicious Choices Near You.." 
                   : `${filteredVendors.length} ${selectedCategory} restaurants`
                 }
               </h2>
             </div>
-            <p className="text-gray-600 text-sm">
-              Fresh and healthy meals delivered to your doorstep
-            </p>
           </div>
         )}
 
@@ -455,15 +461,17 @@ function AppContent() {
             ))}
           </div>
         ) : filteredVendors.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-5 xl:gap-6">
-            {filteredVendors.map((vendor) => (
-              <VendorCard
-                key={vendor.id}
-                vendor={vendor}
-                onClick={handleVendorClick}
-              />
-            ))}
-          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 max-w-7xl mx-auto w-full">
+              {filteredVendors.map((vendor) => (
+                <div className="flex justify-center items-stretch w-full h-full">
+                  <VendorCard
+                    key={vendor.id}
+                    vendor={vendor}
+                    onClick={handleVendorClick}
+                  />
+                </div>
+              ))}
+            </div>
         ) : (
           <div className="text-center py-16">
             <div className="mb-6">

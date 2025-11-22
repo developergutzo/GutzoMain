@@ -11,72 +11,54 @@ interface VendorCardProps {
 export function VendorCard({ vendor, onClick }: VendorCardProps) {
   const availableCount = vendor.products?.filter(p => p.available).length || 0;
   const totalCount = vendor.products?.length || 0;
-  
+  // Example: show offer if vendor.tags includes 'offer', show promoted if 'promoted'
+  const isPromoted = vendor.tags?.includes('promoted');
+  const offerTag = vendor.tags?.find(tag => tag.toLowerCase().includes('off'));
   return (
-    <Card 
-      className="cursor-pointer hover:shadow-lg transition-all duration-200 overflow-hidden group"
+    <Card
+      className="cursor-pointer group bg-white rounded-08rem transition-all duration-200 overflow-hidden p-0 flex flex-col border border-transparent shadow-none hover:shadow-lg hover:border-[#F1F1F1]"
+      style={{
+        width: '100%',
+        maxWidth: 370,
+        minWidth: 0,
+        height: 'auto',
+        aspectRatio: '1.15/1',
+      }}
       onClick={() => onClick(vendor)}
     >
-      <div className="relative h-48 overflow-hidden">
+  <div className="relative w-full h-[180px] md:h-[200px] lg:h-[220px] xl:h-[240px] overflow-hidden rounded-t-[0.8rem]">
         <ImageWithFallback
           src={vendor.image || ""}
           alt={`${vendor.name} logo`}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-          onError={(e) => {
-            console.log(`Image failed to load for ${vendor.name}:`, {
-              src: vendor.image,
-              error: e
-            });
-          }}
+          className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
         />
-        <div className="absolute top-3 right-3 flex items-center bg-white px-2 py-1 rounded-full shadow-md">
-          <Star className="h-3.5 w-3.5 text-yellow-400 fill-current" />
-          <span className="ml-1 text-xs font-medium">{vendor.rating}</span>
-        </div>
-        
-        {/* Availability indicator badge */}
-        {totalCount > 0 && (
-          <div className="absolute bottom-3 left-3">
-            <div className={`px-2 py-1 rounded-full text-xs font-medium shadow-sm ${
-              availableCount === totalCount 
-                ? 'bg-gutzo-selected text-white' 
-                : availableCount > 0 
-                  ? 'bg-orange-100 text-orange-700'
-                  : 'bg-gray-100 text-gray-600'
-            }`}>
-              {availableCount === totalCount 
-                ? 'All Available' 
-                : availableCount > 0
-                  ? `${availableCount} Available`
-                  : 'Few Available'
-              }
-            </div>
+        {/* Promoted badge */}
+        {isPromoted && (
+          <div className="absolute top-2 left-2 bg-white/90 text-xs font-semibold px-2 py-0.5 rounded shadow z-10" style={{letterSpacing: 0.2}}>
+            Promoted
           </div>
         )}
-      </div>
-      
-      <CardContent className="p-4">
-        <h3 className="font-semibold text-base md:text-lg mb-1.5 line-clamp-1">{vendor.name}</h3>
-        <p className="text-gray-600 text-sm mb-1 line-clamp-2">{vendor.description}</p>
-        <p className="text-gray-500 text-xs mb-3">{vendor.location}</p>
-        
-        <div className="flex items-center justify-between text-xs">
-          <div className="flex items-center text-gray-600">
-            <Clock className="h-3.5 w-3.5 mr-1" />
-            <span>{vendor.deliveryTime || '30-45 min'}</span>
+        {/* Offer badge */}
+        {offerTag && (
+          <div className="absolute bottom-2 left-2 bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow z-10">
+            {offerTag.toUpperCase()}
           </div>
-          
-          {/* Product Availability Summary */}
-          {totalCount > 0 && (
-            <div className="text-gray-500">
-              <span className="font-medium text-gutzo-selected">
-                {availableCount}
-              </span>
-              <span className="mx-1">/</span>
-              <span className="font-medium">{totalCount}</span>
-              <span className="ml-1">items</span>
-            </div>
-          )}
+        )}
+        {/* Rating badge */}
+        <div className="absolute top-2 right-2 flex items-center bg-white px-2 py-0.5 rounded shadow z-10">
+          <span className="text-green-700 font-bold text-xs mr-1">{vendor.rating?.toFixed(1)}</span>
+          <Star className="h-3 w-3 text-green-600 fill-current" />
+        </div>
+      </div>
+      <CardContent className="flex-1 flex flex-col px-4 py-2">
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="font-semibold text-base truncate text-gray-900" style={{ fontFamily: 'Poppins' }}>{vendor.name}</h3>
+          <span className="text-gray-500 text-xs font-medium">₹{vendor.minimumOrder} for one</span>
+        </div>
+        <div className="text-gray-600 text-xs truncate mb-1" style={{ fontFamily: 'Poppins' }}>{vendor.cuisineType}</div>
+        <div className="flex items-center justify-between text-xs text-gray-500">
+          <span>{vendor.deliveryTime || '30 min'}</span>
+          <span>{vendor.location}</span>
         </div>
       </CardContent>
     </Card>

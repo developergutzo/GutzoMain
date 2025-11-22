@@ -3,6 +3,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "./ui/sheet";
 import { Button } from "./ui/button";
 import { useLocation } from "../contexts/LocationContext";
 import { useAuth } from "../contexts/AuthContext";
+import colors from "../styles/colors";
 
 interface LocationBottomSheetProps {
   isOpen: boolean;
@@ -27,7 +28,7 @@ export function LocationBottomSheet({ isOpen, onClose, onShowAddressList }: Loca
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent 
         side="bottom" 
-        className="rounded-t-3xl p-0 w-full max-w-full left-0 right-0 transition-transform duration-300 ease-in-out" 
+        className="rounded-t-[0.8rem] p-0 w-full max-w-full left-0 right-0 transition-transform duration-300 ease-in-out" 
         style={{ top: '104px', bottom: 0, height: 'calc(100vh - 104px)' }}
       >
         <style>{`
@@ -71,13 +72,13 @@ export function LocationBottomSheet({ isOpen, onClose, onShowAddressList }: Loca
 
         <div className="p-6 space-y-4">
           {/* Current Location Display */}
-          <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
+          <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-[0.8rem] border border-gray-200">
             {isLoading ? (
               <Loader2 className="h-5 w-5 animate-spin text-gray-400 flex-shrink-0 mt-0.5" />
             ) : error ? (
-              <AlertCircle className="h-5 w-5 text-gutzo-primary flex-shrink-0 mt-0.5" />
+              <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: colors.error }} />
             ) : (
-              <MapPin className="h-5 w-5 text-gutzo-primary flex-shrink-0 mt-0.5" />
+              <MapPin className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: colors.info }} />
             )}
             <div className="flex-1 min-w-0">
               <div className="font-medium text-gray-900">
@@ -87,7 +88,10 @@ export function LocationBottomSheet({ isOpen, onClose, onShowAddressList }: Loca
                 {isLoading ? "Please wait..." : error ? error : locationDisplay}
               </div>
               {!isInCoimbatore && !isLoading && !error && (
-                <div className="text-xs text-orange-600 mt-2 bg-orange-50 px-2 py-1 rounded-md inline-block">
+                <div
+                  className="text-xs mt-2 px-2 py-1 rounded-[0.8rem] inline-block"
+                  style={{ color: colors.warning, background: '#FFF7E6' }}
+                >
                   Service currently available only in Coimbatore
                 </div>
               )}
@@ -98,7 +102,7 @@ export function LocationBottomSheet({ isOpen, onClose, onShowAddressList }: Loca
           <Button
             onClick={handleDetectLocation}
             disabled={isLoading}
-            className="w-full bg-white hover:bg-gray-50 text-gutzo-primary border border-gray-200 rounded-xl py-6 flex items-center justify-center gap-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+            className="w-full bg-white hover:bg-gray-50 text-gutzo-primary border border-gray-200 rounded-[0.8rem] py-6 flex items-center justify-center gap-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
           >
             <Navigation className={`h-5 w-5 ${isLoading ? 'animate-pulse' : ''}`} />
             <span className="font-medium">
@@ -110,7 +114,7 @@ export function LocationBottomSheet({ isOpen, onClose, onShowAddressList }: Loca
           {isAuthenticated && (
             <Button
               onClick={handleManageAddresses}
-              className="w-full bg-gutzo-primary hover:bg-gutzo-primary-hover text-white rounded-xl py-6 flex items-center justify-center gap-3"
+              className="w-full bg-gutzo-primary hover:bg-gutzo-primary-hover text-white rounded-[0.8rem] py-6 flex items-center justify-center gap-3"
             >
               <Plus className="h-5 w-5" />
               <span className="font-medium">Add/Manage Addresses</span>
@@ -118,7 +122,7 @@ export function LocationBottomSheet({ isOpen, onClose, onShowAddressList }: Loca
           )}
 
           {/* Info Text */}
-          <p className="text-xs text-center text-gray-500 pt-2">
+          <p className="text-xs text-center pt-2" style={{ color: colors.info }}>
             We need your location to show restaurants delivering to you
           </p>
         </div>

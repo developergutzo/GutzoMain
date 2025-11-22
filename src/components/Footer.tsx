@@ -30,17 +30,17 @@ export function Footer() {
           </div>
           
           <div className="w-full sm:w-[calc(50%-1.5rem)] lg:w-auto lg:flex-1">
-            <h3 className="font-semibold text-white mb-3 sm:mb-4 text-base">Company</h3>
+            <h3 className="font-medium text-white mb-3 sm:mb-4 text-base">Company</h3>
             <div className="space-y-2 sm:space-y-3">
               <button 
                 onClick={() => navigate('/about')}
-                className="block text-gray-400 hover:text-white transition-colors text-sm text-left whitespace-nowrap interactive"
+                className="block text-gray-400 hover:text-white transition-colors text-sm text-left whitespace-nowrap interactive font-normal"
               >
                 About Us
               </button>
               <button 
                 onClick={() => navigate('/contact')}
-                className="block text-gray-400 hover:text-white transition-colors text-sm text-left whitespace-nowrap interactive"
+                className="block text-gray-400 hover:text-white transition-colors text-sm text-left whitespace-nowrap interactive font-normal"
               >
                 Contact Us
               </button>
@@ -48,23 +48,23 @@ export function Footer() {
           </div>
           
           <div className="w-full sm:w-[calc(50%-1.5rem)] lg:w-auto lg:flex-1">
-            <h3 className="font-semibold text-white mb-3 sm:mb-4 text-base">Legal</h3>
+            <h3 className="font-medium text-white mb-3 sm:mb-4 text-base">Legal</h3>
             <div className="space-y-2 sm:space-y-3">
               <button 
                 onClick={() => navigate('/T&C')}
-                className="block text-gray-400 hover:text-white transition-colors text-sm text-left whitespace-nowrap interactive"
+                className="block text-gray-400 hover:text-white transition-colors text-sm text-left whitespace-nowrap interactive font-normal"
               >
                 Terms & Conditions
               </button>
               <button 
                 onClick={() => navigate('/refund_policy')}
-                className="block text-gray-400 hover:text-white transition-colors text-sm text-left whitespace-nowrap interactive"
+                className="block text-gray-400 hover:text-white transition-colors text-sm text-left whitespace-nowrap interactive font-normal"
               >
                 Refund Policy
               </button>
               <button 
                 onClick={() => navigate('/privacy_policy')}
-                className="block text-gray-400 hover:text-white transition-colors text-sm text-left whitespace-nowrap interactive"
+                className="block text-gray-400 hover:text-white transition-colors text-sm text-left whitespace-nowrap interactive font-normal"
               >
                 Privacy Policy
               </button>
@@ -108,38 +108,7 @@ export function Footer() {
             <p className="text-gray-400 text-xs sm:text-sm">
               © 2025 Gutzo. All rights reserved.
             </p>
-            <div className="flex flex-wrap justify-center sm:justify-end gap-3 sm:gap-4">
-              <button 
-                onClick={() => navigate('/about')}
-                className="text-gray-500 hover:text-gray-400 text-xs transition-colors interactive"
-              >
-                About
-              </button>
-              <button 
-                onClick={() => navigate('/contact')}
-                className="text-gray-500 hover:text-gray-400 text-xs transition-colors interactive"
-              >
-                Contact
-              </button>
-              <button 
-                onClick={() => navigate('/T&C')}
-                className="text-gray-500 hover:text-gray-400 text-xs transition-colors interactive"
-              >
-                Terms
-              </button>
-              <button 
-                onClick={() => navigate('/refund_policy')}
-                className="text-gray-500 hover:text-gray-400 text-xs transition-colors interactive"
-              >
-                Refund
-              </button>
-              <button 
-                onClick={() => navigate('/privacy_policy')}
-                className="text-gray-500 hover:text-gray-400 text-xs transition-colors interactive"
-              >
-                Privacy
-              </button>
-            </div>
+            {/* Footer links removed as requested */}
           </div>
         </div>
       </div>

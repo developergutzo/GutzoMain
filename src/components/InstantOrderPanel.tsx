@@ -10,6 +10,7 @@ import { Input } from './ui/input';
 import { ImageWithFallback } from './common/ImageWithFallback';
 import { Product, Vendor } from '../types/index';
 import { apiService } from '../utils/api';
+import { useRouter } from './Router';
 
 export interface CartItem {
   id: string;
@@ -102,6 +103,7 @@ export function InstantOrderPanel({
   const [selectedWallet, setSelectedWallet] = useState<string>('');
   const [upiId, setUpiId] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const { navigate } = useRouter();
 
   // GST rules (aligned with cart):
   // - Item prices include 5% GST
@@ -114,11 +116,10 @@ export function InstantOrderPanel({
 
   // Digital wallet options
   const digitalWallets = [
-    { id: 'paytm', name: 'Paytm', icon: '💰', color: 'bg-blue-500' },
+    { id: 'phonepe', name: 'PhonePe', icon: '💰', color: 'bg-blue-500' },
     { id: 'amazonpay', name: 'Amazon Pay', icon: '📦', color: 'bg-orange-500' },
     { id: 'mobikwik', name: 'MobiKwik', icon: '💳', color: 'bg-red-500' },
     { id: 'freecharge', name: 'FreeCharge', icon: '⚡', color: 'bg-green-500' },
-    { id: 'phonepe', name: 'PhonePe', icon: '📱', color: 'bg-purple-500' },
     { id: 'googlepay', name: 'Google Pay', icon: '🎯', color: 'bg-blue-600' }
   ];
 
@@ -513,7 +514,7 @@ export function InstantOrderPanel({
 
 
 
-            {/* Only one payment button at the bottom for PhonePe integration */}
+            {/* Only one payment button at the bottom for PhonePe integration (placeholder) */}
 
             {/* Order Summary */}
             <div className="bg-gradient-to-br from-gutzo-highlight/15 to-gutzo-primary/10 rounded-xl p-5 border border-gutzo-primary/20">
@@ -564,25 +565,12 @@ export function InstantOrderPanel({
             <Button
               onClick={async () => {
                 if (cartItems.length === 0 || isProcessing) return;
-                const orderId = `ORD_${Date.now()}`;
-                const customerId = userPhone || 'guest';
-                const amount = totalAmount * 100; // in paise
-                const redirectUrl = window.location.origin + '/payment-status';
+                // Don't invoke PhonePe flow. Navigate to a friendly PhonePe placeholder page instead.
                 try {
-                  // Persist order id for status page
+                  const orderId = `ORD_${Date.now()}`;
                   try { sessionStorage.setItem('last_order_id', orderId); } catch {}
-                  const data = await apiService.createPhonePePayment({ amount, orderId, customerId, redirectUrl });
-                  console.log('PhonePe payment API response:', data);
-                  if (data && data.data && data.data.redirectUrl) {
-                    window.location.href = data.data.redirectUrl;
-                  } else {
-                    alert('Failed to initiate PhonePe payment.');
-                  }
-                } catch (err) {
-                  let message = 'Unknown error';
-                  if (err instanceof Error) message = err.message;
-                  alert('Error initiating payment: ' + message);
-                }
+                } catch (e) {}
+                navigate('/phonepe-soon');
               }}
               disabled={cartItems.length === 0 || isProcessing}
               className="w-full bg-gradient-to-r from-gutzo-primary to-gutzo-primary-hover text-white font-medium py-4 rounded-xl hover:shadow-lg transition-all disabled:opacity-50"

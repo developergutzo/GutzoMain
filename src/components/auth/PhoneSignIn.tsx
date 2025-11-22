@@ -233,6 +233,7 @@ export function PhoneSignIn({
                   error={otpError}
                   maxLength={6}
                   className="!py-6 !min-h-[72px] text-lg border-2 !border-gray-300 focus:!border-gutzo-primary focus:!ring-gutzo-primary"
+                  ref={el => { if (otpSent && el) el.focus(); }}
                 />
               </div>
 

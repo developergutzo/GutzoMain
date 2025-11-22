@@ -1,32 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://gutzo.example/</loc>
+    <loc>https://gutzo.in/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://gutzo.example/about</loc>
+    <loc>https://gutzo.in/about/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://gutzo.example/contact</loc>
+    <loc>https://gutzo.in/contact/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://gutzo.example/cart</loc>
+    <loc>https://gutzo.in/cart/</loc>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://gutzo.example/checkout</loc>
+    <loc>https://gutzo.in/checkout/</loc>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://gutzo.example/privacy</loc>
+    <loc>https://gutzo.in/privacy/</loc>
     <changefreq>yearly</changefreq>
     <priority>0.2</priority>
   </url>

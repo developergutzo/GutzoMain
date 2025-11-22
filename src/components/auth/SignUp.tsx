@@ -15,6 +15,7 @@ interface SignUpProps {
   otpSent?: boolean;
 }
 
+
 export function SignUp({ 
   onSignUp, 
   onVerifyOTP,
@@ -40,12 +41,22 @@ export function SignUp({
   const [timeLeft, setTimeLeft] = useState(60);
   const [otpError, setOtpError] = useState("");
 
+  // Input refs for auto-focus and navigation
+  const phoneRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+
   // Update form data when preFilledPhone changes
   useEffect(() => {
     if (preFilledPhone) {
       setFormData(prev => ({ ...prev, phoneNumber: formatPhoneNumber(preFilledPhone) }));
     }
   }, [preFilledPhone]);
+
+  // Auto-focus phone number input on mount
+  useEffect(() => {
+    if (phoneRef.current) phoneRef.current.focus();
+  }, []);
 
   // Countdown timer for OTP
   useEffect(() => {
@@ -191,6 +202,13 @@ export function SignUp({
               autoComplete="tel"
               disabled={!!preFilledPhone}
               className={`!py-6 !min-h-[72px] text-lg border-2 !border-gray-300 focus:!border-gutzo-primary focus:!ring-gutzo-primary ${preFilledPhone ? '!bg-gray-100 !text-gray-700' : ''}`}
+              ref={phoneRef}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  nameRef.current?.focus();
+                }
+              }}
             />
           </div>
 
@@ -204,6 +222,13 @@ export function SignUp({
               error={errors.name}
               autoComplete="name"
               className="!py-6 !min-h-[72px] text-lg border-2 !border-gray-300 focus:!border-gutzo-primary focus:!ring-gutzo-primary"
+              ref={nameRef}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  emailRef.current?.focus();
+                }
+              }}
             />
           </div>
 
@@ -218,6 +243,7 @@ export function SignUp({
               autoComplete="email"
               className="!py-6 !min-h-[72px] text-lg border-2 !border-gray-300 focus:!border-gutzo-primary focus:!ring-gutzo-primary"
               disabled={otpSent}
+              ref={emailRef}
             />
           </div>
 

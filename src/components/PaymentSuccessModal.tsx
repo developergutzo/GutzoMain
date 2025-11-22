@@ -1,7 +1,6 @@
 import { X, CheckCircle, Download, MessageCircle, Package, ArrowRight, Clock, MapPin } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
-import exampleImage from 'figma:asset/fcb24fa41bbe22449e0b736155687dc6b7080088.png';
 
 interface PaymentDetails {
   paymentId: string;
@@ -355,7 +354,7 @@ export function PaymentSuccessModal({
                   🌱 Thank you for choosing healthy with Gutzo!
                 </p>
                 <p className="text-xs text-gray-600 mt-1">
-                  Your support helps us bring fresh, nutritious meals to Coimbra
+                  Your support helps us bring fresh, nutritious meals to your community
                 </p>
               </div>
             </div>

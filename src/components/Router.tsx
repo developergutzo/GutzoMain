@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 
-type Route = '/' | '/T&C' | '/refund_policy' | '/privacy_policy' | '/payment-status' | '/contact' | '/about';
+type Route = '/' | '/T&C' | '/refund_policy' | '/privacy_policy' | '/payment-status' | '/contact' | '/about' | '/phonepe-soon';
 
 interface RouterContextType {
   currentRoute: Route;
@@ -21,15 +21,16 @@ export function RouterProvider({ children }: { children: ReactNode }) {
       '/privacy_policy': 'Privacy Policy - Gutzo',
       '/payment-status': 'Payment Status - Gutzo',
       '/contact': 'Contact Us - Gutzo',
-      '/about': 'About Us - Gutzo'
+      '/about': 'About Us - Gutzo',
+      '/phonepe-soon': 'PhonePe Integration - Gutzo'
     };
     document.title = titles[route];
   }, []);
 
   // Initialize route from browser URL
   useEffect(() => {
-    const path = window.location.pathname as Route;
-    const validRoutes: Route[] = ['/', '/T&C', '/refund_policy', '/privacy_policy', '/payment-status', '/contact', '/about'];
+  const path = window.location.pathname as Route;
+  const validRoutes: Route[] = ['/', '/T&C', '/refund_policy', '/privacy_policy', '/payment-status', '/contact', '/about', '/phonepe-soon'];
     
     if (validRoutes.includes(path)) {
       // Scroll to top immediately on initial load if not on homepage
@@ -72,8 +73,8 @@ export function RouterProvider({ children }: { children: ReactNode }) {
   // Handle browser back/forward buttons
   useEffect(() => {
     const handlePopState = () => {
-      const path = window.location.pathname as Route;
-      const validRoutes: Route[] = ['/', '/T&C', '/refund_policy', '/privacy_policy', '/payment-status', '/contact', '/about'];
+  const path = window.location.pathname as Route;
+  const validRoutes: Route[] = ['/', '/T&C', '/refund_policy', '/privacy_policy', '/payment-status', '/contact', '/about', '/phonepe-soon'];
       
       if (validRoutes.includes(path)) {
         window.scrollTo(0, 0);

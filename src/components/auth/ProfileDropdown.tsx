@@ -51,14 +51,9 @@ export function ProfileDropdown({ isOpen, onClose, onOptionClick, userInfo }: Pr
 
   return (
     <>
-      {/* Invisible backdrop to handle clicks outside */}
-      <div 
-        className="fixed inset-0 z-30" 
-        onClick={onClose}
-      />
       
       {/* Dropdown Menu */}
-      <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 z-40 animate-in slide-in-from-top-2 duration-200">
+      <div className="absolute top-full right-0 w-56 bg-white rounded-xl shadow-lg border border-gray-100 z-40 animate-in slide-in-from-top-2 duration-200">
 
 
         {/* Menu Options */}

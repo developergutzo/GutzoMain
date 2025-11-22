@@ -17,6 +17,12 @@ interface LoginPanelProps {
 }
 
 export function LoginPanel({ isOpen, onClose, onAuthComplete }: LoginPanelProps) {
+  // TEMP: Dummy login flag and accounts (for PhonePe PG verification)
+  const DUMMY_ENABLED = import.meta.env.VITE_DUMMY_LOGIN === 'true';
+  const DUMMY_ACCOUNTS: Record<string, string> = {
+    '9876543210': '123456'
+  };
+
   const [currentStep, setCurrentStep] = useState<AuthStep>('login');
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -52,6 +58,21 @@ export function LoginPanel({ isOpen, onClose, onAuthComplete }: LoginPanelProps)
   const handleSignUp = async (data: { phoneNumber: string; name: string; email: string }) => {
     setLoading(true);
     try {
+      // TEMP: Dummy Login for PhonePe PG verification
+      const DUMMY_ENABLED = import.meta.env.VITE_DUMMY_LOGIN === 'true';
+      // Map of dummy phone -> otp for temporary verification. Can add more test numbers here.
+      const DUMMY_ACCOUNTS: Record<string, string> = {
+        // Single dedicated dummy credential for PhonePe verification
+        '9876543210': '123456'
+      };
+      if (DUMMY_ENABLED && DUMMY_ACCOUNTS[data.phoneNumber]) {
+        // Treat dummy phone as existing — directly show OTP (skip signup fields)
+        setPhoneNumber(data.phoneNumber);
+        setOtpSent(true);
+        setLoading(false);
+        toast.success(`OTP sent to +91 ${data.phoneNumber.replace(/(\d{5})(\d{5})/, '$1-$2')} (dummy)`);
+        return;
+      }
       // First check if user already exists using supabase.functions.invoke
       const { data: checkResult, error: checkError } = await supabase.functions.invoke(
         'gutzo-api/check-user',
@@ -87,6 +108,21 @@ export function LoginPanel({ isOpen, onClose, onAuthComplete }: LoginPanelProps)
   const handleSendOTP = async (phone: string) => {
     setLoading(true);
     try {
+      // TEMP: Dummy Login for PhonePe PG verification
+      const DUMMY_ENABLED = import.meta.env.VITE_DUMMY_LOGIN === 'true';
+      const DUMMY_ACCOUNTS: Record<string, string> = {
+        // Single dedicated dummy credential for PhonePe verification
+        '9876543210': '123456'
+      };
+      // If dummy login is enabled via env and phone matches any test number, skip backend OTP
+      if (DUMMY_ENABLED && DUMMY_ACCOUNTS[phone]) {
+        // Directly mark OTP as sent for dummy flow (no backend call)
+        setPhoneNumber(phone);
+        setOtpSent(true);
+        setLoading(false);
+        toast.success(`OTP sent to +91 ${phone.replace(/(\d{5})(\d{5})/, '$1-$2')} (dummy)`);
+        return;
+      }
       // For login, check if user exists first
       if (authMode === 'login') {
         const { data: checkResult, error: checkError } = await supabase.functions.invoke(
@@ -120,6 +156,20 @@ export function LoginPanel({ isOpen, onClose, onAuthComplete }: LoginPanelProps)
 
   const sendOTP = async (phone: string) => {
     try {
+      // TEMP: Dummy Login for PhonePe PG verification
+      const DUMMY_ENABLED = import.meta.env.VITE_DUMMY_LOGIN === 'true';
+      const DUMMY_ACCOUNTS: Record<string, string> = {
+        // Single dedicated dummy credential for PhonePe verification
+        '9876543210': '123456'
+      };
+      if (DUMMY_ENABLED && DUMMY_ACCOUNTS[phone]) {
+        const formattedPhone = `+91${phone}`;
+        setPhoneNumber(phone);
+        setOtpSent(true);
+        toast.success(`OTP sent to +91 ${phone.replace(/(\d{5})(\d{5})/, '$1-$2')} (dummy)`);
+        return;
+      }
+
       const formattedPhone = `+91${phone}`;
       
       const { data: result, error: invokeError } = await supabase.functions.invoke(
@@ -145,43 +195,69 @@ export function LoginPanel({ isOpen, onClose, onAuthComplete }: LoginPanelProps)
   const handleVerifyOTP = async (otp: string) => {
     setLoading(true);
     try {
+      // TEMP: Dummy Login for PhonePe PG verification
+      const DUMMY_ENABLED = import.meta.env.VITE_DUMMY_LOGIN === 'true';
+      const DUMMY_ACCOUNTS: Record<string, string> = {
+        '9876543210': '123456',
+        '9999999999': '654321'
+      };
+
       const formattedPhone = `+91${phoneNumber}`;
-      console.log(`🔐 Verifying OTP with server for ${formattedPhone}`);
-      
-      const { data: result, error: verifyError } = await supabase.functions.invoke(
-        'gutzo-api/verify-otp',
-        {
-          method: 'POST',
-          body: { phone: formattedPhone, otp: otp },
+
+      // If dummy mode and phone matches any dummy account, validate OTP locally and skip backend
+      if (DUMMY_ENABLED && DUMMY_ACCOUNTS[phoneNumber]) {
+        const expected = DUMMY_ACCOUNTS[phoneNumber];
+        if (otp !== expected) {
+          throw new Error('Invalid OTP');
         }
-      );
-
-      if (verifyError) throw verifyError;
-      if (!result.success) {
-        throw new Error(result.error || 'Invalid OTP');
-      }
-
-      console.log(`✅ OTP verification successful for ${formattedPhone}`);
-
-      if (authMode === 'signup') {
-        console.log('📝 Creating user account for signup...');
-        const { data: createResult, error: createError } = await supabase.functions.invoke(
-          'gutzo-api/create-user',
+        console.log(`✅ Dummy OTP verification successful for ${formattedPhone}`);
+      } else {
+        console.log(`🔐 Verifying OTP with server for ${formattedPhone}`);
+        const { data: result, error: verifyError } = await supabase.functions.invoke(
+          'gutzo-api/verify-otp',
           {
             method: 'POST',
-            body: {
-              phone: formattedPhone,
-              name: userInfo.name,
-              email: userInfo.email,
-            },
+            body: { phone: formattedPhone, otp: otp },
           }
         );
 
-        if (createError) throw createError;
-        if (!createResult.success) {
-          throw new Error(createResult.error || 'Failed to create user account');
+        if (verifyError) throw verifyError;
+        if (!result.success) {
+          throw new Error(result.error || 'Invalid OTP');
         }
-        console.log('✅ User account created successfully');
+
+        console.log(`✅ OTP verification successful for ${formattedPhone}`);
+      }
+
+      if (authMode === 'signup') {
+        // For dummy mode, skip server-side user creation to avoid backend calls
+        const DUMMY_ENABLED = import.meta.env.VITE_DUMMY_LOGIN === 'true';
+        const DUMMY_ACCOUNTS: Record<string, string> = {
+          // Single dedicated dummy credential for PhonePe verification
+          '9876543210': '123456'
+        };
+        if (DUMMY_ENABLED && DUMMY_ACCOUNTS[phoneNumber]) {
+          console.log('📝 Skipping create-user in dummy mode');
+        } else {
+          console.log('📝 Creating user account for signup...');
+          const { data: createResult, error: createError } = await supabase.functions.invoke(
+            'gutzo-api/create-user',
+            {
+              method: 'POST',
+              body: {
+                phone: formattedPhone,
+                name: userInfo.name,
+                email: userInfo.email,
+              },
+            }
+          );
+
+          if (createError) throw createError;
+          if (!createResult.success) {
+            throw new Error(createResult.error || 'Failed to create user account');
+          }
+          console.log('✅ User account created successfully');
+        }
       }
       
       const authData = {
@@ -326,6 +402,7 @@ export function LoginPanel({ isOpen, onClose, onAuthComplete }: LoginPanelProps)
                     <X className="h-5 w-5 text-gray-500" />
                   </button>
                 </div>
+                
                 {currentStep === 'login' && (
                   <p className="text-gray-600 text-sm">
                     or <button onClick={handleSwitchToSignup} className="text-gutzo-primary font-semibold hover:underline">create an account</button>
@@ -419,6 +496,7 @@ export function LoginPanel({ isOpen, onClose, onAuthComplete }: LoginPanelProps)
                     or <button onClick={handleSwitchToLogin} className="text-gutzo-primary font-semibold hover:underline">login to your account</button>
                   </p>
                 )}
+                
               </div>
 
               {/* Form Content */}

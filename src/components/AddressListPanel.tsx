@@ -153,7 +153,7 @@ export function AddressListPanel({
           className="fixed inset-0 bg-black/40 transition-opacity duration-300 ease-out"
           onClick={onClose}
         />
-        <div className="relative bg-white rounded-2xl w-full max-w-[600px] max-h-[85vh] z-[101] shadow-xl overflow-hidden">
+        <div className="relative bg-white rounded-[0.8rem] w-full max-w-[600px] max-h-[85vh] z-[101] shadow-xl overflow-hidden">
           {/* Header - Consistent design */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <div className="flex items-center space-x-3">
@@ -175,7 +175,7 @@ export function AddressListPanel({
             {loading ? (
               <div className="space-y-4">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="animate-pulse bg-gray-100 h-24 rounded-xl" />
+                  <div key={i} className="animate-pulse bg-gray-100 h-24 rounded-[0.8rem]" />
                 ))}
               </div>
             ) : addresses.length === 0 ? (
@@ -189,7 +189,7 @@ export function AddressListPanel({
                 {addresses.map((address) => (
                   <div
                     key={address.id}
-                    className={`border rounded-xl p-4 cursor-pointer transition-all duration-200 ${
+                    className={`border rounded-[0.8rem] p-4 cursor-pointer transition-all duration-200 ${
                       address.is_default
                         ? 'border-gutzo-primary bg-gutzo-primary/5'
                         : 'border-gray-200 hover:border-gray-300'
@@ -198,7 +198,7 @@ export function AddressListPanel({
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start space-x-4 flex-1">
-                        <div className={`p-3 rounded-lg ${
+                        <div className={`p-3 rounded-[0.8rem] ${
                           address.is_default
                             ? 'bg-gutzo-primary text-white'
                             : 'bg-gray-100 text-gray-600'
@@ -233,7 +233,7 @@ export function AddressListPanel({
                               e.stopPropagation();
                               handleSetDefault(address.id);
                             }}
-                            className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-gutzo-primary transition-colors"
+                            className="p-2 hover:bg-gray-100 rounded-[0.8rem] text-gray-500 hover:text-gutzo-primary transition-colors"
                             title="Set as default"
                           >
                             <Star className="h-4 w-4" />
@@ -246,7 +246,7 @@ export function AddressListPanel({
                             handleDeleteAddress(address.id);
                           }}
                           disabled={deletingId === address.id}
-                          className="p-2 hover:bg-red-50 rounded-lg text-gray-500 hover:text-red-500 disabled:opacity-50 transition-colors"
+                          className="p-2 hover:bg-red-50 rounded-[0.8rem] text-gray-500 hover:text-red-500 disabled:opacity-50 transition-colors"
                           title="Delete address"
                         >
                           <Trash2 className="h-4 w-4" />

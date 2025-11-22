@@ -47,7 +47,7 @@ export function SearchBottomSheet({ isOpen, onClose, searchQuery, onSearchChange
       <SheetContent 
         side="bottom" 
         className="rounded-t-3xl p-0 w-full max-w-full left-0 right-0 transition-transform duration-300 ease-in-out" 
-        style={{ top: '104px', bottom: 0, height: 'calc(100vh - 104px)' }}
+        style={{ top: '104px', bottom: 0, height: 'calc(100vh - 104px)', position: 'fixed' }}
       >
         <style>{`
           [data-slot="sheet-content"] > button[class*="absolute"] {
@@ -76,7 +76,16 @@ export function SearchBottomSheet({ isOpen, onClose, searchQuery, onSearchChange
             }
           }
         `}</style>
-        <SheetHeader className="p-6 pb-4 border-b border-gray-100">
+        {/* Always visible close button, top right, above all content */}
+        <button
+          onClick={onClose}
+          className="absolute z-50 top-4 right-4 rounded-full p-2 bg-white/80 hover:bg-gray-100 shadow transition-colors"
+          style={{ boxShadow: '0 2px 8px 0 rgba(0,0,0,0.08)' }}
+          aria-label="Close search"
+        >
+          <X className="h-6 w-6 text-gray-500" />
+        </button>
+        <SheetHeader className="p-6 pt-12 pb-4 border-b border-gray-100">
           <div className="flex items-center gap-3">
             <div className="flex-1 flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl border border-gray-200">
               <Search className="h-5 w-5 text-gray-400 flex-shrink-0" />

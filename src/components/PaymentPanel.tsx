@@ -32,7 +32,7 @@ const PAYMENT_METHODS = [
   {
     id: 'upi',
     name: 'UPI',
-    description: 'Pay using PhonePe, GPay, Paytm',
+  description: 'Pay using PhonePe, GPay',
     icon: Smartphone,
     popular: true
   },
@@ -46,7 +46,7 @@ const PAYMENT_METHODS = [
   {
     id: 'wallet',
     name: 'Digital Wallets',
-    description: 'Paytm, Amazon Pay, Mobikwik',
+    description: 'PhonePe, Amazon Pay, Mobikwik',
     icon: Wallet,
     popular: false
   }
@@ -210,18 +210,24 @@ export function PaymentPanel({
             {/* Delivery Address */}
             <div className="bg-gradient-to-r from-gutzo-primary/10 to-gutzo-highlight/15 rounded-xl p-4 border border-gutzo-primary/20">
               <div className="flex items-start gap-3">
-                <div className="p-2 bg-gutzo-primary/15 rounded-full">
-                  <MapPin className="h-5 w-5 text-gutzo-primary" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-medium text-gray-900 mb-2">Delivery Address</h4>
-                  <div className="text-sm text-gray-700">
-                    <p className="font-medium">Home</p>
-                    <p>123 Main Street, Sector 4</p>
-                    <p>Coimbatore, Tamil Nadu 641001</p>
-                    <p className="text-xs text-gray-600 mt-1">+91 98765 43210</p>
+                  <div className="p-2 bg-gutzo-primary/15 rounded-full">
+                    <MapPin className="h-5 w-5 text-gutzo-primary" />
                   </div>
-                </div>
+                  <div className="flex-1">
+                    <h4 className="font-medium text-gray-900 mb-2">Delivery Address</h4>
+                    <div className="text-sm text-gray-700">
+                      {/* Prefer showing vendor/address data instead of hard-coded placeholders */}
+                      <p className="font-medium">{vend.name || 'Delivery address'}</p>
+                      {vend.location ? (
+                        <>
+                          <p>{vend.location}</p>
+                        </>
+                      ) : (
+                        <p className="text-gray-500">No address on file</p>
+                      )}
+                      <p className="text-xs text-gray-600 mt-1">{vend.phone || ''}</p>
+                    </div>
+                  </div>
                 <Button
                   variant="outline"
                   size="sm"
@@ -355,7 +361,7 @@ export function PaymentPanel({
                 <h4 className="font-medium text-gray-900 mb-3">Enter UPI ID</h4>
                 <Input
                   type="text"
-                  placeholder="yourname@paytm"
+                  placeholder="example@upi"
                   value={upiId}
                   onChange={(e) => setUpiId(e.target.value)}
                   className="mb-2"
@@ -419,7 +425,7 @@ export function PaymentPanel({
               <div className="bg-gray-50 rounded-xl p-4">
                 <h4 className="font-medium text-gray-900 mb-3">Select Wallet</h4>
                 <div className="grid grid-cols-2 gap-2">
-                  {['Paytm', 'Amazon Pay', 'Mobikwik', 'Freecharge'].map((wallet) => (
+                  {['PhonePe', 'Amazon Pay', 'Mobikwik', 'Freecharge'].map((wallet) => (
                     <button
                       key={wallet}
                       className="p-3 border border-gray-200 rounded-lg hover:border-gutzo-primary/50 transition-all text-sm"
@@ -463,7 +469,7 @@ export function PaymentPanel({
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Delivery fee:</span>
-                      <span className="font-medium text-gutzo-selected">FREE</span>
+                      <span className="font-medium text-gutzo-selected">{(vend.deliveryFee ?? 0) === 0 ? 'FREE' : `₹${vend.deliveryFee}`}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Est. delivery:</span>

@@ -1,4 +1,5 @@
 import { MapPin, Loader2, AlertCircle, LogOut, User, ChevronDown, ShoppingCart, Search, X } from "lucide-react";
+import MobileProfileIcon from "./MobileProfileIcon";
 import { useState } from "react";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback } from "./ui/avatar";
@@ -8,6 +9,7 @@ import { useCart } from "../contexts/CartContext";
 import { useAuth } from "../contexts/AuthContext";
 import { ImageWithFallback } from "./common/ImageWithFallback";
 import { useRouter } from "../components/Router";
+import colors from "../styles/colors";
 import { LocationBottomSheet } from "./LocationBottomSheet";
 import { SearchBottomSheet } from "./SearchBottomSheet";
 import { LocationDropdown } from "./LocationDropdown";
@@ -89,8 +91,6 @@ export function Header({ onShowLogin, onLogout, onShowProfile, onShowCart, onSho
             >
               <ImageWithFallback
                 src="https://35-194-40-59.nip.io/service/storage/v1/object/public/Gutzo/GUTZO.svg"
-                //src="http://192.168.1.39:54321/storage/v1/object/public/Gutzo/GUTZO.svg"
-                //src="https://jrpiqxajjpyxiitweoqc.supabase.co/storage/v1/object/public/Gutzo%20Logo/GUTZO.svg"
                 alt="Gutzo - Healthy Feels Good"
                 className="h-32 w-auto sm:h-36 md:h-40"
               />
@@ -110,7 +110,7 @@ export function Header({ onShowLogin, onLogout, onShowProfile, onShowCart, onSho
 
           {!hideInteractive && (
             <div className="hidden md:flex flex-1 items-center max-w-2xl">
-              <div className="flex flex-1 items-center border border-gray-200 rounded-xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+              <div className="flex flex-1 items-center border border-gray-200 rounded-08rem bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] min-h-[60px]">
                 {/* Location Selector with Dropdown */}
                 <div className="relative min-w-[180px]">
                   <div 
@@ -175,10 +175,14 @@ export function Header({ onShowLogin, onLogout, onShowProfile, onShowCart, onSho
             <button
               type="button"
               onClick={onShowCart}
-              className="relative flex items-center justify-center w-11 h-11 rounded-xl cursor-pointer hover:opacity-90 active:scale-95 hover:bg-gray-50 transition-colors transition-transform"
+              className="relative flex items-center justify-center w-auto h-11 cursor-pointer transition-colors hidden md:flex px-3 bg-white focus:outline-none border-none shadow-none hover:bg-transparent"
               title="View cart"
+              style={{ color: colors.textSecondary }}
+              onMouseEnter={e => (e.currentTarget.style.color = colors.textPrimary)}
+              onMouseLeave={e => (e.currentTarget.style.color = colors.textSecondary)}
             >
-              <ShoppingCart className="h-5 w-5 text-gray-600" />
+              <ShoppingCart className="h-5 w-5" />
+              <span className="ml-2 font-normal hidden sm:inline">Cart</span>
               {totalItems > 0 && (
                 <span className="absolute -top-1 -right-1 bg-gutzo-primary text-white text-xs font-medium rounded-full h-5 w-5 flex items-center justify-center">
                   {totalItems > 99 ? '99+' : totalItems}
@@ -188,25 +192,31 @@ export function Header({ onShowLogin, onLogout, onShowProfile, onShowCart, onSho
             
             {/* Auth Button */}
             {isAuthenticated ? (
-              <div className="relative">
+              <div
+                className="relative flex items-center"
+                onMouseEnter={() => setShowDropdown(true)}
+                onMouseLeave={() => setShowDropdown(false)}
+              >
+                {/* Mobile: Only show rounded initial */}
                 <button
+                  type="button"
+                  aria-label="Profile"
                   onClick={() => setShowDropdown(!showDropdown)}
-                  className="flex items-center space-x-2 px-3 py-2 rounded-xl hover:bg-gray-50 transition-colors min-w-[44px] min-h-[44px] group"
-                  title="View profile options"
+                  className="block md:hidden h-11 w-11 min-w-[44px] min-h-[44px] max-w-[44px] max-h-[44px] rounded-full bg-gutzo-primary text-white flex items-center justify-center text-lg font-semibold border-none p-0 focus:outline-none"
                 >
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="bg-gutzo-primary text-white font-medium text-sm">
-                      {getInitials(displayName)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="hidden lg:flex items-center space-x-1">
-                    <span className="font-medium text-gray-900 text-sm max-w-20 truncate">
-                      {authLoading ? 'Loading...' : displayName}
-                    </span>
-                    <ChevronDown className={`h-4 w-4 text-gray-500 group-hover:text-gutzo-primary transition-all duration-200 ${showDropdown ? 'rotate-180' : ''}`} />
-                  </div>
+                  {getInitials(displayName)}
                 </button>
-                
+                {/* Desktop: icon and name */}
+                <button
+                  type="button"
+                  aria-label="Profile"
+                  onClick={() => setShowDropdown(!showDropdown)}
+                  className={`hidden md:flex items-center bg-white border-none p-0 focus:outline-none transition-colors min-w-[44px] min-h-[44px] px-3 sm:px-4 py-2 text-sm sm:text-base hover:text-gutzo-primary hover:bg-transparent ${showDropdown ? 'text-gutzo-primary' : 'text-gray-900'}`}
+                  style={{ minWidth: 44, minHeight: 44 }}
+                >
+                  <User className="h-5 w-5" />
+                  <span className="ml-2 font-medium max-w-[100px] truncate inline-block align-middle">{displayName}</span>
+                </button>
                 <ProfileDropdown
                   isOpen={showDropdown}
                   onClose={() => setShowDropdown(false)}
@@ -219,14 +229,29 @@ export function Header({ onShowLogin, onLogout, onShowProfile, onShowCart, onSho
                 />
               </div>
             ) : (
-              <Button
-                onClick={onShowLogin}
-                className="bg-gutzo-primary hover:bg-gutzo-primary-hover text-white rounded-xl font-medium transition-colors min-w-[44px] min-h-[44px] px-3 sm:px-4 py-2 text-sm sm:text-base flex items-center gap-1.5"
-              >
-                <User className="h-4 w-4" />
-                <span className="hidden sm:inline">Login</span>
-                <span className="sr-only sm:hidden">Login</span>
-              </Button>
+              <>
+                {/* Mobile: Use the new SVG profile icon, visible only on mobile */}
+                <button
+                  onClick={onShowLogin}
+                  className="block md:hidden h-11 w-11 min-w-[44px] min-h-[44px] max-w-[44px] max-h-[44px] rounded-full flex items-center justify-center bg-transparent p-0 m-0 focus:outline-none"
+                  aria-label="Login"
+                >
+                  <MobileProfileIcon className="w-11 h-11" />
+                </button>
+                {/* Desktop: Keep the existing button */}
+                <Button
+                  onClick={onShowLogin}
+                  variant="secondary"
+                  className="hidden md:flex items-center gap-1.5 font-medium min-w-[44px] min-h-[44px] px-3 sm:px-4 py-2 text-sm sm:text-base bg-white focus:outline-none border-none shadow-none hover:bg-transparent"
+                  style={{ color: colors.textSecondary }}
+                  onMouseEnter={e => (e.currentTarget.style.color = colors.textPrimary)}
+                  onMouseLeave={e => (e.currentTarget.style.color = colors.textSecondary)}
+                >
+                  <User className="h-4 w-4" />
+                  <span className="hidden sm:inline font-normal">Login</span>
+                  <span className="sr-only sm:hidden">Login</span>
+                </Button>
+              </>
             )}
           </div>
           )}
@@ -255,13 +280,19 @@ export function Header({ onShowLogin, onLogout, onShowProfile, onShowCart, onSho
             </button>
 
             {/* Search Icon - Opens Bottom Sheet */}
-            <button 
-              className="p-2 cursor-pointer hover:bg-gray-100 rounded-full transition-colors active:scale-95"
-              onClick={handleMobileSearchClick}
-              aria-label="Search"
-            >
-              <Search className="h-5 w-5 text-gray-600" />
-            </button>
+              {/**
+               * Mobile: Search Icon (show only on mobile)
+               * This flow is commented out as per request. Uncomment to re-enable in the future.
+               */}
+              {/*
+              <button 
+                className="p-2 cursor-pointer hover:bg-gray-100 rounded-full transition-colors active:scale-95"
+                onClick={handleMobileSearchClick}
+                aria-label="Search"
+              >
+                <Search className="h-5 w-5 text-gray-600" />
+              </button>
+              */}
           </div>
         </div>
         )}

@@ -83,11 +83,9 @@ export function CheckoutPage() {
               </CardHeader>
               <CardContent>
                 <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                  <p className="font-medium text-gray-900 mb-2">Home</p>
+                  <p className="font-medium text-gray-900 mb-2">Delivery Address</p>
                   <p className="text-gray-700 text-sm leading-relaxed">
-                    123, Sample Street<br />
-                    Coimbatore, Tamil Nadu - 641001<br />
-                    Phone: +91 XXXXX-XXXXX
+                    Your saved delivery address will appear here. Please add or select a delivery address before proceeding.
                   </p>
                 </div>
                 <Button 
@@ -113,7 +111,7 @@ export function CheckoutPage() {
                   <div className="flex-1">
                     <h3 className="font-medium text-gray-900">Healthy Bowl</h3>
                     <p className="text-sm text-gray-600">Vendor: The Fruit Bowl Co</p>
-                    <p className="text-sm text-gutzo-primary font-medium mt-1">₹250</p>
+                    <p className="text-sm text-gutzo-primary font-medium mt-1">—</p>
                   </div>
                   <div className="text-right">
                     <p className="text-sm text-gray-600">Qty: 1</p>
@@ -128,7 +126,7 @@ export function CheckoutPage() {
                   <div className="flex-1">
                     <h3 className="font-medium text-gray-900">Green Smoothie</h3>
                     <p className="text-sm text-gray-600">Vendor: The Fruit Bowl Co</p>
-                    <p className="text-sm text-gutzo-primary font-medium mt-1">₹150</p>
+                    <p className="text-sm text-gutzo-primary font-medium mt-1">—</p>
                   </div>
                   <div className="text-right">
                     <p className="text-sm text-gray-600">Qty: 2</p>
@@ -181,31 +179,31 @@ export function CheckoutPage() {
                 <div className="space-y-3">
                   <div className="flex justify-between text-gray-700">
                     <span>Subtotal</span>
-                    <span>₹550</span>
+                    <span>—</span>
                   </div>
                   <div className="flex justify-between text-gray-700">
                     <span>Delivery Fee</span>
-                    <span className="text-green-600">FREE</span>
+                    <span className="text-gray-700">—</span>
                   </div>
                   <div className="flex justify-between text-gray-700">
                     <span>Platform Fee</span>
-                    <span>₹5</span>
+                    <span>—</span>
                   </div>
                   <div className="flex justify-between text-gray-700">
-                    <span>GST (5%)</span>
-                    <span>₹27.50</span>
+                    <span>GST (where applicable)</span>
+                    <span>—</span>
                   </div>
                   <div className="border-t border-gray-300 pt-3">
                     <div className="flex justify-between font-bold text-gray-900 text-lg">
                       <span>Total</span>
-                      <span className="text-gutzo-primary">₹582.50</span>
+                      <span className="text-gutzo-primary">Calculated at checkout</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="bg-gutzo-highlight rounded-lg p-4">
                   <p className="text-sm text-gutzo-selected">
-                    💰 You saved ₹50 on delivery fees!
+                    Delivery fees are applied as per vendor and location.
                   </p>
                 </div>
 
