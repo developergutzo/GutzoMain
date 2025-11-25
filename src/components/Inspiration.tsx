@@ -50,6 +50,39 @@ export const Inspiration: React.FC<InspirationProps> = ({ onOptionClick }) => {
                   style={{ maxWidth: '100%' }}
                 >
                   <span
+                    className="block rounded-full flex items-center justify-center overflow-hidden mb-0.5 transition-transform group-hover:scale-110"
+                    style={{ width: '80px', height: '80px' }}
+                  >
+                    {option.img ? (
+                      <img
+                        src={option.img}
+                        alt={option.label}
+                        className="w-full h-full object-cover rounded-full"
+                        style={{ aspectRatio: 1, display: 'block' }}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-300 rounded-full flex items-center justify-center text-xs text-gray-500">Img</div>
+                    )}
+                  </span>
+                  <span
+                      className="text-xs text-gray-500 transition-colors mt-1 text-center truncate w-full"
+                    style={{ fontFamily: 'Poppins', fontWeight: 400, fontSize: '0.95rem' }}
+                  >
+                    {option.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-4">
+              {inspirationOptions.slice(Math.ceil(inspirationOptions.length / 2)).map((option) => (
+                <button
+                  key={option.label}
+                  className="flex flex-col items-center group focus:outline-none flex-shrink-0 min-w-[90px]"
+                  onClick={() => onOptionClick?.(option.label)}
+                  style={{ maxWidth: '100%' }}
+                >
+                  <span
                     className="block rounded-full flex items-center justify-center overflow-hidden mb-1 transition-transform group-hover:scale-110"
                     style={{ width: '80px', height: '80px' }}
                   >
@@ -67,40 +100,7 @@ export const Inspiration: React.FC<InspirationProps> = ({ onOptionClick }) => {
                   </span>
                   <span
                     className="text-xs text-gray-500 group-hover:text-gutzo-primary transition-colors mt-1 text-center truncate w-full"
-                    style={{ fontFamily: 'Poppins', fontWeight: 500, fontSize: '0.95rem' }}
-                  >
-                    {option.label}
-                  </span>
-                </button>
-              ))}
-            </div>
-            <div className="flex gap-4">
-              {inspirationOptions.slice(Math.ceil(inspirationOptions.length / 2)).map((option) => (
-                <button
-                  key={option.label}
-                  className="flex flex-col items-center group focus:outline-none flex-shrink-0 min-w-[90px]"
-                  onClick={() => onOptionClick?.(option.label)}
-                  style={{ maxWidth: '100%' }}
-                >
-                  <span
-                    className="block rounded-full flex items-center justify-center overflow-hidden mb-2 transition-transform group-hover:scale-110"
-                    style={{ width: '80px', height: '80px' }}
-                  >
-                    {option.img ? (
-                      <img
-                        src={option.img}
-                        alt={option.label}
-                        className="w-full h-full object-cover rounded-full"
-                        style={{ aspectRatio: 1, display: 'block' }}
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gray-300 rounded-full flex items-center justify-center text-xs text-gray-500">Img</div>
-                    )}
-                  </span>
-                  <span
-                    className="text-xs text-gray-500 group-hover:text-gutzo-primary transition-colors mt-1 text-center truncate w-full"
-                    style={{ fontFamily: 'Poppins', fontWeight: 500, fontSize: '1rem' }}
+                    style={{ fontFamily: 'Poppins', fontWeight: 400, fontSize: '1rem' }}
                   >
                     {option.label}
                   </span>
@@ -120,7 +120,7 @@ export const Inspiration: React.FC<InspirationProps> = ({ onOptionClick }) => {
               style={{ maxWidth: '100%' }}
             >
               <span
-                className="block rounded-full flex items-center justify-center overflow-hidden mb-1 transition-transform group-hover:scale-110"
+                className="block rounded-full flex items-center justify-center overflow-hidden mb-0.5 transition-transform group-hover:scale-110"
                 style={{
                   width: 'clamp(70px, 10vw, 140px)',
                   height: 'clamp(70px, 10vw, 140px)',
@@ -138,7 +138,7 @@ export const Inspiration: React.FC<InspirationProps> = ({ onOptionClick }) => {
                   loading="lazy"
                 />
               </span>
-              <span className="text-lg lg:text-xl font-medium text-gray-500 group-hover:text-gutzo-primary transition-colors mt-1 text-center truncate w-full" style={{ fontFamily: 'Poppins', fontWeight: 500 }}>{option.label}</span>
+              <span className="text-lg lg:text-xl font-medium text-gray-500 transition-colors mt-1 text-center truncate w-full" style={{ fontFamily: 'Poppins', fontWeight: 400 }}>{option.label}</span>
             </button>
           ))}
         </div>

@@ -1,5 +1,5 @@
 import { Search, X, Clock, TrendingUp } from "lucide-react";
-import { Sheet, SheetContent, SheetHeader } from "./ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "./ui/sheet";
 import { useEffect, useRef, useState } from "react";
 
 interface SearchBottomSheetProps {
@@ -86,6 +86,7 @@ export function SearchBottomSheet({ isOpen, onClose, searchQuery, onSearchChange
           <X className="h-6 w-6 text-gray-500" />
         </button>
         <SheetHeader className="p-6 pt-12 pb-4 border-b border-gray-100">
+          <SheetTitle>Search</SheetTitle>
           <div className="flex items-center gap-3">
             <div className="flex-1 flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl border border-gray-200">
               <Search className="h-5 w-5 text-gray-400 flex-shrink-0" />

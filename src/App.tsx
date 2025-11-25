@@ -35,6 +35,7 @@ import { useCart } from "./contexts/CartContext";
 import { AddressModal } from "./components/auth/AddressModal";
 import { AddressListPanel } from "./components/AddressListPanel";
 import { Button } from "./components/ui/button";
+import AddToHomeScreenPrompt from "./components/AddToHomeScreenPrompt";
 
 function AppContent() {
   const { vendors, loading, loadVendorProducts } = useVendors();
@@ -72,6 +73,19 @@ function AppContent() {
       estimatedDelivery: string;
     };
   } | null>(null);
+
+  // PWA install prompt event
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  useEffect(() => {
+    const handler = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+    // (Removed duplicate canInstall and handleAddToHomeScreen definitions)
 
   // Address management states
   const [showAddressModal, setShowAddressModal] = useState(false);
@@ -333,6 +347,18 @@ function AppContent() {
   };
 
 
+  // Add to Home Screen logic
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+  const canInstall = !!deferredPrompt && !isStandalone;
+
+  const handleAddToHomeScreen = () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(() => {
+        setDeferredPrompt(null);
+      });
+    }
+  };
 
   // Show loading screen during authentication initialization
   if (authLoading) {
@@ -400,6 +426,13 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-gray-50 relative">
+      {/* Add to Home Screen Prompt (mobile only, always visible for non-installed users) */}
+      <div className="sm:hidden">
+        <AddToHomeScreenPrompt
+          onAddToHomeScreen={handleAddToHomeScreen}
+          canInstall={canInstall}
+        />
+      </div>
       {/* Overlay for right panels - Dark overlay like Swiggy */}
       {(showLoginPanel || showProfilePanel || showCartPanel || showCheckoutPanel || showAddressPanel) && (
         <div 
@@ -465,9 +498,8 @@ function AppContent() {
         ) : filteredVendors.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 max-w-7xl mx-auto w-full">
               {filteredVendors.map((vendor) => (
-                <div className="flex justify-center items-stretch w-full h-full">
+                <div key={vendor.id} className="flex justify-center items-stretch w-full h-full">
                   <VendorCard
-                    key={vendor.id}
                     vendor={vendor}
                     onClick={handleVendorClick}
                   />
@@ -514,7 +546,7 @@ function AppContent() {
 
   <Footer />
 
-      <WhatsAppSupport />
+      {/* <WhatsAppSupport /> */}
 
 
       <ResponsiveProductDetails
@@ -624,14 +656,16 @@ function AppContent() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <RouterProvider>
-        <LocationProvider>
-          <CartProvider>
-            <AppContent />
-          </CartProvider>
-        </LocationProvider>
-      </RouterProvider>
-    </AuthProvider>
+    <>
+      <AuthProvider>
+        <RouterProvider>
+          <LocationProvider>
+            <CartProvider>
+              <AppContent />
+            </CartProvider>
+          </LocationProvider>
+        </RouterProvider>
+      </AuthProvider>
+    </>
   );
 }
