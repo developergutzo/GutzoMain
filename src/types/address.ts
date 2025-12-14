@@ -6,6 +6,7 @@ export interface UserAddress {
   user_id: string;
   type: AddressType;
   label?: string; // Custom label for 'other' type addresses
+  custom_label?: string; // Backend field for custom label
 
   // Address components
   street: string; // House/Flat/Block No

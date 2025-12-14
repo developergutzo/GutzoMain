@@ -109,6 +109,7 @@ interface AddressFormProps {
     location: { lat: number; lng: number },
     address: string,
   ) => void;
+  existingAddresses?: any[]; // Allow legacy or new types
 }
 
 const AddressForm = ({
@@ -127,26 +128,53 @@ const AddressForm = ({
   customTagRef,
   modalContentRef,
   onLocationSelect,
+  existingAddresses = [],
 }: AddressFormProps) => {
   // Defensive fallback: ensure availableTypes is always an array
   const safeAvailableTypes = Array.isArray(availableTypes) ? availableTypes : ['home', 'work', 'other'];
   const { location, locationDisplay } = useLocation(); // Get device location in form component too
 
+  // Uniqueness Checks
+  // Check if Home exists
+  const hasHome = existingAddresses.some((addr: any) => 
+    (addr.label || addr.type) === 'Home'
+  );
+
+  // Check if Work exists
+  const hasWork = existingAddresses.some((addr: any) => 
+    (addr.label || addr.type) === 'Work'
+  );
+
+  // Get all existing custom labels for unique check (lowercase)
+  const existingCustomLabels = existingAddresses
+    .map((addr: any) => {
+      // Prioritize custom_label for 'other' types, otherwise use label
+      if ((addr.type && addr.type.toLowerCase() === 'other') || addr.label === 'Other') {
+        return (addr.custom_label || addr.custom_tag || addr.label || '').toLowerCase();
+      }
+      return (addr.label || '').toLowerCase();
+    })
+    .filter((label: string) => label && label !== 'home' && label !== 'work');
+
   // Auto-scroll when "other" type is selected
   // Improved auto-scroll: trigger after custom label field is rendered
   useEffect(() => {
-    if (addressData.type === 'other' && modalContentRef?.current && customTagRef?.current) {
+    if (addressData.type === 'other') {
+      // Use a slightly longer timeout to ensure modal animation completes and DOM is ready
       const timer = setTimeout(() => {
-        modalContentRef.current.scrollTo({
-          top: modalContentRef.current.scrollHeight,
-          behavior: "smooth",
-        });
-        // Optionally focus the custom label input
-        customTagRef.current.focus();
-      }, 100);
+        if (modalContentRef?.current && customTagRef?.current) {
+          console.log("📜 Scrolling to custom tag input...");
+          modalContentRef.current.scrollTo({
+            top: modalContentRef.current.scrollHeight,
+            behavior: "smooth",
+          });
+          // Focus the custom label input
+          customTagRef.current.focus();
+        }
+      }, 500); // Increased to 500ms to handle transition
       return () => clearTimeout(timer);
     }
-  }, [addressData.type, modalContentRef, customTagRef, addressData.label]);
+  }, [addressData.type, modalContentRef, customTagRef]);
 
   return (
     <div className="flex flex-col h-full">
@@ -297,9 +325,14 @@ const AddressForm = ({
             
             <div className="flex space-x-3">
               {(['home', 'work', 'other'] as AddressType[]).map((type) => {
-                const isAvailable = safeAvailableTypes.includes(type);
                 const isSelected = addressData.type === type;
-                
+                // Determine if this specific type should be disabled
+                // Only disable 'home' if user already has 'Home', and 'work' if user has 'Work'
+                // BUT do not disable if we are currently editing that address (handled by isEditing check if we had one)
+                // For now, assume this modal is always for NEW addresses (based on usage in InstantOrderPanel)
+                // If editing is added later, we need to pass currentAddressId prop.
+                const isDisabled = (type === 'home' && hasHome) || (type === 'work' && hasWork);
+
                 const typeConfig = {
                   home: { label: 'Home', icon: Home },
                   work: { label: 'Work', icon: Building2 },
@@ -310,46 +343,51 @@ const AddressForm = ({
                 const IconComponent = config.icon;
                 
                 return (
-                  <div
-                    key={type}
-                    className={`flex-1 flex items-center justify-center space-x-2 cursor-pointer p-3 rounded-lg border-2 transition-all duration-200 ${
-                      isSelected
-                        ? 'border-gutzo-primary bg-gutzo-primary/5'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                    onClick={() => {
-                      // Always allow selection - remove complex availability checks
-                      setAddressData(prev => ({ ...prev, type }));
+                  <div key={type} className="flex-1">
+                    <button
+                      type="button"
+                      disabled={isDisabled}
+                      className={`w-full flex items-center justify-center space-x-2 p-3 rounded-lg border-2 transition-all duration-200 ${
+                        isSelected
+                          ? 'border-gutzo-primary bg-gutzo-primary/5'
+                          : isDisabled
+                            ? 'border-gray-100 bg-gray-50 opacity-60 cursor-not-allowed'
+                            : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      onClick={() => {
+                        if (isDisabled) return;
+                        setAddressData(prev => ({ ...prev, type }));
+                        
+                        // Update legacy state for backward compatibility
+                        const legacyType = type === 'home' ? 'Home' : 
+                                          type === 'work' ? 'Work' : 'Other';
+                        setNewAddress(prev => ({ ...prev, type: legacyType }));
+                        
+                        // Clear validation errors
+                        setValidationErrors(prev => ({ ...prev, label: '' }));
+                      }}
+                    >
+                      <div className={`p-2 rounded-lg ${
+                        isSelected 
+                          ? 'bg-gutzo-primary text-white' 
+                          : isDisabled
+                            ? 'bg-gray-200 text-gray-400'
+                            : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        <IconComponent className="h-4 w-4" />
+                      </div>
                       
-                      // Update legacy state for backward compatibility
-                      const legacyType = type === 'home' ? 'Home' : 
-                                        type === 'work' ? 'Work' : 'Other';
-                      setNewAddress(prev => ({ ...prev, type: legacyType }));
-                      
-                      // Clear validation errors
-                      setValidationErrors(prev => ({ ...prev, label: '' }));
-                    }}
-                  >
-                    <input
-                      type="radio"
-                      name="addressType"
-                      value={type}
-                      checked={isSelected}
-                      onChange={() => {}} // Handled by div click
-                      className="w-4 h-4 text-gutzo-primary focus:ring-gutzo-primary border-gray-300"
-                    />
-                    
-                    <div className={`p-2 rounded-lg ${
-                      isSelected 
-                        ? 'bg-gutzo-primary text-white' 
-                        : 'bg-gray-100 text-gray-600'
-                    }`}>
-                      <IconComponent className="h-4 w-4" />
-                    </div>
-                    
-                    <span className="font-medium text-gray-900 text-sm">
-                      {config.label}
-                    </span>
+                      <span className={`font-medium text-sm ${
+                        isDisabled ? 'text-gray-400' : 'text-gray-900'
+                      }`}>
+                        {config.label}
+                      </span>
+                    </button>
+                    {isDisabled && (
+                      <p className="text-[10px] text-center text-amber-600 mt-1">
+                        Already exists
+                      </p>
+                    )}
                   </div>
                 );
               })}
@@ -366,27 +404,37 @@ const AddressForm = ({
                 ref={customTagRef}
                 value={addressData.label || ""}
                 onChange={e => {
+                  const val = e.target.value;
                   setAddressData(prev => ({
                     ...prev,
-                    label: e.target.value
+                    label: val
                   }));
                   setNewAddress(prev => ({
                     ...prev,
-                    custom_tag: e.target.value,
+                    custom_tag: val,
                   }));
-                  if (validationErrors.label) {
-                    setValidationErrors(prev => ({
-                      ...prev,
-                      label: "",
-                    }));
+                  
+                  // Real-time unique validation
+                  if (existingCustomLabels.includes(val.toLowerCase().trim())) {
+                     setValidationErrors(prev => ({
+                       ...prev,
+                       label: "This label already exists. Please choose another name."
+                     }));
+                  } else {
+                     if (validationErrors.label) {
+                      setValidationErrors(prev => ({
+                        ...prev,
+                        label: "",
+                      }));
+                    }
                   }
                 }}
-                placeholder="Enter custom address label"
+                placeholder="Enter custom address label (e.g., Mom's House)"
                 className={`border-2 focus:ring-0 rounded-xl ${validationErrors.label ? "border-red-300 focus:border-red-500" : "border-gray-200 focus:border-gutzo-primary"}`}
                 disabled={savingAddress || loadingTypes}
               />
               {validationErrors.label && (
-                <span className="text-xs text-red-500">{validationErrors.label}</span>
+                <span className="text-xs text-red-500 mt-1 block">{validationErrors.label}</span>
               )}
             </div>
           )}
@@ -410,6 +458,7 @@ const AddressForm = ({
             !addressData.street.trim() ||
             !addressData.fullAddress?.trim() ||
             (addressData.type === 'other' && !addressData.label?.trim()) ||
+            Object.values(validationErrors).some(e => !!e) ||
             savingAddress ||
             loadingTypes
           }
@@ -446,7 +495,8 @@ export function AddressModal({
     availableTypes, 
     loading: addressesLoading, 
     createAddress, 
-    error: addressError 
+    error: addressError,
+    addresses // Expose existing addresses
   } = useAddresses();
   
   // Legacy state for backward compatibility
@@ -615,22 +665,40 @@ export function AddressModal({
     [validationErrors.custom_tag],
   );
 
-  // Load available address types when modal opens
+  // Load available address types when modal opens and determine default type
   useEffect(() => {
     const loadAvailableTypes = async () => {
       if (isOpen) {
         setLoadingTypes(true);
+
+        // Determine smart default type
+        const hasHome = addresses.some((addr: any) => (addr.label || addr.type) === 'Home');
+        const hasWork = addresses.some((addr: any) => (addr.label || addr.type) === 'Work');
         
-        // Reset forms
+        let defaultType: AddressType = 'home';
+        if (hasHome && hasWork) {
+            defaultType = 'other';
+        } else if (hasHome) {
+            defaultType = 'work';
+        }
+        
+        // Reset forms with smart default
         setAddressData({
-          type: 'home',
+          type: defaultType,
           street: '',
           area: '',
           landmark: '',
           fullAddress: '',
-          isDefault: false
+          isDefault: false,
+          label: '', // Reset custom label
+          zipcode: ''
         });
 
+        // Also update legacy state
+        setNewAddress(prev => ({
+            ...prev,
+            type: defaultType === 'home' ? 'Home' : defaultType === 'work' ? 'Work' : 'Other'
+        }));
         
         setValidationErrors({});
 
@@ -640,7 +708,7 @@ export function AddressModal({
     };
 
     loadAvailableTypes();
-  }, [isOpen]);
+  }, [isOpen, addresses]); // Added addresses dependency
 
   // Validation is now handled directly in handleSaveAddress function
 
@@ -679,6 +747,23 @@ export function AddressModal({
         errors.label = 'Label is required for Other address type';
       }
 
+      // Check for duplicate custom label if type is 'other'
+      if (addressData.type === 'other' && addressData.label?.trim()) {
+        const currentLabel = addressData.label.trim().toLowerCase();
+        
+        // Re-calculate existing labels (same logic as in AddressForm)
+        const existingCustomLabels = (addresses || []).map((addr: any) => {
+          if ((addr.type && addr.type.toLowerCase() === 'other') || addr.label === 'Other') {
+            return (addr.custom_label || addr.custom_tag || addr.label || '').toLowerCase();
+          }
+          return (addr.label || '').toLowerCase();
+        }).filter((l: string) => l && l !== 'home' && l !== 'work');
+
+        if (existingCustomLabels.includes(currentLabel)) {
+           errors.label = "This label already exists. Please choose another name.";
+        }
+      }
+
       if (!addressData.latitude || !addressData.longitude) {
         errors.location = 'Please select a location on the map';
       }
@@ -689,8 +774,8 @@ export function AddressModal({
         return;
       }
 
-      // Use the modern address data
-      // MAP FRONTEND DATA TO BACKEND SCHEMA
+      // Map frontend data to backend schema
+      // CORRECTED: label must be one of Home/Work/Other as per backend validation
       const addressPayload: any = {
         label: addressData.type.charAt(0).toUpperCase() + addressData.type.slice(1), // Capitalize: Home, Work, Other
         custom_label: addressData.type === 'other' ? addressData.label : undefined,
@@ -759,10 +844,11 @@ export function AddressModal({
             onClose={handleClose}
             validationErrors={validationErrors}
             setValidationErrors={setValidationErrors}
-            areaRef={areaRef as React.RefObject<HTMLInputElement>}
             customTagRef={customTagRef as React.RefObject<HTMLInputElement>}
             modalContentRef={modalContentRef as React.RefObject<HTMLDivElement>}
             onLocationSelect={handleLocationSelect}
+            // Add existing addresses for uniqueness check
+            existingAddresses={addresses as Address[]} // Convert to legacy type if needed or update props
           />
         </div>
       </div>

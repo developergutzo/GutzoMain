@@ -378,7 +378,11 @@ export function InstantOrderPanel({
                   <h4 className="font-medium text-gray-900 mb-2">Delivery Address</h4>
                   {selectedAddress ? (
                     <div className="text-sm text-gray-700">
-                      <p className="font-medium">{selectedAddress.type === 'home' ? 'Home' : selectedAddress.type}</p>
+                      <p className="font-medium">
+                        {selectedAddress.type.toLowerCase() === 'home' ? 'Home' : 
+                         selectedAddress.type.toLowerCase() === 'work' ? 'Work' : 
+                         (selectedAddress.custom_label || selectedAddress.label || selectedAddress.type)}
+                      </p>
                       <p>{selectedAddress.street}{selectedAddress.area ? `, ${selectedAddress.area}` : ""}</p>
                       <p>{selectedAddress.full_address}</p>
                       <p className="text-xs text-gray-600 mt-1">{selectedAddress.landmark ? selectedAddress.landmark : userPhone}</p>
@@ -434,7 +438,11 @@ export function InstantOrderPanel({
                           <div className="flex items-center gap-3">
                             <MapPin className="h-4 w-4 text-gutzo-primary" />
                             <div className="flex-1">
-                              <p className="font-medium">{address.type === 'home' ? 'Home' : address.type}</p>
+                              <p className="font-medium">
+                                {address.type.toLowerCase() === 'home' ? 'Home' : 
+                                 address.type.toLowerCase() === 'work' ? 'Work' : 
+                                 (address.custom_label || address.label || address.type)}
+                              </p>
                               <p className="text-sm">{address.street}{address.area ? `, ${address.area}` : ""}</p>
                               <p className="text-xs text-gray-600">{address.full_address}</p>
                             </div>
