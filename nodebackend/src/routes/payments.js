@@ -184,18 +184,21 @@ router.post('/initiate-transaction', asyncHandler(async (req, res) => {
     const data = await response.json();
     console.log('Paytm initiateTransaction response:', data);
 
+  // Lookup order UUID from order_number
+    const { data: orderData } = await supabaseAdmin
+      .from('orders')
+      .select('id')
+      .eq('order_number', orderId)
+      .single();
+
     // Create payment record
     await supabaseAdmin.from('payments').insert({
-      // We don't have UUID here if client only sent order number
-      // So we assume orderId is merchant_order_id
+      order_id: orderData?.id || null, // Insert the UUID
       merchant_order_id: orderId, 
       amount,
       status: 'initiated',
       gateway: 'paytm',
       mode: 'web'
-      // Note: order_id (UUID) might be null if not looked up, 
-      // but schema usually requires it.
-      // Ideally we should lookup order UUID from order_number here
     });
 
     successResponse(res, {
