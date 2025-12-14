@@ -104,17 +104,45 @@ router.post('/sync', asyncHandler(async (req, res) => {
   }));
 
   // 3. Bulk insert
-  const { data: newItems, error: insertError } = await supabaseAdmin
-    .from('cart')
-    .insert(formattedItems)
-    .select();
+  // 3. Bulk insert with fallback for bad data
+  try {
+    const { data: newItems, error: insertError } = await supabaseAdmin
+      .from('cart')
+      .insert(formattedItems)
+      .select();
 
-  if (insertError) {
-    console.error('Cart sync insert error:', insertError);
-    throw new ApiError(500, 'Failed to insert synced items');
+    if (insertError) throw insertError;
+
+    successResponse(res, { items: newItems }, 'Cart synced successfully');
+  } catch (batchError) {
+    console.warn('⚠️ Batch insert failed, attempting serial insert to salvage valid items:', batchError.message);
+    
+    // Fallback: Insert valid items one by one
+    const savedItems = [];
+    for (const item of formattedItems) {
+      try {
+        const { data: savedItem, error: singleError } = await supabaseAdmin
+          .from('cart')
+          .insert(item)
+          .select()
+          .single();
+          
+        if (!singleError && savedItem) {
+          savedItems.push(savedItem);
+        }
+      } catch (e) {
+        console.warn(`Skipping invalid cart item during sync (Product: ${item.product_id}):`, e.message);
+      }
+    }
+
+    if (savedItems.length === 0 && formattedItems.length > 0) {
+      // If we couldn't save ANY items, throw the original error
+      throw new ApiError(500, `Failed to sync cart: ${batchError.message}`);
+    }
+
+    console.log(`✅ Recovered ${savedItems.length}/${formattedItems.length} items via serial insert`);
+    successResponse(res, { items: savedItems }, 'Cart synced (some invalid items removed)');
   }
-
-  successResponse(res, { items: newItems }, 'Cart synced successfully');
 }));
 
 // ============================================

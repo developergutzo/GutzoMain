@@ -309,21 +309,23 @@ router.post('/validate-user', asyncHandler(async (req, res) => {
 router.post('/create-user', asyncHandler(async (req, res) => {
   const { phone, name, email } = req.body;
 
-  if (!phone || !name || !email) {
-    throw new ApiError(400, 'Phone, name, and email are required');
+  // Email is optional for phone-first auth
+  if (!phone) {
+    throw new ApiError(400, 'Phone number is required');
   }
 
   console.log('Creating new user for phone:', phone);
 
-  // Check if user already exists
+  // Check if user already exists - if so, return them (idempotent)
   const { data: existingUser } = await supabaseAdmin
     .from('users')
-    .select('id')
+    .select('*')
     .eq('phone', phone)
     .single();
 
   if (existingUser) {
-    throw new ApiError(400, 'User already exists with this phone number');
+    console.log('User already exists, returning existing profile:', phone);
+    return successResponse(res, { user: existingUser }, 'User already exists', 200);
   }
 
   // Generate referral code
@@ -334,8 +336,8 @@ router.post('/create-user', asyncHandler(async (req, res) => {
     .from('users')
     .insert({
       phone,
-      name,
-      email,
+      name: name || 'User', // Default name
+      email: email || null, // Optional email
       verified: true,
       referral_code: referralCode,
       membership_tier: 'bronze',

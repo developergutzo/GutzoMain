@@ -21,6 +21,9 @@ export interface CartItem {
     description?: string;
     category?: string;
   };
+  variantId?: string;
+  addons?: any[];
+  specialInstructions?: string;
 }
 
 interface CartState {
@@ -51,7 +54,8 @@ type CartAction =
   | { type: 'SET_MIGRATION_STATUS'; payload: 'none' | 'pending' | 'completed' | 'failed' }
   | { type: 'CLEAR_CART' }
   | { type: 'LOAD_CART'; payload: Partial<Omit<CartState, 'optimisticUpdates' | 'migrationStatus'>> }
-  | { type: 'MERGE_CART'; payload: { items: CartItem[] } };
+  | { type: 'MERGE_CART'; payload: { items: CartItem[] } }
+  | { type: 'UPDATE_ITEM_ID'; payload: { productId: string; newId: string } };
 
 interface CartContextType extends CartState {
   addItem: (product: Product, vendor: Vendor, quantity: number) => void;
@@ -256,6 +260,25 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         totalItems,
         totalAmount
       };
+      return {
+        ...state,
+        items: newItems,
+        totalItems,
+        totalAmount
+      };
+    }
+
+    case 'UPDATE_ITEM_ID': {
+      const { productId, newId } = action.payload;
+      const newItems = state.items.map(item =>
+        item.productId === productId
+          ? { ...item, id: newId }
+          : item
+      );
+      return {
+        ...state,
+        items: newItems
+      };
     }
 
     case 'REMOVE_ITEM': {
@@ -384,15 +407,17 @@ const transformCartFromAPI = (apiCart: any): { items: CartItem[]; totalItems: nu
     console.log(`🔄 Transforming cart item ${index + 1} with fresh product data:`, item);
     
     const transformedItem = {
-      id: `${item.productId}_${Date.now()}_api`,
-      productId: item.productId,
-      vendorId: item.vendorId,
+      // Use the actual database ID if available, otherwise generate one (for guest/optimistic)
+      // This is CRITICAL for updates/deletes to work against the backend
+      id: item.id || `${item.productId || item.product_id}_${Date.now()}_api`,
+      productId: item.productId || item.product_id,
+      vendorId: item.vendorId || item.vendor_id,
       // Fresh product data from products table
-      name: item.name,
-      price: item.price,
+      name: item.name || item.product?.name,
+      price: item.price || item.product?.price,
       quantity: item.quantity,
       vendor: {
-        id: item.vendorId,
+        id: item.vendorId || item.vendor_id,
         name: item.vendorName || item.vendor?.name || 'Unknown Vendor',
         image: item.vendor?.image || ''
       },
@@ -421,15 +446,21 @@ const transformCartFromAPI = (apiCart: any): { items: CartItem[]; totalItems: nu
 const transformCartToAPI = (cartItems: CartItem[]) => {
   console.log('🔄 Transforming cart to lean API format:', cartItems);
   
-  const leanCartItems = cartItems.map(item => ({
-    productId: item.productId,
-    vendorId: item.vendorId,
-    quantity: item.quantity
-    // Note: We no longer store name, price, image, etc. in cart table
-    // These will be fetched fresh from products table when needed
-  }));
+  const leanCartItems = cartItems.map(item => {
+    // Validate critical fields
+    if (!item.productId) console.warn('⚠️ Missing productId in cart item:', item);
+    if (!item.vendorId) console.warn('⚠️ Missing vendorId in cart item:', item);
+
+    return {
+      product_id: item.productId,
+      vendor_id: item.vendorId,
+      quantity: item.quantity,
+      variant_id: item.variantId || null,
+      addons: item.addons || null,
+      special_instructions: item.specialInstructions || null
+    };
+  });
   
-  console.log('✅ Transformed to lean cart format:', leanCartItems);
   return leanCartItems;
 };
 
@@ -461,22 +492,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const handleAuthenticatedCartLoad = async (userPhone: string) => {
     try {
       const hasGuestCart = localStorage.getItem(GUEST_CART_KEY);
-      const migrationKey = `${CART_MIGRATION_KEY}_${userPhone}`;
-      const hasMigrated = localStorage.getItem(migrationKey);
+      // We don't check for previous migration ("hasMigrated") anymore.
+      // If a guest cart exists in localStorage, it means we have new items to merge,
+      // because we strictly delete GUEST_CART_KEY after every successful migration.
 
       console.log('🔍 Checking cart migration status:', {
         hasGuestCart: !!hasGuestCart,
-        hasMigrated: !!hasMigrated,
         userPhone,
         guestCartContent: hasGuestCart ? JSON.parse(hasGuestCart) : null
       });
 
-      if (hasGuestCart && !hasMigrated) {
+      if (hasGuestCart) {
         console.log('🚀 Starting cart migration process...');
         await migrateGuestCartOnLogin(userPhone);
-        
-        // Mark migration as completed
-        localStorage.setItem(migrationKey, 'completed');
         
         // Clear guest cart after successful migration
         console.log('🧹 Clearing guest cart after successful migration');
@@ -602,6 +630,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [isAuthenticated, clearGuestCart, state.items.length]);
 
   // Save authenticated user's cart to database when cart changes
+  // Save authenticated user's cart to database when cart changes
+  // DISABLED: This causes a race condition where the background sync (which wipes and recreates the cart)
+  // changes all the IDs while we are trying to update specific items via PUT/DELETE.
+  // Granular updates (addItem, updateQuantity, etc.) now handle their own API sync.
+  /*
   useEffect(() => {
     const saveAuthenticatedCart = async () => {
       if (isAuthenticated && user && state.items.length > 0 && state.migrationStatus !== 'pending') {
@@ -613,6 +646,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const timeoutId = setTimeout(saveAuthenticatedCart, 1000);
     return () => clearTimeout(timeoutId);
   }, [state.items, state.migrationStatus, isAuthenticated, user]);
+  */
 
   // Migrate guest cart on login - enhanced for immediate sync
   const migrateGuestCartOnLogin = useCallback(async (userId: string) => {
@@ -646,7 +680,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   let existingCartData: { items: CartItem[]; totalItems: number; totalAmount: number } = { items: [], totalItems: 0, totalAmount: 0 };
       try {
         const existingCartResponse = await apiService.getUserCart(userId);
-        existingCartData = transformCartFromAPI(existingCartResponse);
+        // Correctly unwrap API response
+        existingCartData = transformCartFromAPI(existingCartResponse.data || existingCartResponse);
         console.log('🔍 Existing user cart check:', {
           hasExistingCart: existingCartData.items.length > 0,
           existingItems: existingCartData.items.length
@@ -711,6 +746,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         try {
           await saveCartToDB(userId, finalCartToMigrate.items);
           console.log('✅ Migrated cart saved to database');
+          
+          // CRITICAL: Reload from DB to replace synthetic IDs with real DB UUIDs
+          // This prevents "Cart item not found" errors on subsequent updates
+          console.log('🔄 Reloading cart to sync real IDs...');
+          await loadUserCartFromDB(userId);
         } catch (saveError) {
           console.error('❌ Error saving migrated cart:', saveError);
         }
@@ -749,7 +789,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const cartResponse = await apiService.getUserCart(userId);
-      const cartData = transformCartFromAPI(cartResponse);
+      // Backend returns { success: true, data: { items: [...] } }
+      // We must pass the inner 'data' object to the transformer
+      const cartData = transformCartFromAPI(cartResponse.data || cartResponse);
       console.log('✅ User cart loaded from database:', { 
         items: cartData.items?.length || 0,
         cartData 
@@ -795,16 +837,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isAuthenticated, user]);
 
+  // Enhanced addItem with direct persistence
   const addItem = (product: Product, vendor: Vendor, quantity: number = 1) => {
-    dispatch({ type: 'ADD_ITEM', payload: { product, vendor, quantity } });
+    // Redirect to optimistic version which handles API sync
+    addItemOptimistic(product, vendor, quantity);
   };
 
   const removeItem = (productId: string) => {
     dispatch({ type: 'REMOVE_ITEM', payload: { productId } });
   };
 
+  // Enhanced updateQuantity with direct persistence
   const updateQuantity = (productId: string, quantity: number) => {
-    dispatch({ type: 'UPDATE_QUANTITY', payload: { productId, quantity } });
+    // Redirect to optimistic version which handles API sync
+    updateQuantityOptimistic(productId, quantity);
   };
 
   // Optimistic quantity update with background sync
@@ -822,21 +868,124 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     // Only sync with API if user is authenticated
     if (isAuthenticated && user) {
+      if (!currentItem) {
+        console.error('❌ Cannot update: Item not found in cart for product:', productId);
+        dispatch({ type: 'ROLLBACK_UPDATE', payload: { productId } });
+        return;
+      }
+
+      let cartItemId = currentItem.id;
+
+      // Check if we have a synthetic ID (temporary local ID)
+      if (typeof cartItemId === 'string' && cartItemId.includes('_')) {
+        console.log('⚠️ Detected synthetic ID for update. Attempting to resolve real DB ID...', cartItemId);
+        
+        try {
+          // Attempt to fetch fresh cart data to find the real ID
+          const cartResponse = await apiService.getUserCart(user.phone);
+          const freshData = transformCartFromAPI(cartResponse.data || cartResponse);
+          const freshItem = freshData.items.find(i => i.productId === productId);
+          
+          if (freshItem && freshItem.id && !freshItem.id.includes('_')) {
+            console.log('✅ Resolved real ID from server:', freshItem.id);
+            cartItemId = freshItem.id;
+            
+            // Update local state with the real ID for future operations
+            dispatch({ 
+              type: 'UPDATE_ITEM_ID', 
+              payload: { productId, newId: cartItemId } 
+            });
+          } else {
+             // If we still can't find it, it means the ADD operation hasn't completed or failed.
+             // We can't update what doesn't exist in DB.
+             console.warn('⏳ Real ID not found yet (add op pending?). Queueing retry...');
+             // Simple delay retry or just fail silently/rollback?
+             // For now, let's wait a bit and try one more time
+             await new Promise(resolve => setTimeout(resolve, 1000));
+             
+             const retryResponse = await apiService.getUserCart(user.phone);
+             const retryData = transformCartFromAPI(retryResponse.data || retryResponse);
+             const retryItem = retryData.items.find(i => i.productId === productId);
+             
+             if (retryItem && retryItem.id && !retryItem.id.includes('_')) {
+                cartItemId = retryItem.id;
+                dispatch({ type: 'UPDATE_ITEM_ID', payload: { productId, newId: cartItemId } });
+             } else {
+                console.error('❌ Failed to resolve real ID. Item might not be in DB yet.');
+                dispatch({ type: 'ROLLBACK_UPDATE', payload: { productId } });
+                toast.error('Syncing... please try again in a moment.');
+                return;
+             }
+          }
+        } catch (resolveError) {
+          console.error('❌ Error resolving real ID:', resolveError);
+          dispatch({ type: 'ROLLBACK_UPDATE', payload: { productId } });
+          return;
+        }
+      }
+
       try {
-        const success = await apiService.updateCartItem(user.phone, productId, { quantity });
+        console.log('🔄 Syncing update with API using Cart Item ID:', cartItemId);
+        const success = await apiService.updateCartItem(user.phone, cartItemId, { quantity });
         
         if (success) {
           console.log('✅ Cart item update synced with API successfully');
           dispatch({ type: 'CONFIRM_UPDATE', payload: { productId } });
         } else {
-          console.error('❌ Cart item update failed on API');
-          dispatch({ type: 'ROLLBACK_UPDATE', payload: { productId } });
-          toast.error('Failed to update cart. Please try again.');
+          throw new Error('Update failed');
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ API sync failed for cart update:', error);
+        
+        // Aggressive Self-Healing: If 404, invalid ID, or mismatch
+        // catch (500) which usually happens on invalid UUID syntax
+        if (
+             error.message?.includes('404') || 
+             error.message?.includes('not found') || 
+             error.message?.includes('invalid input syntax') ||
+             error.message?.includes('500')
+           ) {
+            console.log('⚠️ Cart item issue identified (ID mismatch/Invalid). Recovering...');
+            
+            try {
+                // 1. Fetch fresh cart directly
+                const cartResponse = await apiService.getUserCart(user.phone);
+                const freshData = transformCartFromAPI(cartResponse.data || cartResponse);
+                
+                // 2. Find the item by Product ID (which is constant)
+                const freshItem = freshData.items.find(i => i.productId === productId);
+                
+                if (freshItem && freshItem.id) {
+                     console.log('✅ Found fresh item in DB:', { oldId: cartItemId, newId: freshItem.id });
+                     
+                     // 3. Update local state with the correct ID
+                     dispatch({ 
+                       type: 'UPDATE_ITEM_ID', 
+                       payload: { productId, newId: freshItem.id } 
+                     });
+                     
+                     // 4. Retry the update with the fresh ID
+                     console.log('🔄 Retrying update with fresh ID...');
+                     const retrySuccess = await apiService.updateCartItem(user.phone, freshItem.id, { quantity });
+                     
+                     if (retrySuccess) {
+                        console.log('✅ Retry successful! Cart synced.');
+                        dispatch({ type: 'CONFIRM_UPDATE', payload: { productId } });
+                        return; // Exit successfully
+                     }
+                } else {
+                    console.log('❌ Item not found in fresh cart - it must have been deleted.');
+                    dispatch({ type: 'REMOVE_ITEM', payload: { productId } });
+                    return;
+                }
+            } catch (retryError) {
+                console.error('❌ Retry failed:', retryError);
+            }
+        }
+
+        // Fallback for other errors or failed retry
         dispatch({ type: 'ROLLBACK_UPDATE', payload: { productId } });
-        toast.error('Cart update failed. Please check your connection.');
+        toast.error('Failed to update cart. Please refresh.');
       }
     } else {
       // For guest users, confirm immediately (no API sync needed)
@@ -853,24 +1002,55 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     // Only sync with API if user is authenticated
     if (isAuthenticated && user) {
+      const existingItem = state.items.find(item => item.productId === product.id);
+      
       try {
-        const currentQuantity = state.items.find(item => item.productId === product.id)?.quantity || 0;
-        const newQuantity = currentQuantity + quantity;
-        
-        const success = await apiService.updateCartItem(user.phone, product.id, { quantity: newQuantity });
-        
-        if (success) {
-          console.log('✅ Cart item addition synced with API successfully');
+        if (existingItem && existingItem.id && !existingItem.id.endsWith('_api')) {
+             // Case 1: Item exists and has a real DB ID -> Update Quantity
+             const newQuantity = existingItem.quantity + quantity;
+             const success = await apiService.updateCartItem(user.phone, existingItem.id, { quantity: newQuantity });
+             
+             if (success) {
+               console.log('✅ Cart item update synced with API successfully');
+             } else {
+               throw new Error('Update failed');
+             }
         } else {
-          console.error('❌ Cart item addition failed on API, rolling back');
-          dispatch({ type: 'UPDATE_QUANTITY', payload: { productId: product.id, quantity: currentQuantity } });
-          toast.error('Failed to add item to cart. Please try again.');
+             // Case 2: New item OR existing item with temp ID -> Add to Cart (POST)
+             // Using POST /cart will either create a new item or increment if it exists (depending on backend logic)
+             // But backend generally expects POST for add.
+             const response = await apiService.addToCart(user.phone, {
+                product_id: product.id,
+                quantity: quantity,
+                vendor_id: vendor.id
+             });
+             
+             // Extract real ID from response
+             // Response might be wrapped in { success: true, data: { id: ... } } or just return data
+             const responseData = response.data || response;
+             
+             if (responseData && (responseData.id || responseData.cart_id)) {
+                const realId = responseData.id || responseData.cart_id;
+                console.log('✅ Added to cart, got real ID:', realId);
+                
+                // CRITICAL: Update local state with real ID so next update uses it
+                dispatch({ 
+                   type: 'UPDATE_ITEM_ID', 
+                   payload: { productId: product.id, newId: realId } 
+                });
+             }
         }
+
       } catch (error) {
         console.error('❌ API sync failed for cart addition:', error);
+        // Rollback on error
         const currentQuantity = state.items.find(item => item.productId === product.id)?.quantity || 0;
         const rollbackQuantity = Math.max(0, currentQuantity - quantity);
-        dispatch({ type: 'UPDATE_QUANTITY', payload: { productId: product.id, quantity: rollbackQuantity } });
+        if (rollbackQuantity === 0) {
+             dispatch({ type: 'REMOVE_ITEM', payload: { productId: product.id } });
+        } else {
+             dispatch({ type: 'UPDATE_QUANTITY', payload: { productId: product.id, quantity: rollbackQuantity } });
+        }
         toast.error('Failed to add item. Please check your connection.');
       }
     }

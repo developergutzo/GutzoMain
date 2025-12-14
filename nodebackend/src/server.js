@@ -65,18 +65,23 @@ app.use((req, res, next) => {
   next();
 });
 
+// Trust proxy (required for correct IP detection behind Caddy/Nginx)
+app.set('trust proxy', 1);
+
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 200,
-  message: { success: false, message: 'Too many requests, please try again later.' }
+  max: 2000, // Increased for dev/testing
+  message: { success: false, message: 'Too many requests, please try again later.' },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
 app.use('/api/', limiter);
 
 // Stricter limit for OTP
 const otpLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 3,
+  max: 10, // Increased for dev/testing
   message: { success: false, message: 'Too many OTP requests. Wait 1 minute.' }
 });
 app.use('/api/auth/send-otp', otpLimiter);
