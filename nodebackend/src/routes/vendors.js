@@ -153,6 +153,7 @@ router.get('/:id/products', asyncHandler(async (req, res) => {
     .from('products')
     .select(`
       *,
+      vendor:vendors(*),
       variants:product_variants(*),
       addons:product_addons(*)
     `)

@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 type Product = GlobalProduct & {
   action?: "add" | "reserve" | "soldout";
   review_count?: number; // From DB
-  vendor?: { name: string }; // From DB join
+  vendor?: any; // From DB join
 };
 
 interface InstantPicksProps {
@@ -120,21 +120,21 @@ const InstantPicks: React.FC<InstantPicksProps> = ({ noPadding = false, vendorId
                           addItem(
                             product,
                             {
-                              id: product.vendor_id || 'v1',
+                              id: product.vendor?.id || product.vendor_id || 'v1',
                               name: product.vendor?.name || 'Vendor',
-                              description: '',
-                              location: '',
-                              rating: 5,
-                              image: '',
-                              deliveryTime: '',
-                              minimumOrder: 0,
-                              deliveryFee: 0,
-                              cuisineType: '',
-                              phone: '',
-                              isActive: true,
-                              isFeatured: false,
-                              created_at: '2025-12-01T00:00:00Z',
-                              tags: []
+                              description: product.vendor?.description || '',
+                              location: product.vendor?.location || '',
+                              rating: product.vendor?.rating || 5,
+                              image: product.vendor?.image || '',
+                              deliveryTime: product.vendor?.delivery_time || product.vendor?.deliveryTime || '',
+                              minimumOrder: product.vendor?.minimum_order || product.vendor?.minimumOrder || 0,
+                              deliveryFee: product.vendor?.delivery_fee || product.vendor?.deliveryFee || 0,
+                              cuisineType: product.vendor?.cuisine_type || product.vendor?.cuisineType || '',
+                              phone: product.vendor?.phone || '',
+                              isActive: true, // Assuming active if we are seeing products
+                              isFeatured: product.vendor?.is_featured || false,
+                              created_at: product.vendor?.created_at || new Date().toISOString(),
+                              tags: product.vendor?.tags || []
                             },
                             1
                           )
