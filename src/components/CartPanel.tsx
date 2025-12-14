@@ -272,29 +272,16 @@ export function CartPanel({ isOpen, onClose, isAuthenticated = false, onShowLogi
               const includedGstDelivery = deliveryFee - (deliveryFee / (1 + FEES_GST_RATE));
               const includedGstPlatform = platformFee - (platformFee / (1 + FEES_GST_RATE));
               const includedGstFees = includedGstDelivery + includedGstPlatform;
-              const total = subtotal + deliveryFee + platformFee; // All values are GST-inclusive as per rules
+              const total = subtotal; // Fees only shown in Review Order page
               return (
                 <>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Items ({totalItems})</span>
                     <span className="text-gray-900">₹{subtotal.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Delivery Fee (incl. 18% GST)</span>
-                    <span className="text-gray-900">₹{deliveryFee.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Platform Fee (incl. 18% GST)</span>
-                    <span className="text-gray-900">₹{platformFee.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">GST included in items @5%</span>
-                    <span className="text-gray-900">₹{includedGstItems.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">GST included in fees @18%</span>
-                    <span className="text-gray-900">₹{includedGstFees.toFixed(2)}</span>
-                  </div>
+                  
+                  {/* Fees removed from Cart view as per request - displayed in Review Order/Checkout only */}
+                  
                   <div className="pt-2">
                     <div className="flex justify-between font-medium">
                       <span className="text-gray-900">Total</span>

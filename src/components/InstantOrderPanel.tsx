@@ -115,8 +115,8 @@ export function InstantOrderPanel({
   // - Platform fee is flat ₹10 including 18% GST
   const ITEMS_GST_RATE = 0.05; // 5%
   const FEES_GST_RATE = 0.18; // 18%
-  const DELIVERY_FEE = 50;
-  const PLATFORM_FEE = 10;
+  const DELIVERY_FEE = 1;
+  const PLATFORM_FEE = 1;
 
   // Digital wallet options
   const digitalWallets = [

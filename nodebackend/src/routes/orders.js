@@ -57,9 +57,9 @@ const calculateOrderTotal = async (items, vendorId, couponCode = null) => {
     .eq('id', vendorId)
     .single();
 
-  const deliveryFee = vendor?.delivery_fee || 50; // Default to 50 if missing, matching UI
+  const deliveryFee = vendor?.delivery_fee || 1; // Default to 1 for testing
   const packagingFee = 0; // Removed separate packaging fee
-  const platformFee = 10; // Fixed platform fee matching UI (incl 18% GST)
+  const platformFee = 1; // Fixed platform fee to 1 for testing
   let discount = 0;
 
   // Apply coupon if provided
