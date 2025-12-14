@@ -1,5 +1,8 @@
 import CartStrip from "./CartStrip";
 import { CartPanel } from "./CartPanel";
+import { LoginPanel } from "./auth/LoginPanel";
+import { ProfilePanel } from "./auth/ProfilePanel";
+import { useAuth } from "../contexts/AuthContext";
       <CartStrip />
     import FutureMeals from "./FutureMeals";
     <FutureMeals />
@@ -95,6 +98,32 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId }) => {
   const vendor = vendorFromState || vendors.find(v => v.id === id);
   const [showVendorDetails, setShowVendorDetails] = useState(true);
   const [selectedMealPlan, setSelectedMealPlan] = useState<any | null>(null);
+  const { isAuthenticated, user, login, logout } = useAuth();
+  const [showLoginPanel, setShowLoginPanel] = useState(false);
+  const [showProfilePanel, setShowProfilePanel] = useState(false);
+  const [profilePanelContent, setProfilePanelContent] = useState<'profile' | 'orders' | 'address'>('profile');
+
+  const handleShowLogin = () => setShowLoginPanel(true);
+  const handleCloseAuth = () => setShowLoginPanel(false);
+  
+  const handleAuthComplete = async (authData: any) => {
+    try {
+      await login(authData);
+      setShowLoginPanel(false);
+    } catch (error) {
+      console.error("Login failed", error);
+    }
+  };
+
+  const handleShowProfile = (content: 'profile' | 'orders' | 'address') => {
+    setProfilePanelContent(content);
+    setShowProfilePanel(true);
+  };
+
+  const handleLogout = () => {
+    logout();
+    setShowProfilePanel(false);
+  };
 
   // Framer Motion slide variants (fixed for smooth, fast animation)
   const slideVariants = {
@@ -115,7 +144,12 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId }) => {
       <div className="vendor-details-page desktop" style={{ background: '#f7f7fa', minHeight: '100vh' }}>
         {/* Always render header; use CSS for responsive visibility */}
         <div className="hidden lg:block">
-          <Header onShowCart={() => setShowCartPanel(true)} />
+          <Header 
+            onShowCart={() => setShowCartPanel(true)} 
+            onShowLogin={handleShowLogin}
+            onShowProfile={handleShowProfile}
+            onLogout={handleLogout}
+          />
         </div>
         <div
           style={{
@@ -160,9 +194,27 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId }) => {
       <CartPanel
         isOpen={showCartPanel}
         onClose={() => setShowCartPanel(false)}
-        isAuthenticated={false}
-        onShowLogin={() => {}}
+        isAuthenticated={isAuthenticated}
+        onShowLogin={handleShowLogin}
         onShowCheckout={() => {}}
+      />
+      
+      <LoginPanel 
+        isOpen={showLoginPanel}
+        onClose={handleCloseAuth}
+        onAuthComplete={handleAuthComplete}
+      />
+      
+      <ProfilePanel 
+        isOpen={showProfilePanel}
+        onClose={() => setShowProfilePanel(false)}
+        onLogout={handleLogout}
+        content={profilePanelContent}
+        userInfo={user ? {
+          name: user.name,
+          phone: user.phone,
+          email: user.email
+        } : null}
       />
     </div>
   );
