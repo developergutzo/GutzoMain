@@ -156,7 +156,7 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId }) => {
           {/* Today's best picks section inside same container */}
           <InstantPicks noPadding vendorId={vendor.id} />
         </div>
-      <CartStrip onShowCart={() => setShowCartPanel(true)} />
+      {!showCartPanel && <CartStrip onShowCart={() => setShowCartPanel(true)} />}
       <CartPanel
         isOpen={showCartPanel}
         onClose={() => setShowCartPanel(false)}
