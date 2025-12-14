@@ -3,11 +3,9 @@ import { CartPanel } from "./CartPanel";
 import { LoginPanel } from "./auth/LoginPanel";
 import { ProfilePanel } from "./auth/ProfilePanel";
 import { useAuth } from "../contexts/AuthContext";
-      <CartStrip />
-    import FutureMeals from "./FutureMeals";
-    <FutureMeals />
-  import MenuCategories from "./MenuCategories";
-  <MenuCategories />
+import { InstantOrderPanel } from "./InstantOrderPanel";
+import { PaymentSuccessModal } from "./PaymentSuccessModal";
+import { AddressModal } from "./auth/AddressModal";
 import React, { useState, useEffect } from "react";
 
 // Simple right panel for desktop
@@ -90,7 +88,8 @@ interface VendorDetailsPageProps {
 const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId }) => {
   const [showCartPanel, setShowCartPanel] = useState(false);
   const { vendors, loading } = useVendors();
-  const { addItem, getItemQuantity, isItemInCart } = useCart();
+
+  const { addItem, getItemQuantity, isItemInCart, items: cartItems } = useCart();
   const { currentRoute, navigate } = useRouter();
   const location = useLocation();
   const vendorFromState = location.state?.vendor;
@@ -101,6 +100,13 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId }) => {
   const { isAuthenticated, user, login, logout } = useAuth();
   const [showLoginPanel, setShowLoginPanel] = useState(false);
   const [showProfilePanel, setShowProfilePanel] = useState(false);
+
+  const [showCheckoutPanel, setShowCheckoutPanel] = useState(false);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
+  const [paymentSuccessData, setPaymentSuccessData] = useState<any>(null);
+  const [addressRefreshTrigger, setAddressRefreshTrigger] = useState(0);
+  const [newlyAddedAddressId, setNewlyAddedAddressId] = useState<string | undefined>(undefined);
   const [profilePanelContent, setProfilePanelContent] = useState<'profile' | 'orders' | 'address'>('profile');
 
   const handleShowLogin = () => setShowLoginPanel(true);
@@ -123,6 +129,23 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId }) => {
   const handleLogout = () => {
     logout();
     setShowProfilePanel(false);
+  };
+
+  const handleShowCheckout = () => {
+    setShowCartPanel(false);
+    setShowCheckoutPanel(true);
+  };
+
+  const handlePaymentSuccess = (data: any) => {
+    setShowCheckoutPanel(false);
+    setPaymentSuccessData(data);
+    setShowPaymentSuccess(true);
+  };
+
+  const handleAddressAdded = async (address: any) => {
+    if (address && address.id) setNewlyAddedAddressId(address.id);
+    setAddressRefreshTrigger(prev => prev + 1);
+    setShowAddressModal(false);
   };
 
   // Framer Motion slide variants (fixed for smooth, fast animation)
@@ -190,13 +213,47 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId }) => {
           {/* Today's best picks section inside same container */}
           <InstantPicks noPadding vendorId={vendor.id} />
         </div>
-      {!showCartPanel && <CartStrip onShowCart={() => setShowCartPanel(true)} />}
+      {(!showCartPanel && !showCheckoutPanel) && <CartStrip onShowCart={() => setShowCartPanel(true)} />}
       <CartPanel
         isOpen={showCartPanel}
         onClose={() => setShowCartPanel(false)}
         isAuthenticated={isAuthenticated}
         onShowLogin={handleShowLogin}
-        onShowCheckout={() => {}}
+        onShowCheckout={handleShowCheckout}
+      />
+
+      <InstantOrderPanel
+        isOpen={showCheckoutPanel}
+        onClose={() => setShowCheckoutPanel(false)}
+        cartItems={cartItems}
+        onPaymentSuccess={handlePaymentSuccess}
+        onAddAddress={() => setShowAddressModal(true)}
+        refreshTrigger={addressRefreshTrigger}
+        newAddressId={newlyAddedAddressId}
+      />
+
+      {paymentSuccessData && (
+        <PaymentSuccessModal
+          isOpen={showPaymentSuccess}
+          onClose={() => setShowPaymentSuccess(false)}
+          paymentDetails={paymentSuccessData.paymentDetails}
+          orderSummary={paymentSuccessData.orderSummary}
+          onViewOrders={() => {
+            setShowPaymentSuccess(false);
+            setProfilePanelContent('orders');
+            setShowProfilePanel(true);
+          }}
+          onContinueExploring={() => {
+            setShowPaymentSuccess(false);
+            navigate('/');
+          }}
+        />
+      )}
+
+      <AddressModal
+        isOpen={showAddressModal}
+        onClose={() => setShowAddressModal(false)}
+        onSave={handleAddressAdded}
       />
       
       <LoginPanel 
