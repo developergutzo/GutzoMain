@@ -550,6 +550,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const clearCart = useCallback(async () => {
     console.log('🧹 Clearing cart...', { isAuthenticated, userPhone: user?.phone });
     
+    // Set loading state
+    dispatch({ type: 'SET_LOADING', payload: true });
+
+    // Clear guest cart storage just in case (to prevent fallbacks)
+    localStorage.removeItem(GUEST_CART_KEY);
+    const migrationKeys = Object.keys(localStorage).filter(key => 
+      key.startsWith(CART_MIGRATION_KEY)
+    );
+    migrationKeys.forEach(key => localStorage.removeItem(key));
+
     // Clear local state immediately
     dispatch({ type: 'CLEAR_CART' });
     
@@ -564,10 +574,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         toast.error('Cart cleared locally, but database sync failed');
       }
     } else {
-      // For guests, also clear localStorage
-      clearGuestCart();
+      // For guests, we already cleared localStorage above
+      // Ensure specific keys are definitely gone
+      localStorage.removeItem(GUEST_CART_KEY); 
     }
-  }, [isAuthenticated, user, clearGuestCart]);
+    
+    // Stop loading state
+    dispatch({ type: 'SET_LOADING', payload: false });
+  }, [isAuthenticated, user]);
 
   // Track previous authentication state to detect actual logout events
   const prevAuthStateRef = useRef(isAuthenticated);
