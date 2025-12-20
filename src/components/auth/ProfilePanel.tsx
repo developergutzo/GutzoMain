@@ -704,11 +704,7 @@ export function ProfilePanel({ isOpen, onClose, onLogout, content, userInfo, onV
           />
 
           {/* Footer */}
-          <div className="mt-6 pt-4 border-t border-gray-100">
-            <p className="text-xs text-gray-500 text-center">
-              Gutzo v1.0 • Healthy meals delivered fresh
-            </p>
-          </div>
+
         </div>
       </div>
     </>
