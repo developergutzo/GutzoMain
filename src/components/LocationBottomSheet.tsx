@@ -87,14 +87,7 @@ export function LocationBottomSheet({ isOpen, onClose, onShowAddressList }: Loca
               <div className="text-sm text-gray-600 mt-1">
                 {isLoading ? "Please wait..." : error ? error : locationDisplay}
               </div>
-              {!isInCoimbatore && !isLoading && !error && (
-                <div
-                  className="text-xs mt-2 px-2 py-1 rounded-[0.8rem] inline-block"
-                  style={{ color: colors.warning, background: '#FFF7E6' }}
-                >
-                  Service currently available only in Coimbatore
-                </div>
-              )}
+
             </div>
           </div>
 
