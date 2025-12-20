@@ -3,14 +3,28 @@ import { nodeApiService } from "../utils/nodeApi";
 import { toast } from "sonner";
 
 export type MealPlan = {
-	id: string; // Added ID for key
+	id: string;
 	title: string;
 	vendor: string;
+	vendorId?: string;
+	vendorLogo?: string;
 	rating: number;
 	price: string;
 	schedule: string;
 	features: string[];
 	image: string;
+	// Dynamic UI Fields
+	trustText?: string;
+	
+	// Menu Data
+	dayMenu?: Array<{
+		day_of_week: number;
+		day_name: string;
+		breakfast_item?: string;
+		lunch_item?: string;
+		dinner_item?: string;
+		snack_item?: string;
+	}>;
 };
 
 interface WeeklyMealPlansSectionProps {
@@ -30,13 +44,20 @@ export default function WeeklyMealPlansSection({ noPadding = false, onMealPlanCl
 					const mappedPlans: MealPlan[] = response.data.map((plan: any) => ({
 						id: plan.id,
 						title: plan.title,
-						vendor: plan.vendor?.name || 'Unknown Vendor',
-						rating: Number(plan.rating) || 4.5, // Ensure number
+						vendor: plan.vendor?.name || plan.vendor_name || 'Unknown Vendor',
+						vendorId: plan.vendor?.id || plan.vendor_id,
+						vendorLogo: plan.vendor?.image,
+						rating: Number(plan.rating) || 4.5,
 						price: plan.price_display || `₹${plan.price_per_day}/day`,
 						schedule: plan.schedule || 'Mon – Sat',
 						features: plan.features || [],
-						image: plan.thumbnail || plan.banner_url || '/assets/mealplans/proteinpower.png', // Fallback
+						image: plan.thumbnail || plan.banner_url || '/assets/mealplans/proteinpower.png',
+						// Dynamic Fields
+						trustText: plan.trust_text,
+						dayMenu: plan.day_menu || [],
 					}));
+					console.log('API Response for Meal Plans:', response.data);
+					console.log('Mapped Plans:', mappedPlans);
 					setMealPlans(mappedPlans);
 				}
 			} catch (error) {

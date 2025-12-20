@@ -128,20 +128,20 @@ const MealPlanBottomSheet: React.FC<MealPlanBottomSheetProps> = ({ plan, onClose
            {/* ----------------------------------------------------------------------
                PERSISTENT HEADER (Plan Info + Close)
                ---------------------------------------------------------------------- */}
-           <div className="flex items-start justify-between px-6 pt-4 pb-0 flex-shrink-0">
-             <div>
-                <h2 className="text-2xl font-bold text-gray-900 leading-tight">{plan.title || 'Healthy Daily'}</h2>
-                <p className="text-xs text-gray-500 mt-0.5">by {plan.vendor || 'FitMeals Inc.'}</p>
+           {!showFullMenu && (
+             <div className="flex items-start justify-between px-6 pt-4 pb-0 flex-shrink-0">
+               <div>
+                  <h2 className="text-2xl font-bold text-gray-900 leading-tight">{plan.title}</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">by {plan.vendor}</p>
+               </div>
+               <div className="flex items-center gap-3">
+                  {/* Veg Toggle */}
+                  <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 transition-colors">
+                    <X className="h-5 w-5 text-gray-500" />
+                  </button>
+               </div>
              </div>
-             <div className="flex items-center gap-3">
-                {/* Veg Toggle */}
-
-
-                <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 transition-colors">
-                  <X className="h-5 w-5 text-gray-500" />
-                </button>
-             </div>
-           </div>
+           )}
 
         {showFullMenu ? (
            // ----------------------------------------------------------------------
@@ -160,52 +160,102 @@ const MealPlanBottomSheet: React.FC<MealPlanBottomSheetProps> = ({ plan, onClose
               </div>
 
               {/* Scrollable Menu List */}
-              <div className="flex-1 overflow-y-auto bg-gray-50 p-4">
-                 <div className="space-y-4">
-                  {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day, idx) => (
-                     <div key={day} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
-                        <div className="flex justify-between items-center mb-3">
-                           <h3 className="font-bold text-gray-900">{day}</h3>
-                           {day === 'Tuesday' && <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: '#E8F6F1', color: '#1BA672' }}>TOMORROW</span>}
-                        </div>
-                        <div className="space-y-3">
-                           <div className="flex gap-3">
-                              <div className="mt-1 w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center shrink-0">
-                                 <Sun size={14} className="text-orange-500" />
-                              </div>
-                              <div>
-                                 <p className="text-xs font-bold text-gray-400 uppercase">Breakfast</p>
-                                 <p className="text-sm font-medium text-gray-800">Idly & Sambar {idx % 2 === 0 ? '+ Chutney' : ''}</p>
-                              </div>
-                           </div>
-                           <div className="flex gap-3">
-                              <div className="mt-1 w-8 h-8 rounded-full bg-green-50 flex items-center justify-center shrink-0">
-                                 <Utensils size={14} className="text-green-500" />
-                              </div>
-                              <div>
-                                 <p className="text-xs font-bold text-gray-400 uppercase">Lunch</p>
-                                 <p className="text-sm font-medium text-gray-800">{idx % 2 === 0 ? 'Sambar Rice & Poriyal' : 'Curd Rice & Pickle'}</p>
-                              </div>
-                           </div>
-                           <div className="flex gap-3">
-                              <div className="mt-1 w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center shrink-0">
-                                 <Moon size={14} className="text-indigo-500" />
-                              </div>
-                              <div>
-                                 <p className="text-xs font-bold text-gray-400 uppercase">Dinner</p>
-                                 <p className="text-sm font-medium text-gray-800">Chapati & {idx % 2 === 0 ? 'Paneer Gravy' : 'Dal Fry'}</p>
-                              </div>
-                           </div>
-                        </div>
-                     </div>
-                  ))}
-                  
-                  <div className="p-4 rounded-xl bg-gray-100 border border-gray-200 text-center">
-                     <p className="text-sm font-medium text-gray-500">Sunday is a rest day 😴</p>
-                     <p className="text-xs text-gray-400 mt-1">Kitchen closed</p>
+               <div className="flex-1 overflow-y-auto bg-gray-50 p-4">
+                  <div className="space-y-4">
+                   {/* Dynamic Menu Loop */}
+                   {[1, 2, 3, 4, 5, 6, 0].map((dayNum) => {
+                      const dayData = plan.dayMenu?.find(d => d.day_of_week === dayNum);
+                      const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayNum];
+                      
+                      const today = new Date();
+                      const todayNum = today.getDay();
+                      const tomorrowNum = (todayNum + 1) % 7;
+                      const dayAfterTomorrowNum = (todayNum + 2) % 7;
+                      
+                      const isTomorrow = dayNum === tomorrowNum;
+                      const isDayAfterTomorrow = dayNum === dayAfterTomorrowNum;
+
+                      // Check if Tomorrow is a Rest Day (to decide if we show "Day After Tomorrow" tag)
+                      const tomorrowData = plan.dayMenu?.find(d => d.day_of_week === tomorrowNum);
+                      const tomorrowIsRestDay = !(tomorrowData && (tomorrowData.breakfast_item || tomorrowData.lunch_item || tomorrowData.dinner_item || tomorrowData.snack_item));
+
+                      // Enhanced Logic: Any day with no menu items is a "Rest Day"
+                      const hasMenuData = dayData && (dayData.breakfast_item || dayData.lunch_item || dayData.dinner_item || dayData.snack_item);
+
+                      if (!hasMenuData) {
+                         return (
+                            <div key={dayNum} className="p-4 rounded-xl bg-gray-100 border border-gray-200 text-center relative overflow-hidden">
+                               {isTomorrow && (
+                                  <div className="absolute top-0 right-0 bg-green-500 text-white text-[10px] px-2 py-0.5 rounded-bl-lg font-bold">
+                                     TOMORROW
+                                  </div>
+                               )}
+                               <p className="text-sm font-medium text-gray-500">{dayName} is a rest day 😴</p>
+                               <p className="text-xs text-gray-400 mt-1">Kitchen closed</p>
+                            </div>
+                         );
+                      }
+
+                      if (!dayData) return null;
+
+                      return (
+                         <div key={dayNum} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+                            <div className="flex justify-between items-center mb-3">
+                               <h3 className="font-bold text-gray-900">{dayName}</h3>
+                              {isTomorrow && <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: '#E8F6F1', color: '#1BA672' }}>TOMORROW</span>}
+                              {(isDayAfterTomorrow && tomorrowIsRestDay) && <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: '#E8F6F1', color: '#1BA672' }}>DAY AFTER TOMORROW</span>}
+                            </div>
+                            <div className="space-y-3">
+                               {dayData.breakfast_item && (
+                                  <div className="flex gap-3">
+                                     <div className="mt-1 w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center shrink-0">
+                                        <Sun size={14} className="text-orange-500" />
+                                     </div>
+                                     <div>
+                                        <p className="text-xs font-bold text-gray-400 uppercase">Breakfast</p>
+                                        <p className="text-sm font-medium text-gray-800">{dayData.breakfast_item}</p>
+                                     </div>
+                                  </div>
+                               )}
+                               {dayData.lunch_item && (
+                                  <div className="flex gap-3">
+                                     <div className="mt-1 w-8 h-8 rounded-full bg-green-50 flex items-center justify-center shrink-0">
+                                        <Utensils size={14} className="text-green-500" />
+                                     </div>
+                                     <div>
+                                        <p className="text-xs font-bold text-gray-400 uppercase">Lunch</p>
+                                        <p className="text-sm font-medium text-gray-800">{dayData.lunch_item}</p>
+                                     </div>
+                                  </div>
+                               )}
+                               {dayData.dinner_item && (
+                                  <div className="flex gap-3">
+                                     <div className="mt-1 w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center shrink-0">
+                                        <Moon size={14} className="text-indigo-500" />
+                                     </div>
+                                     <div>
+                                        <p className="text-xs font-bold text-gray-400 uppercase">Dinner</p>
+                                        <p className="text-sm font-medium text-gray-800">{dayData.dinner_item}</p>
+                                     </div>
+                                  </div>
+                               )}
+                               {dayData.snack_item && (
+                                  <div className="flex gap-3">
+                                     <div className="mt-1 w-8 h-8 rounded-full bg-pink-50 flex items-center justify-center shrink-0">
+                                        <Coffee size={14} className="text-pink-500" />
+                                     </div>
+                                     <div>
+                                        <p className="text-xs font-bold text-gray-400 uppercase">Snack</p>
+                                        <p className="text-sm font-medium text-gray-800">{dayData.snack_item}</p>
+                                     </div>
+                                  </div>
+                               )}
+                            </div>
+                         </div>
+                      );
+                   })}
                   </div>
-                 </div>
-              </div>
+               </div>
            </div>
         ) : (
            // ----------------------------------------------------------------------
@@ -227,47 +277,104 @@ const MealPlanBottomSheet: React.FC<MealPlanBottomSheetProps> = ({ plan, onClose
                  onClick={() => setShowFullMenu(true)}
                  className="bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-gray-100 p-3 cursor-pointer group hover:border-[#CDEBDD] hover:shadow-[0_4px_16px_rgba(27,166,114,0.1)] transition-all duration-200"
               >
-                 <div className="flex justify-between items-start mb-2">
-                     <h3 className="text-lg font-bold text-gray-900 group-hover:text-gutzo-primary transition-colors">Tuesday <span className="text-orange-500 font-medium">(Tomorrow)</span></h3>
-                 </div>
-                 
-                 <div className="flex gap-3 items-center">
-                    {/* Left: Menu List */}
-                    <div className="flex-1 space-y-2">
-                       {[
-                          { label: 'BREAKFAST', item: 'Idly & Sambar' },
-                          { label: 'LUNCH', item: 'Sambar & Rice' },
-                          { label: 'DINNER', item: 'Chapati & Gravy' }
-                       ].map((m, i) => (
-                          <div key={i} className="flex gap-2.5">
-                             <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0" />
-                             <div>
-                                <p className="text-[12px] font-bold text-gray-500 uppercase tracking-wide" style={{ fontSize: '12px' }}>{m.label}</p>
-                                <p className="text-[12px] font-semibold text-gray-800 leading-tight" style={{ fontSize: '12px' }}>{m.item}</p>
-                             </div>
-                          </div>
-                       ))}
-                    </div>
+                  {(() => {
+                     const today = new Date().getDay(); // 0-6
+                     let targetDay = (today + 1) % 7;
+                     let dayData = plan.dayMenu?.find(d => d.day_of_week === targetDay);
+                     
+                     // Logic: If tomorrow has no menu (e.g. Sunday/Rest), try the day after
+                     let isDayAfterTomorrow = false;
+                     if (!dayData || (!dayData.breakfast_item && !dayData.lunch_item && !dayData.dinner_item)) {
+                        targetDay = (today + 2) % 7;
+                        dayData = plan.dayMenu?.find(d => d.day_of_week === targetDay);
+                        isDayAfterTomorrow = true;
+                     }
 
-                    {/* Right: Image */}
-                    <div className="w-[100px] h-[100px] min-w-[100px] min-h-[100px] rounded-xl overflow-hidden bg-gray-100 shrink-0 group-hover:opacity-90 transition-opacity" style={{ width: '100px', height: '100px', minWidth: '100px', minHeight: '100px' }}>
-                       <img 
-                          src={plan.image || '/assets/mealplans/proteinpower.png'} 
-                          alt="Meal"
-                          className="w-full h-full object-cover"
-                       />
-                    </div>
-                 </div>
+                     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                     const targetDayName = dayNames[targetDay];
+
+                     return (
+                        <>
+                           <div className="flex justify-between items-start mb-2">
+                              <h3 className="text-lg font-bold text-gray-900 group-hover:text-gutzo-primary transition-colors">
+                                 {targetDayName} <span className="text-orange-500 font-medium">({isDayAfterTomorrow ? 'Day After Tomorrow' : 'Tomorrow'})</span>
+                              </h3>
+                           </div>
+                           
+                           <div className="flex gap-3 items-center">
+                              {/* Left: Menu List */}
+                              <div className="flex-1 space-y-2">
+                                 {(dayData && (dayData.breakfast_item || dayData.lunch_item || dayData.dinner_item || dayData.snack_item)) ? (
+                                    <>
+                                       {dayData.breakfast_item && (
+                                          <div className="flex gap-2.5">
+                                             <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0" />
+                                             <div>
+                                                <p className="text-[12px] font-bold text-gray-500 uppercase tracking-wide" style={{ fontSize: '12px' }}>BREAKFAST</p>
+                                                <p className="text-[12px] font-semibold text-gray-800 leading-tight" style={{ fontSize: '12px' }}>{dayData.breakfast_item}</p>
+                                             </div>
+                                          </div>
+                                       )}
+                                       {dayData.lunch_item && (
+                                          <div className="flex gap-2.5">
+                                             <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
+                                             <div>
+                                                <p className="text-[12px] font-bold text-gray-500 uppercase tracking-wide" style={{ fontSize: '12px' }}>LUNCH</p>
+                                                <p className="text-[12px] font-semibold text-gray-800 leading-tight" style={{ fontSize: '12px' }}>{dayData.lunch_item}</p>
+                                             </div>
+                                          </div>
+                                       )}
+                                       {dayData.dinner_item && (
+                                          <div className="flex gap-2.5">
+                                             <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0" />
+                                             <div>
+                                                <p className="text-[12px] font-bold text-gray-500 uppercase tracking-wide" style={{ fontSize: '12px' }}>DINNER</p>
+                                                <p className="text-[12px] font-semibold text-gray-800 leading-tight" style={{ fontSize: '12px' }}>{dayData.dinner_item}</p>
+                                             </div>
+                                          </div>
+                                       )}
+                                       {dayData.snack_item && (
+                                          <div className="flex gap-2.5">
+                                             <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-pink-500 shrink-0" />
+                                             <div>
+                                                <p className="text-[12px] font-bold text-gray-500 uppercase tracking-wide" style={{ fontSize: '12px' }}>SNACK</p>
+                                                <p className="text-[12px] font-semibold text-gray-800 leading-tight" style={{ fontSize: '12px' }}>{dayData.snack_item}</p>
+                                             </div>
+                                          </div>
+                                       )}
+                                    </>
+                                 ) : (
+                                    <div className="py-2">
+                                    <div className="py-2">
+                                       <p className="text-sm font-medium text-gray-500 italic">Menu not available for next 2 days</p>
+                                    </div>
+                                    </div>
+                                 )}
+                              </div>
+                              
+                              {/* Right: Image */}
+                              <div className="w-[100px] h-[100px] min-w-[100px] min-h-[100px] rounded-xl overflow-hidden bg-gray-100 shrink-0 group-hover:opacity-90 transition-opacity" style={{ width: '100px', height: '100px', minWidth: '100px', minHeight: '100px' }}>
+                                 <img 
+                                    src={plan.image || '/assets/mealplans/proteinpower.png'} 
+                                    alt="Meal"
+                                    className="w-full h-full object-cover"
+                                 />
+                              </div>
+                           </div>
+                           </>
+                        );
+                     })()}
 
 
-                 <div className="mt-0 pt-3 border-t border-gray-100 flex justify-center">
+                  <div className="mt-0 pt-3 border-t border-gray-100 flex justify-center">
                      <button 
                         className="w-full flex items-center justify-center gap-1 text-gray-500 text-[12px] font-medium group-hover:text-gutzo-primary group-hover:gap-2 transition-all py-0.5"
                      >
                         View full menu <ArrowRight size={14} />
                      </button>
-                 </div>
-              </div>
+                  </div>
+               </div>
+            </div>
 
               {/* 3️⃣ Plan Configuration */}
               <div className="mt-4">
@@ -711,7 +818,7 @@ const MealPlanBottomSheet: React.FC<MealPlanBottomSheetProps> = ({ plan, onClose
 
               </div>
             </div>
-            </div>
+
 
            {/* Sticky Bottom CTA */}
            <div className="flex-shrink-0 p-6 bg-white border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-[1003]">

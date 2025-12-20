@@ -11,7 +11,7 @@ router.get('/', optionalAuth, asyncHandler(async (req, res) => {
 
   let query = supabaseAdmin
     .from('meal_plans')
-    .select('*, vendor:vendors(id, name, image, rating)', { count: 'exact' })
+    .select('*, vendor:vendors(id, name, image, rating), day_menu:meal_plan_day_menu(*)', { count: 'exact' })
     .eq('is_active', true);
 
   if (featured === 'true') query = query.eq('is_featured', true);
