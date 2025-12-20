@@ -71,9 +71,11 @@ import InstantPicks from "./InstantPicks";
 import { useVendors } from "../hooks/useVendors";
 import { useCart } from "../contexts/CartContext";
 import { useLocation } from 'react-router-dom';
+import { useLocation as useUserLocation } from '../contexts/LocationContext';
 import { Header } from "../components/Header";
 import WeeklyMealPlansSection from "../components/WeeklyMealPlansSection";
 import MealPlanBottomSheet from "./MealPlanBottomSheet";
+
 
 function getVendorIdFromRoute(route: string) {
   const match = route.match(/\/vendor\/(.+)/);
@@ -92,6 +94,7 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId }) => {
   const { addItem, getItemQuantity, isItemInCart, items: cartItems } = useCart();
   const { currentRoute, navigate } = useRouter();
   const location = useLocation();
+  const { locationLabel } = useUserLocation();
   const vendorFromState = location.state?.vendor;
   const id = vendorId || getVendorIdFromRoute(currentRoute);
   const vendor = vendorFromState || vendors.find(v => v.id === id);
@@ -187,7 +190,13 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId }) => {
             name={vendor.name}
             rating={vendor.rating}
             reviews={400}
-            location={vendor.location || vendor.deliveryTime}
+            location={vendor.location}
+            deliveryTime={vendor.deliveryTime}
+            userAddressLabel={locationLabel || undefined}
+            onAddressClick={() => {
+              setProfilePanelContent('address');
+              setShowProfilePanel(true);
+            }}
             tags={["Vegan Friendly", "High Protein", "Fresh Daily"]}
             onBack={handleClose}
           />

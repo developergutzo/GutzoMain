@@ -519,18 +519,28 @@ export function ProfilePanel({ isOpen, onClose, onLogout, content, userInfo, onV
   const handleSetDefaultAddress = async (addressId: string) => {
     if (!user?.phone) return;
 
+    // Optimistic Update: Immediately update UI
+    const optimisticAddresses = addresses.map(addr => ({
+      ...addr,
+      is_default: addr.id === addressId
+    }));
+    setAddresses(optimisticAddresses);
+
     try {
       const result = await AddressApi.setDefaultAddress(addressId, user.phone);
       if (result.success) {
-        // Refresh addresses list
+        // Refresh addresses list from server to be sure
         fetchUserAddresses();
         // Refresh global location context to update header
         refreshLocation();
       } else {
         console.error('Failed to set default address:', result.error);
+        // Revert on failure (fetched from server)
+        fetchUserAddresses();
       }
     } catch (error) {
       console.error('Error setting default address:', error);
+      fetchUserAddresses();
     }
   };
 
@@ -609,7 +619,15 @@ export function ProfilePanel({ isOpen, onClose, onLogout, content, userInfo, onV
               </Button>
             </div>
             {addresses.map((address) => (
-              <div key={address.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-gutzo-primary/30 transition-colors duration-200">
+              <div 
+                key={address.id} 
+                onClick={() => !address.is_default && handleSetDefaultAddress(address.id)}
+                className={`rounded-xl p-4 transition-all duration-200 cursor-pointer ${
+                  address.is_default 
+                    ? 'bg-[#E8F6F1] border-2 border-[#1BA672] shadow-md' 
+                    : 'bg-gray-50 border border-gray-200 hover:border-[#1BA672]/30'
+                }`}
+              >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     {/* Address Type Header */}
@@ -618,18 +636,13 @@ export function ProfilePanel({ isOpen, onClose, onLogout, content, userInfo, onV
                       <span className="font-medium text-sm text-gutzo-primary capitalize">
                         {address.type === 'other' && address.custom_label ? address.custom_label : address.type}
                       </span>
-                      {address.is_default && (
-                        <span className="px-2 py-1 bg-gutzo-selected text-white text-xs rounded-full">
-                          Default
-                        </span>
-                      )}
                     </div>
 
                     {/* Address Details */}
                     <div className="text-sm text-gray-700 space-y-1">
                       {(() => {
                         const displayText = AddressApi.getAddressDisplayText(address);
-                        // Clean up full address only if it starts with the display text (case-insensitive check might be safer but strict is okay for same source)
+                        // Clean up full address only if it starts with the display text
                         let cleanFullAddress = address.full_address;
                         if (cleanFullAddress && cleanFullAddress.startsWith(displayText)) {
                           cleanFullAddress = cleanFullAddress.substring(displayText.length).replace(/^[\s,]+/, '').trim();
@@ -637,29 +650,19 @@ export function ProfilePanel({ isOpen, onClose, onLogout, content, userInfo, onV
                         
                         return (
                           <>
-                            <p className="font-medium">{displayText}</p>
+                            <p className="font-medium text-gray-900">{displayText}</p>
                             {address.landmark && (
-                              <p className="text-gray-600">Landmark: {address.landmark}</p>
+                              <p className="text-gray-500 text-xs">Landmark: {address.landmark}</p>
                             )}
                             {cleanFullAddress && <p className="text-gray-600">{cleanFullAddress}</p>}
                           </>
                         );
                       })()}
                       {address.postal_code && (
-                        <p className="text-gray-600">Postal Code: {address.postal_code}</p>
+                        <p className="text-gray-500 text-xs">Postal Code: {address.postal_code}</p>
                       )}
                       {address.delivery_instructions && (
-                        <p className="text-gray-600">Instructions: {address.delivery_instructions}</p>
-                      )}
-                      
-                      {/* Set Default Option */}
-                      {!address.is_default && (
-                        <button
-                          onClick={() => handleSetDefaultAddress(address.id)}
-                          className="mt-3 text-xs font-semibold text-gutzo-primary hover:text-gutzo-primary-hover flex items-center transition-opacity hover:opacity-80 px-0 bg-transparent border-none cursor-pointer"
-                        >
-                           Make Default
-                        </button>
+                        <p className="text-gray-500 text-xs">Note: {address.delivery_instructions}</p>
                       )}
                     </div>
                   </div>
@@ -667,7 +670,10 @@ export function ProfilePanel({ isOpen, onClose, onLogout, content, userInfo, onV
                   {/* Actions */}
                   <div className="flex items-center space-x-2 ml-3">
                     <button
-                      onClick={() => handleDeleteAddress(address.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteAddress(address.id);
+                      }}
                       disabled={deletingAddressId === address.id}
                       className="p-2 hover:bg-red-50 rounded-lg transition-colors duration-200 disabled:opacity-50"
                     >

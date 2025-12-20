@@ -20,6 +20,8 @@ export interface Vendor {
   logo_url?: string;
   contact_whatsapp?: string;
   products?: Product[];
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface Product {
@@ -72,7 +74,7 @@ export interface CartItem {
 export interface Address {
   id?: string;
   user_id?: string;
-  type: 'home' | 'work' | 'other';
+  type: "home" | "work" | "other";
   address_line1: string;
   address_line2?: string;
   city: string;
@@ -82,6 +84,10 @@ export interface Address {
   is_default: boolean;
   created_at?: string;
   updated_at?: string;
+  latitude?: number;
+  longitude?: number;
+  label?: string;
+  custom_label?: string;
 }
 
 export interface User {

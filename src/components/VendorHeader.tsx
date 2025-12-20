@@ -6,12 +6,15 @@ interface VendorHeaderProps {
   rating: number;
   reviews: number;
   location: string;
+  deliveryTime: string;
   tags: string[];
+  userAddressLabel?: string;
+  onAddressClick?: () => void;
   onBack?: () => void;
 }
 
 
-const VendorHeader: React.FC<VendorHeaderProps> = ({ name, rating, reviews, location, tags, onBack }) => {
+const VendorHeader: React.FC<VendorHeaderProps> = ({ name, rating, reviews, location, deliveryTime, tags, userAddressLabel, onAddressClick, onBack }) => {
   return (
     <>
       {/* Header Section (outside card) */}
@@ -69,11 +72,24 @@ const VendorHeader: React.FC<VendorHeaderProps> = ({ name, rating, reviews, loca
           <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', minHeight: 28 }}>
               <span style={{ color: '#6B6B6B', fontWeight: 700, fontSize: '0.95rem', marginRight: 6 }}>Outlet</span>
-              <span style={{ color: '#6B6B6B', fontWeight: 500, fontSize: '0.95rem', marginLeft: 2 }}>Goldwins ▼</span>
+              <span style={{ color: '#6B6B6B', fontWeight: 500, fontSize: '0.95rem', marginLeft: 2 }}>{location}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', minHeight: 28 }}>
-              <span style={{ color: '#1A1A1A', fontWeight: 700, fontSize: '0.95rem', marginRight: 6 }}>25–30 mins</span>
-              <span style={{ color: '#6B6B6B', fontWeight: 500, fontSize: '0.95rem' }}>Delivery to Home</span>
+              <span style={{ color: '#1A1A1A', fontWeight: 700, fontSize: '0.95rem', marginRight: 6 }}>{deliveryTime}</span>
+              <span 
+                onClick={onAddressClick}
+                style={{ 
+                  color: '#6B6B6B', 
+                  fontWeight: 500, 
+                  fontSize: '0.95rem',
+                  cursor: onAddressClick ? 'pointer' : 'default',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+              >
+                Delivery to {userAddressLabel || "Location"}
+                {onAddressClick && <span style={{ fontSize: '0.8em', marginLeft: 4 }}>▼</span>}
+              </span>
             </div>
           </div>
         </div>
