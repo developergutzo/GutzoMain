@@ -42,6 +42,8 @@ export const processVendorData = (vendor: any): Vendor => ({
     : (vendor.isFeatured || false),
   created_at: vendor.created_at || new Date().toISOString(),
   tags: vendor.tags || generateTagsFromDescription(vendor.description || ""),
+  latitude: vendor.latitude ? parseFloat(vendor.latitude) : undefined,
+  longitude: vendor.longitude ? parseFloat(vendor.longitude) : undefined,
 });
 
 // Keep exact category names without normalization

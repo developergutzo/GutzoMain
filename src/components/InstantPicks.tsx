@@ -17,9 +17,10 @@ type Product = GlobalProduct & {
 interface InstantPicksProps {
   noPadding?: boolean;
   vendorId?: string;
+  disabled?: boolean;
 }
 
-const InstantPicksItem: React.FC<{ product: Product; isLast: boolean; noPadding: boolean }> = ({ product, isLast, noPadding }) => {
+const InstantPicksItem: React.FC<{ product: Product; isLast: boolean; noPadding: boolean; disabled?: boolean }> = ({ product, isLast, noPadding, disabled }) => {
   const { addItem, updateQuantity, getItemQuantity } = useCart();
   const quantity = getItemQuantity(product.id);
 
@@ -44,9 +45,10 @@ const InstantPicksItem: React.FC<{ product: Product; isLast: boolean; noPadding:
             {product.action === "add" && (
               quantity === 0 ? (
                 <button
-                  className="instant-picks-btn instant-picks-btn-green"
+                  className={`instant-picks-btn ${disabled ? 'instant-picks-btn-gray' : 'instant-picks-btn-green'}`}
+                  disabled={disabled}
                   onClick={() =>
-                    addItem(
+                    !disabled && addItem(
                       product,
                       {
                         id: product.vendor?.id || product.vendor_id || 'v1',
@@ -68,7 +70,7 @@ const InstantPicksItem: React.FC<{ product: Product; isLast: boolean; noPadding:
                       1
                     )
                   }
-                >ADD</button>
+                >{'ADD'}</button>
               ) : (
                 <div className="qty-selector">
                   <button className="qty-btn" onClick={() => updateQuantity(product.id, quantity - 1)}>-</button>
@@ -88,7 +90,7 @@ const InstantPicksItem: React.FC<{ product: Product; isLast: boolean; noPadding:
   );
 };
 
-const InstantPicks: React.FC<InstantPicksProps> = ({ noPadding = false, vendorId }) => {
+const InstantPicks: React.FC<InstantPicksProps> = ({ noPadding = false, vendorId, disabled }) => {
   const [products, setProducts] = React.useState<Product[]>([]);
   const [loading, setLoading] = React.useState(true);
 
@@ -181,6 +183,7 @@ const InstantPicks: React.FC<InstantPicksProps> = ({ noPadding = false, vendorId
           product={product} 
           isLast={idx === products.length - 1} 
           noPadding={noPadding} 
+          disabled={disabled}
         />
       ))}
     </div>

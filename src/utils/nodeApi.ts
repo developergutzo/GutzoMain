@@ -668,6 +668,13 @@ class NodeApiService {
         return this.request(`/delivery-zones/${zoneId}/vendors`);
     }
 
+    async getDeliveryServiceability(pickup: any, drop: any) {
+        return this.request("/delivery/serviceability", {
+            method: "POST",
+            body: { pickup_details: pickup, drop_details: drop },
+        });
+    }
+
     // --- Banners ---
     async getBanners() {
         return this.request("/banners");

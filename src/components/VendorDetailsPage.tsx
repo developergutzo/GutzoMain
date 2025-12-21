@@ -6,6 +6,8 @@ import { useAuth } from "../contexts/AuthContext";
 import { InstantOrderPanel } from "./InstantOrderPanel";
 import { PaymentSuccessModal } from "./PaymentSuccessModal";
 import { AddressModal } from "./auth/AddressModal";
+import { AddressApi } from "../utils/addressApi";
+import { nodeApiService as apiService } from "../utils/nodeApi";
 import React, { useState, useEffect } from "react";
 
 // Simple right panel for desktop
@@ -94,7 +96,7 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId }) => {
   const { addItem, getItemQuantity, isItemInCart, items: cartItems } = useCart();
   const { currentRoute, navigate } = useRouter();
   const location = useLocation();
-  const { locationLabel } = useUserLocation();
+  const { location: userLocation, locationLabel } = useUserLocation();
   const vendorFromState = location.state?.vendor;
   const id = vendorId || getVendorIdFromRoute(currentRoute);
   const vendor = vendorFromState || vendors.find(v => v.id === id);
@@ -111,6 +113,65 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId }) => {
   const [addressRefreshTrigger, setAddressRefreshTrigger] = useState(0);
   const [newlyAddedAddressId, setNewlyAddedAddressId] = useState<string | undefined>(undefined);
   const [profilePanelContent, setProfilePanelContent] = useState<'profile' | 'orders' | 'address'>('profile');
+  const [dynamicEta, setDynamicEta] = useState<string | null>(null);
+  const [isServiceable, setIsServiceable] = useState<boolean>(true);
+
+  useEffect(() => {
+    const fetchEta = async () => {
+      // Ensure vendor has coordinates
+      if (!vendor || !vendor.latitude || !vendor.longitude) return;
+
+      let userLat = userLocation?.coordinates?.latitude;
+      let userLng = userLocation?.coordinates?.longitude;
+
+      // If authenticated, try to use default address coordinates for more precision
+      if (isAuthenticated && user?.phone) {
+        try {
+          const res = await AddressApi.getDefaultAddress(user.phone);
+          if (res.success && res.data && res.data.latitude && res.data.longitude) {
+            userLat = res.data.latitude;
+            userLng = res.data.longitude;
+          }
+        } catch (e) {
+          // Fallback to GPS/Context location
+        }
+      }
+
+      if (userLat && userLng) {
+        try {
+          const pickup = {
+            address: vendor.location || "Vendor Location",
+            latitude: vendor.latitude,
+            longitude: vendor.longitude,
+          };
+          const drop = {
+            address: "Customer Location",
+            latitude: userLat,
+            longitude: userLng,
+          };
+
+          const res = await apiService.getDeliveryServiceability(pickup, drop);
+          
+          if (res.data) {
+             // Check serviceability explicitly
+             const serviceable = res.data.is_serviceable !== undefined ? res.data.is_serviceable : (res.data.value?.is_serviceable ?? true);
+             setIsServiceable(serviceable);
+
+             if (serviceable) {
+                const eta = res.data.pickup_eta || res.data.value?.pickup_eta;
+                if (eta) setDynamicEta(eta);
+             } else {
+                setDynamicEta(null);
+             }
+          }
+        } catch (e) {
+          console.error("Failed to fetch dynamic ETA", e);
+        }
+      }
+    };
+
+    fetchEta();
+  }, [vendor, isAuthenticated, user?.phone, userLocation]);
 
   const handleShowLogin = () => setShowLoginPanel(true);
   const handleCloseAuth = () => setShowLoginPanel(false);
@@ -191,7 +252,7 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId }) => {
             rating={vendor.rating}
             reviews={400}
             location={vendor.location}
-            deliveryTime={vendor.deliveryTime}
+            deliveryTime={!isServiceable ? "Not Serviceable" : (dynamicEta || vendor.deliveryTime)}
             userAddressLabel={locationLabel || undefined}
             onAddressClick={() => {
               setProfilePanelContent('address');
@@ -204,6 +265,7 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId }) => {
           <WeeklyMealPlansSection
             noPadding
             onMealPlanClick={plan => setSelectedMealPlan(plan)}
+            disabled={!isServiceable}
           />
           {/* Show next steps UI when a meal plan is selected */}
           {selectedMealPlan && (
@@ -220,7 +282,7 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId }) => {
             )
           )}
           {/* Today's best picks section inside same container */}
-          <InstantPicks noPadding vendorId={vendor.id} />
+          <InstantPicks noPadding vendorId={vendor.id} disabled={!isServiceable} />
         </div>
       {(!showCartPanel && !showCheckoutPanel) && <CartStrip onShowCart={() => setShowCartPanel(true)} />}
       <CartPanel

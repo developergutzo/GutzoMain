@@ -30,9 +30,10 @@ export type MealPlan = {
 interface WeeklyMealPlansSectionProps {
 	noPadding?: boolean; 
 	onMealPlanClick?: (plan: MealPlan) => void;
+	disabled?: boolean;
 }
 
-export default function WeeklyMealPlansSection({ noPadding = false, onMealPlanClick }: WeeklyMealPlansSectionProps) {
+export default function WeeklyMealPlansSection({ noPadding = false, onMealPlanClick, disabled }: WeeklyMealPlansSectionProps) {
 	const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
 	const [loading, setLoading] = useState(true);
 
@@ -139,7 +140,7 @@ export default function WeeklyMealPlansSection({ noPadding = false, onMealPlanCl
 								cursor: 'pointer',
 							}}
 							onClick={() => {
-								if (typeof onMealPlanClick === 'function') {
+								if (!disabled && typeof onMealPlanClick === 'function') {
 									onMealPlanClick(plan);
 								}
 							}}
@@ -178,13 +179,15 @@ export default function WeeklyMealPlansSection({ noPadding = false, onMealPlanCl
 								<p className="text-[11px] text-gray-500 mb-0.5">by {plan.vendor}</p>
 								<p className="text-[12px] text-gray-600 mb-1" style={{ fontSize: '12px' }}>{plan.schedule}</p>
 								<p className="text-[13px] font-semibold text-gray-900 mb-2">{plan.price}</p>
-								<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', marginTop: 4, marginBottom: 10, cursor: 'pointer' }}>
-									<span style={{ color: '#1BA672', fontFamily: 'Poppins', fontWeight: 400, fontSize: 14, letterSpacing: '-0.01em', marginRight: 4 }}>
+								<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', marginTop: 4, marginBottom: 10, cursor: disabled ? 'not-allowed' : 'pointer' }}>
+									<span style={{ color: disabled ? '#9CA3AF' : '#1BA672', fontFamily: 'Poppins', fontWeight: 400, fontSize: 14, letterSpacing: '-0.01em', marginRight: 4 }}>
 										View Plan
 									</span>
-									<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-										<path d="M6 4L10 8L6 12" stroke="#1BA672" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-									</svg>
+									{!disabled && (
+										<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<path d="M6 4L10 8L6 12" stroke="#1BA672" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+										</svg>
+									)}
 								</div>
 							</div>
 						</div>
