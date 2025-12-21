@@ -3,8 +3,9 @@ import { MapPin, Search, Crosshair, Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 
-// HARDCODED GOOGLE MAPS API KEY - Replace with your actual key
-const GOOGLE_MAPS_API_KEY = "AIzaSyCHTG5c0iMf2Sme31nBFDKXxOm460AGZlA"; // Replace with your actual API key
+import { getGoogleMapsApiKey } from "../utils/googleMapsConfig";
+
+const GOOGLE_MAPS_API_KEY = getGoogleMapsApiKey();
 
 interface GoogleMapPickerProps {
   onLocationSelect: (location: { lat: number; lng: number; address: string }) => void;

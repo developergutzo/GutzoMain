@@ -8,6 +8,7 @@ import { PaymentSuccessModal } from "./PaymentSuccessModal";
 import { AddressModal } from "./auth/AddressModal";
 import { AddressApi } from "../utils/addressApi";
 import { nodeApiService as apiService } from "../utils/nodeApi";
+import { DistanceService } from "../utils/distanceService";
 import React, { useState, useEffect } from "react";
 
 // Simple right panel for desktop
@@ -96,7 +97,7 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId }) => {
   const { addItem, getItemQuantity, isItemInCart, items: cartItems } = useCart();
   const { currentRoute, navigate } = useRouter();
   const location = useLocation();
-  const { location: userLocation, locationLabel } = useUserLocation();
+  const { location: userLocation, locationLabel, locationDisplay } = useUserLocation();
   const vendorFromState = location.state?.vendor;
   const id = vendorId || getVendorIdFromRoute(currentRoute);
   const vendor = vendorFromState || vendors.find(v => v.id === id);
@@ -123,14 +124,22 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId }) => {
 
       let userLat = userLocation?.coordinates?.latitude;
       let userLng = userLocation?.coordinates?.longitude;
+      let dropAddress = locationDisplay || "Customer Location";
 
       // If authenticated, try to use default address coordinates for more precision
       if (isAuthenticated && user?.phone) {
         try {
           const res = await AddressApi.getDefaultAddress(user.phone);
-          if (res.success && res.data && res.data.latitude && res.data.longitude) {
-            userLat = res.data.latitude;
-            userLng = res.data.longitude;
+          if (res.success && res.data) {
+            if (res.data.latitude && res.data.longitude) {
+              userLat = res.data.latitude;
+              userLng = res.data.longitude;
+            }
+            // Use precise address string if available
+            const formattedAddress = AddressApi.getAddressDisplayText(res.data);
+            if (formattedAddress) {
+              dropAddress = formattedAddress;
+            }
           }
         } catch (e) {
           // Fallback to GPS/Context location
@@ -145,7 +154,7 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId }) => {
             longitude: vendor.longitude,
           };
           const drop = {
-            address: "Customer Location",
+            address: dropAddress,
             latitude: userLat,
             longitude: userLng,
           };
@@ -158,8 +167,30 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId }) => {
              setIsServiceable(serviceable);
 
              if (serviceable) {
-                const eta = res.data.pickup_eta || res.data.value?.pickup_eta;
-                if (eta) setDynamicEta(eta);
+                const pickupEtaStr = res.data.pickup_eta || res.data.value?.pickup_eta;
+                
+                if (pickupEtaStr) {
+                  // Calculate travel time from vendor to customer
+                  const travelTimeStr = await DistanceService.getTravelTime(
+                    { latitude: vendor.latitude, longitude: vendor.longitude },
+                    { latitude: userLat, longitude: userLng }
+                  );
+
+                  let totalEtaDisplay = pickupEtaStr;
+
+                  if (travelTimeStr) {
+                    const pickupMins = DistanceService.parseDurationToMinutes(pickupEtaStr);
+                    const travelMins = DistanceService.parseDurationToMinutes(travelTimeStr);
+                    
+                    if (pickupMins > 0 && travelMins > 0) {
+                      const totalMins = pickupMins + travelMins;
+                      // Create a range, e.g., "35-40 mins"
+                      totalEtaDisplay = `${totalMins}-${totalMins + 5} mins`;
+                    }
+                  }
+                  
+                  setDynamicEta(totalEtaDisplay);
+                }
              } else {
                 setDynamicEta(null);
              }

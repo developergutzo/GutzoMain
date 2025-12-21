@@ -1,5 +1,5 @@
 // Google Maps configuration utility
-import { getGoogleMapsKeyWithFallback } from './figmaMakeEnvironment';
+import { getGoogleMapsKeyWithFallback } from "./figmaMakeEnvironment";
 
 declare global {
   interface Window {
@@ -13,54 +13,67 @@ declare global {
 export function getGoogleMapsApiKey(): string | null {
   // First, try to get the API key directly from environment variables
   // Since the user mentioned it's already provided in Figma Make
-  
+
   // Try Deno first (Figma Make's primary runtime)
-  if (typeof (globalThis as any).Deno !== 'undefined' && (globalThis as any).Deno?.env?.get) {
-    const denoKey = (globalThis as any).Deno.env.get('GOOGLE_MAPS_API_KEY');
-    if (denoKey && denoKey !== 'YOUR_GOOGLE_MAPS_API_KEY_HERE') {
+  if (
+    typeof (globalThis as any).Deno !== "undefined" &&
+    (globalThis as any).Deno?.env?.get
+  ) {
+    const denoKey = (globalThis as any).Deno.env.get("GOOGLE_MAPS_API_KEY");
+    if (denoKey && denoKey !== "YOUR_GOOGLE_MAPS_API_KEY_HERE") {
       return denoKey;
     }
   }
-  
+
+  // Try import.meta.env (Vite standard)
+  if (
+    typeof import.meta !== "undefined" &&
+    import.meta.env?.VITE_GOOGLE_MAPS_API_KEY
+  ) {
+    return import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  }
+
   // Try process.env
-  if (typeof process !== 'undefined' && process.env?.GOOGLE_MAPS_API_KEY) {
+  if (typeof process !== "undefined" && process.env?.GOOGLE_MAPS_API_KEY) {
     const processKey = process.env.GOOGLE_MAPS_API_KEY;
-    if (processKey && processKey !== 'YOUR_GOOGLE_MAPS_API_KEY_HERE') {
+    if (processKey && processKey !== "YOUR_GOOGLE_MAPS_API_KEY_HERE") {
       return processKey;
     }
   }
-  
+
   // Try globalThis
-  if (typeof globalThis !== 'undefined' && (globalThis as any).GOOGLE_MAPS_API_KEY) {
+  if (
+    typeof globalThis !== "undefined" && (globalThis as any).GOOGLE_MAPS_API_KEY
+  ) {
     const globalKey = (globalThis as any).GOOGLE_MAPS_API_KEY;
-    if (globalKey && globalKey !== 'YOUR_GOOGLE_MAPS_API_KEY_HERE') {
+    if (globalKey && globalKey !== "YOUR_GOOGLE_MAPS_API_KEY_HERE") {
       return globalKey;
     }
   }
-  
+
   // Try window
-  if (typeof window !== 'undefined' && window.GOOGLE_MAPS_API_KEY) {
+  if (typeof window !== "undefined" && window.GOOGLE_MAPS_API_KEY) {
     const windowKey = window.GOOGLE_MAPS_API_KEY;
-    if (windowKey && windowKey !== 'YOUR_GOOGLE_MAPS_API_KEY_HERE') {
+    if (windowKey && windowKey !== "YOUR_GOOGLE_MAPS_API_KEY_HERE") {
       return windowKey;
     }
   }
-  
+
   // Fallback to the complex detection
   return getGoogleMapsKeyWithFallback();
 }
 
 // This function should be called early in the app initialization
 export function initializeGoogleMapsConfig() {
-  if (typeof window !== 'undefined') {
+  if (typeof window !== "undefined") {
     const apiKey = getGoogleMapsApiKey();
-    
+
     if (apiKey) {
       window.GOOGLE_MAPS_API_KEY = apiKey;
-      console.log('✅ Google Maps API key configured successfully');
+      console.log("✅ Google Maps API key configured successfully");
     } else {
       // Don't show scary errors - maps will gracefully degrade
-      console.log('ℹ️ Google Maps will operate in limited mode');
+      console.log("ℹ️ Google Maps will operate in limited mode");
     }
   }
 }
