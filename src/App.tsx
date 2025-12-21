@@ -439,8 +439,7 @@ function AppContent() {
                    </div>
                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No Service Available Here</h3>
                    <p className="text-gray-500 max-w-md mx-auto mb-6">
-                     We couldn't find any vendors delivering to your current location. 
-                     Try searching for "Bangalore" or changing your delivery address.
+                     We couldn't find any vendors delivering to your current location.
                    </p>
                    <Button 
                      onClick={() => handleShowProfile('address')}
