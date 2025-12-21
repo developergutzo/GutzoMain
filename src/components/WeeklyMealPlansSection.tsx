@@ -31,9 +31,10 @@ interface WeeklyMealPlansSectionProps {
 	noPadding?: boolean; 
 	onMealPlanClick?: (plan: MealPlan) => void;
 	disabled?: boolean;
+    validVendorIds?: string[]; // IDs of vendors currently service-able/visible
 }
 
-export default function WeeklyMealPlansSection({ noPadding = false, onMealPlanClick, disabled }: WeeklyMealPlansSectionProps) {
+export default function WeeklyMealPlansSection({ noPadding = false, onMealPlanClick, disabled, validVendorIds }: WeeklyMealPlansSectionProps) {
 	const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
 	const [loading, setLoading] = useState(true);
 
@@ -63,7 +64,6 @@ export default function WeeklyMealPlansSection({ noPadding = false, onMealPlanCl
 				}
 			} catch (error) {
 				console.error("Failed to fetch meal plans:", error);
-				// toast.error("Failed to load meal plans"); // Optional: silent fail is often better for initial loading sections
 			} finally {
 				setLoading(false);
 			}
@@ -71,8 +71,13 @@ export default function WeeklyMealPlansSection({ noPadding = false, onMealPlanCl
 
 		fetchMealPlans();
 	}, []);
+    
+    // Filter displayed plans based on validVendorIds if provided
+    const displayedPlans = validVendorIds 
+        ? mealPlans.filter(plan => plan.vendorId && validVendorIds.includes(plan.vendorId))
+        : mealPlans;
 
-	if (loading) {
+    if (loading) {
 		return (
 			<section className="w-full bg-[#fafafa] pt-4 pb-8 md:pt-6 md:pb-12 lg:pt-8 lg:pb-16">
 				<div className={`w-full max-w-7xl mx-auto flex flex-col${noPadding ? '' : ' px-4 sm:px-6 lg:px-8'}`}>
@@ -99,7 +104,7 @@ export default function WeeklyMealPlansSection({ noPadding = false, onMealPlanCl
 		);
 	}
 
-	if (mealPlans.length === 0) return null;
+	if (displayedPlans.length === 0) return null;
 
 	return (
 		<section className="w-full bg-[#fafafa] pt-4 pb-8 md:pt-6 md:pb-12 lg:pt-8 lg:pb-16">
@@ -126,7 +131,7 @@ export default function WeeklyMealPlansSection({ noPadding = false, onMealPlanCl
             maxWidth: window.innerWidth < 1024 ? 'none' : '100%',
 					}}
 				>
-					{mealPlans.map((plan, idx) => (
+					{displayedPlans.map((plan, idx) => (
 						<div
 							key={plan.id || idx}
 							className="gutzo-card-hover"

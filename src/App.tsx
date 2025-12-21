@@ -386,7 +386,10 @@ function AppContent() {
         onSearchChange={setSearchQuery}
       />
       <Inspiration onOptionClick={setSelectedCategory} loading={loading} />
-      <WeeklyMealPlansSection onMealPlanClick={plan => setSelectedMealPlan(plan)} />
+      <WeeklyMealPlansSection 
+        onMealPlanClick={plan => setSelectedMealPlan(plan)} 
+        validVendorIds={filteredVendors.map(v => v.id)}
+      />
       {/* Show next steps UI when a meal plan is selected */}
       {selectedMealPlan && (
         <>
