@@ -180,17 +180,15 @@ const AddressForm = ({
     <div className="flex flex-col h-full">
       {/* Mobile Header */}
       <div className="sm:hidden flex items-center justify-between p-4 border-b border-gray-200 bg-white sticky top-0 z-10">
-        <button
-          onClick={onClose}
-          className="p-2 hover:bg-gray-100 rounded-lg -ml-2"
-        >
-          <X className="h-6 w-6 text-gray-600" />
-        </button>
         <h2 className="font-semibold text-gray-900">
           Add Delivery Address
         </h2>
-        <div className="w-10" />{" "}
-        {/* Spacer for center alignment */}
+        <button
+          onClick={onClose}
+          className="p-2 hover:bg-gray-100 rounded-lg -mr-2"
+        >
+          <X className="h-6 w-6 text-gray-600" />
+        </button>
       </div>
 
       {/* Desktop Header */}

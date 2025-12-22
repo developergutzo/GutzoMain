@@ -723,13 +723,13 @@ export function ProfilePanel({ isOpen, onClose, onLogout, content, userInfo, onV
         }
       >
         {/* Close Button */}
-        <div className="absolute top-4 left-4 z-10">
+        <div className="absolute top-4 right-4 z-10">
           <button
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors flex items-center justify-center"
             aria-label="Close profile panel"
           >
-            <X className="h-5 w-5 text-gray-500" />
+            <X className="h-6 w-6 text-gray-500" />
           </button>
         </div>
 
