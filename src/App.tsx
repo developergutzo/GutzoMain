@@ -349,7 +349,7 @@ function AppContent() {
     return <VendorDetailsPage onShowCart={handleShowCart} vendors={vendors} loading={loading} />;
   }
   // Added /checkout to the route list
-  if (typeof currentRoute === 'string' && ['/T&C','/refund_policy','/privacy_policy','/payment-status','/phonepe-soon','/contact','/about', '/partner', '/partner/login', '/partner/dashboard', '/checkout'].includes(currentRoute)) {
+  if (typeof currentRoute === 'string' && ['/T&C','/refund_policy','/privacy_policy','/payment-status','/phonepe-soon','/contact','/about', '/partner-with-gutzo', '/partner/login', '/partner/dashboard', '/checkout'].includes(currentRoute)) {
     switch(currentRoute) {
       case '/partner/login': return <PartnerLoginPage />;
       case '/partner/dashboard': return <PartnerDashboard />;
@@ -361,7 +361,7 @@ function AppContent() {
       case '/phonepe-soon': return <PhonePeComingSoon />;
       case '/contact': return <ContactPage />;
       case '/about': return <AboutPage />;
-      case '/partner': return <PartnerPage />;
+      case '/partner-with-gutzo': return <PartnerPage />;
       default: break;
     }
   }

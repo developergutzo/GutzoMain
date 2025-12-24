@@ -9,35 +9,29 @@ const router = express.Router();
 // POST /api/vendor-auth/login
 // ============================================
 router.post('/login', asyncHandler(async (req, res) => {
-  const { username, password } = req.body;
+  const { phone } = req.body;
 
-  if (!username || !password) {
-    throw new ApiError(400, 'Username and password are required');
+  if (!phone) {
+    throw new ApiError(400, 'Phone number is required');
   }
 
-  // MVP: Check username and password directly (Plain text for MVP only)
-  // TODO: Use bcrypt for production
+  // Check if vendor exists with this phone number
   const { data: vendor, error } = await supabaseAdmin
     .from('vendors')
     .select('*')
-    .eq('username', username)
+    .eq('phone', phone)
     .single();
 
   if (error || !vendor) {
-    throw new ApiError(401, 'Invalid credentials');
-  }
-
-  // Simple password check
-  if (vendor.password !== password) {
-    throw new ApiError(401, 'Invalid credentials');
+    throw new ApiError(404, 'Vendor not found');
   }
 
   if (!vendor.is_active) {
     throw new ApiError(403, 'Account is inactive. Contact Admin.');
   }
 
-  // Return success with vendor info (avoid sending password back)
-  delete vendor.password;
+  // Return success with vendor info
+  // No password to delete since we didn't check it
   
   successResponse(res, { vendor }, 'Login successful');
 }));

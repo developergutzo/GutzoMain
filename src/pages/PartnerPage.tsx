@@ -16,12 +16,7 @@ export function PartnerPage() {
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1A1A1A', fontSize: 24, lineHeight: 1 }}>
               &larr;
             </button>
-            <button
-              onClick={() => navigate('/partner/login')}
-              className="text-sm font-medium text-[#1BA672] hover:text-[#14885E]"
-            >
-              Partner Login
-            </button>
+
           </div>
         </div>
 

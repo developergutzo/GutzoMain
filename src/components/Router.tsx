@@ -1,10 +1,10 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 
-type Route = '/' | '/T&C' | '/refund_policy' | '/privacy_policy' | '/payment-status' | '/contact' | '/about' | '/partner' | '/partner/login' | '/partner/dashboard' | '/checkout' | '/phonepe-soon' | `/vendor/${string}`;
+type Route = '/' | '/T&C' | '/refund_policy' | '/privacy_policy' | '/payment-status' | '/contact' | '/about' | '/partner-with-gutzo' | '/partner/login' | '/partner/dashboard' | '/checkout' | '/phonepe-soon' | `/vendor/${string}`;
 
 interface RouterContextType {
   currentRoute: Route;
-  navigate: (route: Route) => void;
+  navigate: (route: Route, state?: any) => void;
   goBack: () => void;
 }
 
@@ -23,7 +23,7 @@ export function RouterProvider({ children }: { children: ReactNode }) {
       '/payment-status': 'Payment Status - Gutzo',
       '/contact': 'Contact Us - Gutzo',
       '/about': 'About Us - Gutzo',
-      '/partner': 'Partner with Gutzo',
+      '/partner-with-gutzo': 'Partner with Gutzo',
       '/partner/login': 'Partner Login - Gutzo',
       '/partner/dashboard': 'Kitchen Dashboard - Gutzo',
       '/checkout': 'Checkout - Gutzo',
@@ -40,7 +40,7 @@ export function RouterProvider({ children }: { children: ReactNode }) {
   // Initialize route from browser URL
   useEffect(() => {
   const path = window.location.pathname as Route;
-  const validRoutes: string[] = ['/', '/T&C', '/refund_policy', '/privacy_policy', '/payment-status', '/contact', '/about', '/partner', '/partner/login', '/partner/dashboard', '/checkout', '/phonepe-soon'];
+  const validRoutes: string[] = ['/', '/T&C', '/refund_policy', '/privacy_policy', '/payment-status', '/contact', '/about', '/partner-with-gutzo', '/partner/login', '/partner/dashboard', '/checkout', '/phonepe-soon'];
     
     // Check if it's a valid static route OR a vendor route
     if (validRoutes.includes(path) || path.startsWith('/vendor/')) {
@@ -54,13 +54,13 @@ export function RouterProvider({ children }: { children: ReactNode }) {
   }, [updateDocumentTitle]);
 
   // Navigation function
-  const navigate = useCallback((route: Route) => {
+  const navigate = useCallback((route: Route, state?: any) => {
     if (route !== currentRoute) {
       try {
         // Scroll to top immediately before route change
         window.scrollTo(0, 0);
         // Update browser history
-        window.history.pushState({}, '', route);
+        window.history.pushState(state || {}, '', route);
         // Update state directly
         setCurrentRoute(route);
         updateDocumentTitle(route);
@@ -90,7 +90,7 @@ export function RouterProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const handlePopState = () => {
     const path = window.location.pathname as Route;
-    const validRoutes: string[] = ['/', '/T&C', '/refund_policy', '/privacy_policy', '/payment-status', '/contact', '/about', '/partner', '/checkout', '/phonepe-soon'];
+    const validRoutes: string[] = ['/', '/T&C', '/refund_policy', '/privacy_policy', '/payment-status', '/contact', '/about', '/partner-with-gutzo', '/checkout', '/phonepe-soon'];
       
       if (validRoutes.includes(path) || path.startsWith('/vendor/')) {
         window.scrollTo(0, 0);

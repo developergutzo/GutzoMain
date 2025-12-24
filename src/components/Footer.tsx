@@ -51,7 +51,7 @@ export function Footer() {
              <h3 className="font-medium text-white mb-3 sm:mb-4 text-base">For Kitchens</h3>
              <div className="space-y-2 sm:space-y-3">
                <button 
-                 onClick={() => navigate('/partner')}
+                 onClick={() => navigate('/partner/login')}
                  className="block text-gray-400 hover:text-white transition-colors text-sm text-left whitespace-nowrap interactive font-normal"
                >
                  Partner with Gutzo

@@ -30,7 +30,7 @@ export function VendorInterestForm() {
   const [formData, setFormData] = useState<VendorInterestFormData>({
     kitchen_name: "",
     contact_name: "",
-    phone: "",
+    phone: history.state?.phone || "",
     email: "",
     city: "Coimbatore", // Default as requested
     food_type: "",

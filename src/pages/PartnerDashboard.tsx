@@ -55,7 +55,7 @@ export function PartnerDashboard() {
 
   const handleLogout = () => {
     localStorage.removeItem('vendor_data');
-    navigate('/partner/login');
+    navigate('/partner-with-gutzo');
     toast.info("Logged out successfully");
   };
 

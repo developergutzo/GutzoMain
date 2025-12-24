@@ -169,6 +169,7 @@ class NodeApiService {
 
     // --- Vendor Auth ---
     async vendorLogin(data: any) {
+        // data should be { phone: '...' }
         return this.request("/vendor-auth/login", {
             method: "POST",
             body: data,
