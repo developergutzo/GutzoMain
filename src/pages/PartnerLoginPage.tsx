@@ -369,7 +369,7 @@ export function PartnerLoginPage() {
         </Card>
         
         <p className="text-center text-sm text-gray-500 mt-6">
-          Having trouble? <a href="mailto:support@gutzo.in" className="font-semibold text-[#1BA672] hover:underline">Contact Support</a>
+          Having trouble? <a href="/contact" className="font-semibold text-[#1BA672] hover:underline">Contact Support</a>
         </p>
       </div>
     </div>

@@ -18,8 +18,8 @@ export function ContactPage() {
           {/* Card */}
             <div className="flex flex-col gap-5 max-w-md mx-auto">
             <ContactCard icon={<PhoneIcon />} label="Phone" value="+91 8903589068" href="tel:+918903589068" />
-            <ContactCard icon={<MailIcon />} label="Email" value="developer.gutzo@gmail.com" href="mailto:developer.gutzo@gmail.com" />
-            <ContactCard icon={<MapPinIcon />} label="Location" value="Coimbatore, Tamil Nadu" />
+            <ContactCard icon={<MailIcon />} label="Email" value="manage.gutzo@gmail.com" href="mailto:manage.gutzo@gmail.com" />
+            <ContactCard icon={<MapPinIcon />} label="Location" value="Coimbatore, Tamil Nadu, India" />
             <ContactCard icon={<WhatsAppIcon />} label="WhatsApp" value="+91 8903589068" href="https://wa.me/918903589068" />
           </div>
         </div>
