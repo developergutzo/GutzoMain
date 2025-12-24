@@ -89,7 +89,7 @@ export function PartnerLoginPage() {
       await apiService.vendorForgotPassword(email);
       toast.success("OTP sent to your email");
       setView('verify-otp');
-      setResendTimer(300); // 5 minutes
+      setResendTimer(60); // 60 seconds
     } catch (error: any) {
       setErrorMsg(error.message || "Failed to send OTP");
     } finally {
@@ -121,7 +121,7 @@ export function PartnerLoginPage() {
     try {
       await apiService.vendorForgotPassword(email);
       toast.success("OTP resent to your email");
-      setResendTimer(300); // Reset timer to 5 mins
+      setResendTimer(60); // Reset timer to 60 seconds
     } catch (error: any) {
       setErrorMsg(error.message || "Failed to resend OTP");
     } finally {
