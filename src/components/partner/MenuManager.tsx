@@ -4,6 +4,7 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Switch } from "../ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Loader2, Plus, Pencil, Trash2, X, Image as ImageIcon } from "lucide-react";
 import { nodeApiService as apiService } from "../../utils/nodeApi";
 import { toast } from "sonner";
@@ -21,31 +22,57 @@ interface Product {
   category: string;
 }
 
+interface Category {
+  id: string;
+  name: string;
+}
+
 interface MenuManagerProps {
   vendorId: string;
 }
 
 export function MenuManager({ vendorId }: MenuManagerProps) {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   useEffect(() => {
-    fetchMenu();
+    fetchData();
   }, [vendorId]);
 
-  const fetchMenu = async () => {
+  const fetchData = async () => {
     try {
-      const res = await apiService.getVendorMenu(vendorId);
-      if (res.success && res.data) {
-        setProducts(res.data.products);
+      const [menuRes, categoriesRes] = await Promise.all([
+        apiService.getVendorMenu(vendorId),
+        apiService.getCategories()
+      ]);
+
+      if (menuRes.success && menuRes.data) {
+        setProducts(menuRes.data.products);
+      }
+      if (categoriesRes.success && categoriesRes.data) {
+        setCategories(categoriesRes.data);
+      } else if (Array.isArray(categoriesRes)) {
+         // handle if it returns array directly (legacy api structure sometimes)
+         setCategories(categoriesRes);
       }
     } catch (error) {
-      toast.error('Failed to load menu');
+      toast.error('Failed to load menu data');
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchMenu = async () => {
+      // Refresh just menu
+      try {
+        const res = await apiService.getVendorMenu(vendorId);
+        if (res.success && res.data) {
+            setProducts(res.data.products);
+        }
+      } catch(e) { console.error(e); }
   };
 
   const handleDelete = async (productId: string) => {
@@ -136,6 +163,7 @@ export function MenuManager({ vendorId }: MenuManagerProps) {
               <ProductForm 
                  vendorId={vendorId} 
                  product={editingProduct} 
+                 categories={categories}
                  onClose={() => setIsEditing(false)} 
                  onSuccess={() => { setIsEditing(false); fetchMenu(); }} 
               />
@@ -146,7 +174,7 @@ export function MenuManager({ vendorId }: MenuManagerProps) {
   );
 }
 
-function ProductForm({ vendorId, product, onClose, onSuccess }: { vendorId: string, product: Product | null, onClose: () => void, onSuccess: () => void }) {
+function ProductForm({ vendorId, product, categories, onClose, onSuccess }: { vendorId: string, product: Product | null, categories: Category[], onClose: () => void, onSuccess: () => void }) {
     const [formData, setFormData] = useState({
         name: product?.name || '',
         description: product?.description || '',
@@ -154,7 +182,7 @@ function ProductForm({ vendorId, product, onClose, onSuccess }: { vendorId: stri
         image_url: product?.image_url || '',
         is_veg: product?.is_veg ?? true,
         is_available: product?.is_available ?? true,
-        category: product?.category || 'Main Course'
+        category: product?.category || (categories[0]?.name || 'Main Course')
     });
     const [loading, setLoading] = useState(false);
 
@@ -197,7 +225,23 @@ function ProductForm({ vendorId, product, onClose, onSuccess }: { vendorId: stri
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="category">Category</Label>
-                        <Input id="category" required value={formData.category} onChange={e => setFormData(prev => ({ ...prev, category: e.target.value }))} placeholder="e.g. Starter" />
+                        <Select 
+                            value={formData.category} 
+                            onValueChange={(val) => setFormData(prev => ({ ...prev, category: val }))}
+                        >
+                            <SelectTrigger id="category">
+                                <SelectValue placeholder="Select Category" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-60">
+                                {categories.map((cat) => (
+                                    <SelectItem key={cat.id} value={cat.name}>
+                                        {cat.name}
+                                    </SelectItem>
+                                ))}
+                                {/* Fallback or Custom option if needed? For now strict select */}
+                                {categories.length === 0 && <SelectItem value="Main Course">Main Course</SelectItem>}
+                            </SelectContent>
+                        </Select>
                     </div>
                 </div>
 
