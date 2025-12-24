@@ -135,7 +135,7 @@ router.get('/:id/products', asyncHandler(async (req, res) => {
   // ============================================
   router.post('/:id/products', asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const { name, description, price, image, category, is_veg, is_available } = req.body;
+    const { name, description, price, image, image_url, category, is_veg, is_available } = req.body;
   
     const { data: product, error } = await supabaseAdmin
       .from('products')
@@ -144,7 +144,7 @@ router.get('/:id/products', asyncHandler(async (req, res) => {
         name,
         description,
         price,
-        image,
+        image_url: image_url || image,
         category,
         is_veg: is_veg ?? true,
         is_available: is_available ?? true,

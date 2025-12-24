@@ -15,7 +15,7 @@ interface Product {
   name: string;
   description: string;
   price: number;
-  image: string;
+  image_url: string;
   is_veg: boolean;
   is_available: boolean;
   category: string;
@@ -70,7 +70,11 @@ export function MenuManager({ vendorId }: MenuManagerProps) {
            <h2 className="text-xl font-bold text-gray-900">Your Menu</h2>
            <p className="text-sm text-gray-500">Manage your dishes and prices</p>
         </div>
-        <Button onClick={() => { setEditingProduct(null); setIsEditing(true); }} className="bg-[#1BA672] hover:bg-[#14885E] text-white">
+        <Button 
+          onClick={() => { setEditingProduct(null); setIsEditing(true); }} 
+          className="shadow-sm"
+          style={{ backgroundColor: '#1BA672', color: 'white' }}
+        >
           <Plus className="w-4 h-4 mr-2" /> Add Item
         </Button>
       </div>
@@ -78,34 +82,40 @@ export function MenuManager({ vendorId }: MenuManagerProps) {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {products.map(product => (
           <Card key={product.id} className="overflow-hidden group hover:shadow-md transition-shadow">
-            <div className="aspect-video w-full bg-gray-100 relative">
-               <ImageWithFallback src={product.image} alt={product.name} className="w-full h-full object-cover" />
-               {!product.is_available && (
-                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                    <span className="text-white font-bold text-sm bg-red-500 px-2 py-1 rounded">SOLD OUT</span>
+            <CardContent className="p-4 flex gap-4">
+              {/* Thumbnail Image */}
+              <div className="w-24 h-24 bg-gray-100 relative rounded-lg overflow-hidden shrink-0">
+                 <ImageWithFallback src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                 {!product.is_available && (
+                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                      <span className="text-white font-bold text-[10px] bg-red-500 px-1 py-0.5 rounded">SOLD OUT</span>
+                   </div>
+                 )}
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 min-w-0 flex flex-col">
+                 <div className="flex justify-between items-start mb-1">
+                    <div>
+                      <h3 className="font-bold text-gray-900 leading-tight">{product.name}</h3>
+                      <p className="text-sm text-[#1BA672] font-semibold mt-0.5">₹{product.price}</p>
+                    </div>
+                    <div className={`shrink-0 w-3 h-3 rounded-full border ${product.is_veg ? 'border-green-600 bg-green-50' : 'border-red-600 bg-red-50'} flex items-center justify-center ml-2`}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${product.is_veg ? 'bg-green-600' : 'bg-red-600'}`}></div>
+                    </div>
                  </div>
-               )}
-            </div>
-            <CardContent className="p-4">
-               <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h3 className="font-bold text-gray-900">{product.name}</h3>
-                    <p className="text-sm text-[#1BA672] font-semibold">₹{product.price}</p>
-                  </div>
-                  <div className={`w-3 h-3 rounded-full border ${product.is_veg ? 'border-green-600 bg-green-50' : 'border-red-600 bg-red-50'} flex items-center justify-center`}>
-                      <div className={`w-1.5 h-1.5 rounded-full ${product.is_veg ? 'bg-green-600' : 'bg-red-600'}`}></div>
-                  </div>
-               </div>
-               <p className="text-xs text-gray-500 line-clamp-2 mb-4 h-8">{product.description}</p>
-               
-               <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => { setEditingProduct(product); setIsEditing(true); }}>
-                     <Pencil className="w-3 h-3 mr-1" /> Edit
-                  </Button>
-                  <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(product.id)}>
-                     <Trash2 className="w-3 h-3" />
-                  </Button>
-               </div>
+                 
+                 <p className="text-xs text-gray-500 line-clamp-2 mb-3 flex-1">{product.description}</p>
+                 
+                 <div className="flex gap-2 mt-auto">
+                    <Button variant="outline" size="sm" className="h-8 text-xs flex-1" onClick={() => { setEditingProduct(product); setIsEditing(true); }}>
+                       <Pencil className="w-3 h-3 mr-1" /> Edit
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(product.id)}>
+                       <Trash2 className="w-3 h-3" />
+                    </Button>
+                 </div>
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -141,7 +151,7 @@ function ProductForm({ vendorId, product, onClose, onSuccess }: { vendorId: stri
         name: product?.name || '',
         description: product?.description || '',
         price: product?.price || '',
-        image: product?.image || '',
+        image_url: product?.image_url || '',
         is_veg: product?.is_veg ?? true,
         is_available: product?.is_available ?? true,
         category: product?.category || 'Main Course'
@@ -199,8 +209,8 @@ function ProductForm({ vendorId, product, onClose, onSuccess }: { vendorId: stri
                 <div className="space-y-2">
                     <Label>Product Image</Label>
                     <ImageUpload 
-                        value={formData.image} 
-                        onChange={val => setFormData(prev => ({ ...prev, image: val }))} 
+                        value={formData.image_url} 
+                        onChange={val => setFormData(prev => ({ ...prev, image_url: val }))} 
                         maxSizeMB={5}
                     />
                 </div>
