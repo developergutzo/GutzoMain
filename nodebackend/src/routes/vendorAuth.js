@@ -159,7 +159,10 @@ router.get('/:id/products', asyncHandler(async (req, res) => {
       .select()
       .single();
   
-    if (error) throw new ApiError(500, 'Failed to create product');
+    if (error) {
+        console.error('Create Product Info:', error);
+        throw new ApiError(500, `Failed to create product: ${error.message}`);
+    }
 
     // Handle Link as Addon (Parent Products)
     if (parent_product_ids && Array.isArray(parent_product_ids) && parent_product_ids.length > 0) {

@@ -433,7 +433,12 @@ function ProductForm({ vendorId, product, products = [], categories, onClose, on
                     </div>
                 </div>
 
-                <Button type="submit" className="w-full bg-[#1BA672] hover:bg-[#14885E] text-white mt-4" disabled={loading}>
+                <Button 
+                    type="submit" 
+                    className="w-full mt-4" 
+                    style={{ backgroundColor: '#1BA672', color: 'white' }}
+                    disabled={loading}
+                >
                     {loading ? <Loader2 className="animate-spin" /> : (product ? 'Save Changes' : 'Add Item')}
                 </Button>
             </form>
