@@ -16,7 +16,7 @@ import { LocationDropdown } from "./LocationDropdown";
 import { SearchDropdown } from "./SearchDropdown";
 import gutzoLogo from 'figma:asset/dd6aa5fc791890562276e586be507ca46d14f4ee.png';
 
-interface HeaderProps {
+export interface HeaderProps {
   onShowLogin?: () => void;
   onLogout?: () => void;
   onShowProfile?: (content: 'profile' | 'orders' | 'address') => void;
@@ -33,9 +33,12 @@ interface HeaderProps {
    * Optional small page label to display next to the logo (e.g. "About Us").
    */
   pageLabel?: string;
+  hideSearchLocation?: boolean;
+  hideCart?: boolean;
 }
 
-export function Header({ onShowLogin, onLogout, onShowProfile, onShowCart, onShowAddressList, searchQuery = '', onSearchChange, hideInteractive = false, pageLabel }: HeaderProps) {
+
+export function Header({ onShowLogin, onLogout, onShowProfile, onShowCart, onShowAddressList, searchQuery = '', onSearchChange, hideInteractive = false, pageLabel, hideSearchLocation = false, hideCart = false }: HeaderProps) {
   const { navigate } = useRouter();
   const { locationDisplay, isLoading, error, refreshLocation, isInCoimbatore, locationLabel } = useLocation();
   const { totalItems } = useCart();
@@ -109,7 +112,7 @@ export function Header({ onShowLogin, onLogout, onShowProfile, onShowCart, onSho
             </div>
           ) : null}
 
-          {!hideInteractive && (
+          {!hideInteractive && !hideSearchLocation && (
             <div className="hidden md:flex flex-1 items-center max-w-2xl">
               <div className="flex flex-1 items-center border border-gray-200 rounded-08rem bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] min-h-[60px]">
                 {/* Location Selector with Dropdown */}
@@ -195,7 +198,9 @@ export function Header({ onShowLogin, onLogout, onShowProfile, onShowCart, onSho
           {!hideInteractive && (
           <div className="flex items-center gap-3">
             {/* Cart Button */}
+            {!hideCart && (
             <button
+
               type="button"
               onClick={onShowCart}
               className="relative flex items-center justify-center w-auto h-11 cursor-pointer transition-colors hidden md:flex px-3 bg-white focus:outline-none border-none shadow-none hover:bg-transparent"
@@ -212,6 +217,7 @@ export function Header({ onShowLogin, onLogout, onShowProfile, onShowCart, onSho
                 </span>
               )}
             </button>
+            )}
             
             {/* Auth Button */}
             {isAuthenticated ? (

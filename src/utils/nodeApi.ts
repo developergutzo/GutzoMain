@@ -167,6 +167,52 @@ class NodeApiService {
         });
     }
 
+    // --- Vendor Auth ---
+    async vendorLogin(data: any) {
+        return this.request("/vendor-auth/login", {
+            method: "POST",
+            body: data,
+        });
+    }
+
+    async updateVendorStatus(id: string, isOpen: boolean) {
+        return this.request(`/vendor-auth/${id}/status`, {
+            method: "POST",
+            body: { isOpen },
+        });
+    }
+
+    async getVendorMenu(vendorId: string) {
+        return this.request(`/vendor-auth/${vendorId}/products`);
+    }
+
+    async addVendorProduct(vendorId: string, data: any) {
+        return this.request(`/vendor-auth/${vendorId}/products`, {
+            method: "POST",
+            body: data,
+        });
+    }
+
+    async updateVendorProduct(vendorId: string, productId: string, data: any) {
+        return this.request(`/vendor-auth/${vendorId}/products/${productId}`, {
+            method: "PUT",
+            body: data,
+        });
+    }
+
+    async deleteVendorProduct(vendorId: string, productId: string) {
+        return this.request(`/vendor-auth/${vendorId}/products/${productId}`, {
+            method: "DELETE",
+        });
+    }
+
+    async updateVendorProfile(vendorId: string, data: any) {
+        return this.request(`/vendor-auth/${vendorId}/profile`, {
+            method: "PUT",
+            body: data,
+        });
+    }
+
     // --- Vendors ---
     async getVendors() {
         console.log("NodeApiService: Fetching vendors...");

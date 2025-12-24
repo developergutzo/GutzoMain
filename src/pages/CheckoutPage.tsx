@@ -9,6 +9,7 @@ import { Button } from '../components/ui/button';
 import { ImageWithFallback } from '../components/common/ImageWithFallback';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
 import { ProfilePanel } from '../components/auth/ProfilePanel';
+import { Header } from '../components/Header';
 import { toast } from 'sonner';
 
 
@@ -40,7 +41,25 @@ export function CheckoutPage() {
   const { items, updateQuantityOptimistic, removeItem } = useCart();
   const cartItems = items as unknown as CartItem[];
   
-  const { user } = useAuth();
+
+  
+  const { user, logout } = useAuth();
+  
+  const handleLogout = async () => {
+    try {
+      if (logout) await logout();
+      navigate('/');
+      toast.success('Logged out successfully');
+    } catch (error) {
+      toast.error('Failed to logout');
+    }
+  };
+
+  const handleShowProfile = (content: 'profile' | 'orders' | 'address') => {
+    setProfilePanelContent(content);
+    setShowProfilePanel(true);
+  };
+   
   
   const [syncedItems, setSyncedItems] = useState<any[]>([]);
   const [deliveryFee, setDeliveryFee] = useState<number>(0);
@@ -348,8 +367,23 @@ export function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F5F7] pb-32">
-      <div className="bg-white sticky top-0 z-40 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+    <div className="min-h-screen bg-[#F4F5F7] pb-32 lg:pb-8">
+      {/* Desktop Header */}
+      <div className="hidden lg:block">
+        <Header 
+          onLogout={handleLogout}
+          onShowProfile={handleShowProfile}
+          onShowAddressList={() => handleShowProfile('address')}
+          onShowLogin={() => navigate('/')} // Redirect to home for login if needed
+          onShowCart={() => {}} // No-op for now on standalone checkout
+          hideInteractive={false}
+          hideSearchLocation={true}
+          hideCart={true}
+        />
+      </div>
+
+      {/* Mobile Header */}
+      <div className="bg-white sticky top-0 z-40 shadow-[0_1px_3px_rgba(0,0,0,0.05)] lg:hidden">
         <div className="max-w-7xl mx-auto w-full">
             <div className="flex items-center px-4 !py-4 justify-between min-h-[64px]">
             <div className="flex items-center gap-3 flex-1 overflow-hidden">
@@ -366,7 +400,7 @@ export function CheckoutPage() {
                       console.log('Address dropdown clicked');
                       setShowProfilePanel(true);
                       setProfilePanelContent('address');
-                    }} className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer leading-none group">
+                    }} className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer leading-none group lg:hidden">
                         <span className="text-sm text-gray-600 truncate max-w-[280px]">
                            <span className="font-medium text-gray-900">{dynamicEta || '30-35 mins'} to home</span>
                            <span className="mx-1 text-gray-400">|</span>
@@ -377,7 +411,7 @@ export function CheckoutPage() {
                 </div>
             </div>
             
-            <button className="p-2 -mr-2 flex-shrink-0">
+            <button className="p-2 -mr-2 flex-shrink-0 lg:hidden">
                 <Share className="w-5 h-5 text-gray-700" />
             </button>
         </div>
@@ -386,15 +420,54 @@ export function CheckoutPage() {
 
 
 
-      <div className="p-3 space-y-3 max-w-7xl mx-auto md:grid md:grid-cols-12 md:gap-8 md:items-start md:px-8 md:space-y-0">
+
+
+      <div className="p-3 space-y-3 max-w-7xl mx-auto flex flex-col lg:flex-row lg:gap-10 lg:items-start lg:px-8 lg:space-y-0">
       
-         {/* Address Section Removed */}
-
-        {/* Special Offer (Mock) */}
 
 
-        {/* Items List */}
-        <div className="bg-white rounded-xl p-4 shadow-sm space-y-3 md:col-span-8">
+
+        {/* Items List Column */}
+        <div className="flex-1 w-full space-y-4">
+            {/* Desktop Page Title (Inside Column) */}
+            <div className="hidden lg:block pb-2">
+                <h1 className="text-3xl font-bold text-gray-900 tracking-tight">{vendor?.name || 'Restaurant'}</h1>
+                {vendor?.location && <p className="text-gray-500 text-base mt-1">{vendor.location}</p>}
+            </div>
+
+            {/* Desktop Address Card (Inside Left Column) */}
+            <div className="hidden lg:block mb-6">
+                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex items-center justify-between">
+                   <div className="flex items-center gap-4">
+                       <div className="p-3 bg-gray-50 rounded-full">
+                           <MapPin className="w-6 h-6 text-gray-700" />
+                       </div>
+                       <div>
+                           <div className="flex items-center gap-2 mb-1">
+                               <h3 className="font-bold text-lg text-gray-900">Delivery to {selectedAddress?.address_type || 'Home'}</h3>
+                               <span className="px-2 py-0.5 bg-green-50 text-green-700 text-xs font-bold rounded-full uppercase tracking-wide">
+                                   {dynamicEta || '30-35 mins'}
+                               </span>
+                           </div>
+                           <p className="text-gray-500 text-sm max-w-2xl truncate">
+                               {selectedAddress ? selectedAddress.full_address : 'Select a delivery address to proceed'}
+                           </p>
+                       </div>
+                   </div>
+                   <button 
+                       onClick={() => {
+                           setShowProfilePanel(true);
+                           setProfilePanelContent('address');
+                       }}
+                       className="text-[#1BA672] font-bold text-sm hover:underline hover:text-[#14885E] transition-colors"
+                   >
+                       CHANGE
+                   </button>
+                </div>
+            </div>
+
+             <h2 className="text-xl font-bold text-gray-800 hidden lg:block">Order Summary</h2>
+             <div className="bg-white rounded-xl p-4 shadow-sm space-y-3">
             {displayItems.map((item) => (
                 <div key={item.id} className="flex gap-4 items-start py-0">
 
@@ -451,12 +524,14 @@ export function CheckoutPage() {
                     <UtensilsCrossed className="w-4 h-4 text-gray-400" /> Don't add cutlery
                  </Button>
             </div>
+             </div>
         </div>
 
 
 
         {/* Desktop Sidebar (Details + Cancellation + Pay Button) */}
-        <div className="md:col-span-4 space-y-4 md:sticky md:top-24">
+        <div className="w-full lg:w-[400px] shrink-0 space-y-4 lg:sticky lg:top-28 h-fit">
+            <h2 className="text-xl font-bold text-gray-800 hidden lg:block">Payment Details</h2>
             {/* Consolidated Details Card */}
             <div className="bg-white rounded-xl p-4 shadow-sm divide-y divide-gray-100/50">
                 {/* Delivery Time */}
@@ -495,7 +570,7 @@ export function CheckoutPage() {
             </div>
 
             {/* Desktop Pay Button */}
-            <div className="hidden md:block">
+            <div className="hidden lg:block">
                  <button 
                    className={`w-full text-white rounded-lg px-4 py-4 flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform relative overflow-hidden group ${
                       isProcessing || !isServiceable ? 'cursor-not-allowed' : ''
@@ -511,7 +586,7 @@ export function CheckoutPage() {
                          </div>
                      ) : (
                          <div className="flex items-center gap-2">
-                              <span className="text-lg font-bold">Pay with Paytm</span>
+                             <span className="text-lg font-semibold">Proceed to Pay</span>
                               <span className="text-xl">→</span>
                          </div>
                      )}
@@ -533,7 +608,7 @@ export function CheckoutPage() {
 
 
       {/* Fixed Footer (Mobile Only) */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.08)] z-50 rounded-t-2xl md:hidden">
+      <div className="fixed bottom-0 left-0 right-0 bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.08)] z-50 rounded-t-2xl lg:hidden">
 
            <div className="px-4 py-3">
                 <button 
@@ -551,7 +626,7 @@ export function CheckoutPage() {
                         </div>
                     ) : (
                         <div className="flex items-center gap-2">
-                             <span className="text-lg font-bold">Pay with Paytm</span>
+                             <span className="text-lg font-semibold">Proceed to Pay</span>
                              <span className="text-xl">→</span>
                         </div>
                     )}

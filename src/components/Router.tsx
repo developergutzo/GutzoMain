@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 
-type Route = '/' | '/T&C' | '/refund_policy' | '/privacy_policy' | '/payment-status' | '/contact' | '/about' | '/partner' | '/checkout' | '/phonepe-soon' | `/vendor/${string}`;
+type Route = '/' | '/T&C' | '/refund_policy' | '/privacy_policy' | '/payment-status' | '/contact' | '/about' | '/partner' | '/partner/login' | '/partner/dashboard' | '/checkout' | '/phonepe-soon' | `/vendor/${string}`;
 
 interface RouterContextType {
   currentRoute: Route;
@@ -24,6 +24,8 @@ export function RouterProvider({ children }: { children: ReactNode }) {
       '/contact': 'Contact Us - Gutzo',
       '/about': 'About Us - Gutzo',
       '/partner': 'Partner with Gutzo',
+      '/partner/login': 'Partner Login - Gutzo',
+      '/partner/dashboard': 'Kitchen Dashboard - Gutzo',
       '/checkout': 'Checkout - Gutzo',
       '/phonepe-soon': 'PhonePe Integration - Gutzo'
     };
@@ -38,7 +40,7 @@ export function RouterProvider({ children }: { children: ReactNode }) {
   // Initialize route from browser URL
   useEffect(() => {
   const path = window.location.pathname as Route;
-  const validRoutes: string[] = ['/', '/T&C', '/refund_policy', '/privacy_policy', '/payment-status', '/contact', '/about', '/partner', '/checkout', '/phonepe-soon'];
+  const validRoutes: string[] = ['/', '/T&C', '/refund_policy', '/privacy_policy', '/payment-status', '/contact', '/about', '/partner', '/partner/login', '/partner/dashboard', '/checkout', '/phonepe-soon'];
     
     // Check if it's a valid static route OR a vendor route
     if (validRoutes.includes(path) || path.startsWith('/vendor/')) {

@@ -45,6 +45,8 @@ import { AboutPage } from "./pages/AboutPage";
 import PaymentStatusPage from "./pages/PaymentStatusPage";
 import PhonePeComingSoon from "./pages/PaytmComingSoon";
 import { PartnerPage } from "./pages/PartnerPage";
+import { PartnerLoginPage } from "./pages/PartnerLoginPage";
+import { PartnerDashboard } from "./pages/PartnerDashboard";
 import { CheckoutPage } from "./pages/CheckoutPage"; // Added CheckoutPage import
 import { Toaster } from "./components/ui/sonner";
 import { Loader2, MapPin, Plus, X, Zap } from "lucide-react";
@@ -347,9 +349,11 @@ function AppContent() {
     return <VendorDetailsPage onShowCart={handleShowCart} vendors={vendors} loading={loading} />;
   }
   // Added /checkout to the route list
-  if (typeof currentRoute === 'string' && ['/T&C','/refund_policy','/privacy_policy','/payment-status','/phonepe-soon','/contact','/about', '/partner', '/checkout'].includes(currentRoute)) {
+  if (typeof currentRoute === 'string' && ['/T&C','/refund_policy','/privacy_policy','/payment-status','/phonepe-soon','/contact','/about', '/partner', '/partner/login', '/partner/dashboard', '/checkout'].includes(currentRoute)) {
     switch(currentRoute) {
-      case '/checkout': return <CheckoutPage onShowAddressList={handleShowAddressList} />;
+      case '/partner/login': return <PartnerLoginPage />;
+      case '/partner/dashboard': return <PartnerDashboard />;
+      case '/checkout': return <CheckoutPage />;
       case '/T&C': return <TermsPage />;
       case '/refund_policy': return <RefundPage />;
       case '/privacy_policy': return <PrivacyPage />;
