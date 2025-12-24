@@ -8,6 +8,7 @@ import { Loader2, Plus, Pencil, Trash2, X, Image as ImageIcon } from "lucide-rea
 import { nodeApiService as apiService } from "../../utils/nodeApi";
 import { toast } from "sonner";
 import { ImageWithFallback } from "../common/ImageWithFallback";
+import { ImageUpload } from "../common/ImageUpload";
 
 interface Product {
   id: string;
@@ -196,11 +197,12 @@ function ProductForm({ vendorId, product, onClose, onSuccess }: { vendorId: stri
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="image">Image URL</Label>
-                    <div className="flex gap-2">
-                       <Input id="image" value={formData.image} onChange={e => setFormData(prev => ({ ...prev, image: e.target.value }))} placeholder="https://..." />
-                       {formData.image && <div className="w-10 h-10 rounded overflow-hidden bg-gray-100 shrink-0"><img src={formData.image} className="w-full h-full object-cover" /></div>}
-                    </div>
+                    <Label>Product Image</Label>
+                    <ImageUpload 
+                        value={formData.image} 
+                        onChange={val => setFormData(prev => ({ ...prev, image: val }))} 
+                        maxSizeMB={5}
+                    />
                 </div>
 
                 <div className="flex items-center gap-6 pt-2">
