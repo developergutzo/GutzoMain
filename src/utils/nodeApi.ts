@@ -168,8 +168,15 @@ class NodeApiService {
     }
 
     // --- Vendor Auth ---
+    async checkVendorStatus(phone: string) {
+        return this.request("/vendor-auth/check-status", {
+            method: "POST",
+            body: { phone },
+        });
+    }
+
     async vendorLogin(data: any) {
-        // data should be { phone: '...' }
+        // data should be { phone: '...', password: '...' }
         return this.request("/vendor-auth/login", {
             method: "POST",
             body: data,

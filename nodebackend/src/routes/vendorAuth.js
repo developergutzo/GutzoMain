@@ -8,11 +8,55 @@ const router = express.Router();
 // VENDOR LOGIN
 // POST /api/vendor-auth/login
 // ============================================
-router.post('/login', asyncHandler(async (req, res) => {
+// ============================================
+// CHECK VENDOR STATUS
+// POST /api/vendor-auth/check-status
+// ============================================
+router.post('/check-status', asyncHandler(async (req, res) => {
   const { phone } = req.body;
+  if (!phone) throw new ApiError(400, 'Phone number is required');
 
-  if (!phone) {
-    throw new ApiError(400, 'Phone number is required');
+  // 1. Check vendors table
+  const { data: vendor } = await supabaseAdmin
+    .from('vendors')
+    .select('id, is_active')
+    .eq('phone', phone)
+    .single();
+
+  if (vendor) {
+    if (!vendor.is_active) {
+       // Optional: could handle inactive differently, but for now treating as 'vendor' implies password check
+       // or we could block here. Let's return status 'vendor' but frontend will hit login and fail on is_active check if we keep that logic there.
+       // Actually user request says "password match then show".
+       // Let's stick to returning 'vendor'.
+    }
+    return successResponse(res, { status: 'vendor' });
+  }
+
+  // 2. Check vendor_leads table
+  const { data: lead } = await supabaseAdmin
+    .from('vendor_leads')
+    .select('id')
+    .eq('phone', phone)
+    .single();
+
+  if (lead) {
+    return successResponse(res, { status: 'lead' });
+  }
+
+  // 3. New user
+  return successResponse(res, { status: 'new' });
+}));
+
+// ============================================
+// VENDOR LOGIN
+// POST /api/vendor-auth/login
+// ============================================
+router.post('/login', asyncHandler(async (req, res) => {
+  const { phone, password } = req.body;
+
+  if (!phone || !password) {
+    throw new ApiError(400, 'Phone and password are required');
   }
 
   // Check if vendor exists with this phone number
@@ -23,15 +67,20 @@ router.post('/login', asyncHandler(async (req, res) => {
     .single();
 
   if (error || !vendor) {
-    throw new ApiError(404, 'Vendor not found');
+    throw new ApiError(404, 'Vendor not found'); // Should catch this in check-status theoretically
   }
 
   if (!vendor.is_active) {
     throw new ApiError(403, 'Account is inactive. Contact Admin.');
   }
 
+  // Verify password (simple exact match for now as stored in DB)
+  if (vendor.password !== password) {
+    throw new ApiError(401, 'Invalid password');
+  }
+
   // Return success with vendor info
-  // No password to delete since we didn't check it
+  delete vendor.password; // Don't send password back
   
   successResponse(res, { vendor }, 'Login successful');
 }));

@@ -37,7 +37,7 @@ export function VendorInterestForm() {
   });
   
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(history.state?.leadExisting || false);
   const [errors, setErrors] = useState<Partial<VendorInterestFormData>>({});
 
   const validateField = (field: keyof VendorInterestFormData, value: string) => {
@@ -156,7 +156,8 @@ export function VendorInterestForm() {
           </p>
           <Button 
             onClick={() => navigate('/')}
-            className="mt-4 bg-green-600 hover:bg-green-700 text-white"
+            className="mt-4 w-full"
+            style={{ backgroundColor: "#1BA672", color: "white" }}
           >
             Return to Home
           </Button>
