@@ -290,10 +290,10 @@ export function PartnerLoginPage() {
                   <Input 
                     id="otp" 
                     type="text"
-                    placeholder="123456" 
+                    placeholder="Enter OTP" 
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    className="text-center text-2xl tracking-widest"
+                    className="text-center text-xl tracking-widest placeholder:text-gray-50"
                     maxLength={6}
                     required
                   />
