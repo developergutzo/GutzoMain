@@ -309,7 +309,7 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors
             reviews={400}
             location={vendor.location}
             deliveryTime={!isServiceable ? "Not Serviceable" : (dynamicEta || vendor.deliveryTime)}
-            userAddressLabel={locationLabel || undefined}
+            userAddressLabel={locationLabel || locationDisplay}
             onAddressClick={() => {
               setProfilePanelContent('address');
               setShowProfilePanel(true);
