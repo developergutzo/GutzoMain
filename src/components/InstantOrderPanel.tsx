@@ -46,6 +46,7 @@ interface InstantOrderPanelProps {
   onAddAddress?: () => void;
   refreshTrigger?: number;
   newAddressId?: string | null;
+  onShowLogin?: () => void;
 }
 
 export interface InstantOrderData {
@@ -67,7 +68,8 @@ export function InstantOrderPanel({
   onPaymentSuccess,
   onAddAddress,
   refreshTrigger = 0,
-  newAddressId
+  newAddressId,
+  onShowLogin
 }: InstantOrderPanelProps) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [syncedItems, setSyncedItems] = useState<CartItem[]>([]);
@@ -235,7 +237,8 @@ export function InstantOrderPanel({
   const [selectedAddress, setSelectedAddress] = useState<any>(null);
   const [showAddressPanel, setShowAddressPanel] = useState(false);
   const [userPhone, setUserPhone] = useState('');
-  const { user } = useAuth(); // Use auth context for reliable user data
+
+  const { user, isAuthenticated } = useAuth(); // Use auth context for reliable user data
 
   useEffect(() => {
     console.log('🔄 [InstantOrderPanel] sync initiated', { 
@@ -421,6 +424,16 @@ export function InstantOrderPanel({
   };
 
   const handleConfirm = async () => {
+    if (!isAuthenticated) {
+      if (onShowLogin) {
+        onShowLogin();
+        toast.info("Please login to place your order");
+      } else {
+        toast.error("Please login to place an order");
+      }
+      return;
+    }
+
     if (selectedPaymentMethod === 'wallet' && !selectedWallet) {
       toast.error('Please select a wallet to continue');
       return;
@@ -788,6 +801,16 @@ export function InstantOrderPanel({
       <div className="p-6 border-t border-gray-200 bg-gray-50/50">
         <Button
           onClick={async () => {
+            if (!isAuthenticated) {
+              if (onShowLogin) {
+                onShowLogin();
+                toast.info("Please login to place your order");
+              } else {
+                toast.error("Please login to place an order");
+              }
+              return;
+            }
+
             if (cartItems.length === 0 || isProcessing || !isServiceable) return;
             
             if (!selectedAddress) {

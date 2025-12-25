@@ -359,6 +359,7 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors
         onAddAddress={() => setShowAddressModal(true)}
         refreshTrigger={addressRefreshTrigger}
         newAddressId={newlyAddedAddressId}
+        onShowLogin={handleShowLogin}
       />
 
       {paymentSuccessData && (

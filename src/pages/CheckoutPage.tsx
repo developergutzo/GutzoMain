@@ -11,6 +11,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card'
 import { ProfilePanel } from '../components/auth/ProfilePanel';
 import { Header } from '../components/Header';
 import { toast } from 'sonner';
+import { LoginPanel } from '../components/auth/LoginPanel';
 
 
 
@@ -74,6 +75,7 @@ export function CheckoutPage() {
   const [selectedAddress, setSelectedAddress] = useState<any>(null);
   const [showAddressSheet, setShowAddressSheet] = useState(false);
   const [showProfilePanel, setShowProfilePanel] = useState(false);
+  const [showLoginPanel, setShowLoginPanel] = useState(false);
   const [profilePanelContent, setProfilePanelContent] = useState<'profile' | 'orders' | 'address'>('address');
   const [isProcessing, setIsProcessing] = useState(false);
   const [dynamicEta, setDynamicEta] = useState<string | null>(null);
@@ -235,7 +237,8 @@ export function CheckoutPage() {
       
       const userPhone = user?.phone;
       if (!userPhone) {
-          toast.error("Please login to place order");
+          setShowLoginPanel(true);
+          toast.info("Please login to place your order");
           return;
       }
       if (!selectedAddress) {
@@ -374,7 +377,7 @@ export function CheckoutPage() {
           onLogout={handleLogout}
           onShowProfile={handleShowProfile}
           onShowAddressList={() => handleShowProfile('address')}
-          onShowLogin={() => navigate('/')} // Redirect to home for login if needed
+          onShowLogin={() => setShowLoginPanel(true)} // Open login panel instead of redirect
           onShowCart={() => {}} // No-op for now on standalone checkout
           hideInteractive={false}
           hideSearchLocation={true}
@@ -641,6 +644,12 @@ export function CheckoutPage() {
         onClose={() => setShowProfilePanel(false)}
         onLogout={() => {}}
         content={profilePanelContent}
+      />
+      
+      <LoginPanel 
+        isOpen={showLoginPanel} 
+        onClose={() => setShowLoginPanel(false)}
+        onAuthComplete={() => setShowLoginPanel(false)}
       />
     </div>
   );

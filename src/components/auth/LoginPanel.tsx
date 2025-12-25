@@ -339,7 +339,7 @@ export function LoginPanel({ isOpen, onClose, onAuthComplete }: LoginPanelProps)
         <Sheet open={isOpen} onOpenChange={onClose}>
           <SheetContent
             side="bottom"
-            className="rounded-t-3xl p-0 w-full max-w-full left-0 right-0 transition-transform duration-300 ease-in-out"
+            className="rounded-t-3xl p-0 w-full max-w-full left-0 right-0 transition-transform duration-300 ease-in-out z-[100]"
             style={{ top: '104px', bottom: 0, height: 'calc(100vh - 104px)' }}
           >
             <style>{`
@@ -394,7 +394,7 @@ export function LoginPanel({ isOpen, onClose, onAuthComplete }: LoginPanelProps)
             maxWidth: '600px',
             backgroundColor: 'white',
             boxShadow: '-10px 0 40px rgba(0, 0, 0, 0.2)',
-            zIndex: 50,
+            zIndex: 100,
             transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
             transition: 'transform 300ms ease-in-out',
             display: 'flex',
