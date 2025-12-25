@@ -13,6 +13,7 @@ import { Product, Vendor } from '../types/index';
 import { nodeApiService as apiService } from '../utils/nodeApi';
 import { useRouter } from './Router';
 import { useAuth } from '../contexts/AuthContext';
+import { useLocation } from '../contexts/LocationContext';
 
 export interface CartItem {
   id: string;
@@ -111,6 +112,7 @@ export function InstantOrderPanel({
   const [isProcessing, setIsProcessing] = useState(false);
   const { navigate } = useRouter();
   const { isMobile } = useResponsiveLayout();
+  const { location, locationDisplay } = useLocation();
 
   // GST rules (aligned with cart):
   // - Item prices include 5% GST
@@ -293,8 +295,27 @@ export function InstantOrderPanel({
       });
     } else {
       console.log('ℹ️ [InstantOrderPanel] No user phone available, skipping fetch');
+      // Fallback to device location if available and no user logged in
+      if (location && location.coordinates) {
+         console.log('📍 [InstantOrderPanel] Using device location as fallback');
+         setSelectedAddress({
+           id: 'device_location',
+           type: 'Current Location',
+           full_address: locationDisplay,
+           street: '',
+           area: '',
+           latitude: location.coordinates.latitude,
+           longitude: location.coordinates.longitude,
+           is_default: false,
+           // Add missing required properties for type compatibility if needed
+           label: 'Current Location',
+           zip: '',
+           city: location.city,
+           state: location.state
+         });
+      }
     }
-  }, [isOpen, refreshTrigger, user?.phone, newAddressId]);
+  }, [isOpen, refreshTrigger, user?.phone, newAddressId, location, locationDisplay]);
 
   // Calculate Delivery Fee
   useEffect(() => {
