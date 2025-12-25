@@ -31,6 +31,7 @@
             "@radix-ui/react-toggle-group": "^1.1.2",
             "@radix-ui/react-tooltip": "^1.1.8",
             "@supabase/supabase-js": "^2.58.0",
+            "@types/uuid": "^10.0.0",
             "axios": "^1.13.2",
             "body-parser": "^2.2.0",
             "class-variance-authority": "^0.7.1",
@@ -53,6 +54,7 @@
             "recharts": "^2.15.2",
             "sonner": "^2.0.3",
             "tailwind-merge": "*",
+            "uuid": "^13.0.0",
             "vaul": "^1.1.2"
       },
       "scripts": {

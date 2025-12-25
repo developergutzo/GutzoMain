@@ -201,6 +201,32 @@ class NodeApiService {
         });
     }
 
+    async uploadImage(file: File, vendorId: string, productId: string) {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("vendorId", vendorId);
+        formData.append("productId", productId);
+
+        // We need to use fetch directly or adapting request method to handle FormData correctly
+        // The existing request method performs JSON.stringify automatically if body is present
+        // Let's modify request or just do a custom fetch here for upload
+
+        const url = `${this.baseUrl}/api/upload/product-image`;
+        console.log(`NodeAPI Upload: ${url}`);
+
+        const response = await fetch(url, {
+            method: "POST",
+            body: formData,
+            // Header Content-Type is auto-set by browser with boundary for FormData
+        });
+
+        const responseData = await response.json();
+        if (!response.ok) {
+            throw new Error(responseData.message || "Upload failed");
+        }
+        return responseData;
+    }
+
     async updateVendorProduct(vendorId: string, productId: string, data: any) {
         return this.request(`/vendor-auth/${vendorId}/products/${productId}`, {
             method: "PUT",

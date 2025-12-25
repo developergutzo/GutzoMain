@@ -7,6 +7,7 @@ import { cn } from "../ui/utils";
 interface ImageUploadProps {
   value?: string;
   onChange: (value: string) => void;
+  onUpload?: (file: File) => Promise<void>; // Add optional onUpload prop
   maxSizeMB?: number;
   label?: string;
   className?: string;
@@ -14,7 +15,8 @@ interface ImageUploadProps {
 
 export function ImageUpload({ 
   value, 
-  onChange, 
+  onChange,
+  onUpload, // Destructure
   maxSizeMB = 5, 
   label = "Upload Image",
   className 
@@ -23,7 +25,7 @@ export function ImageUpload({
   const [isDragActive, setIsDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleFile = (file: File) => {
+  const handleFile = async (file: File) => {
     setError(null);
     
     // Check file type
@@ -42,6 +44,17 @@ export function ImageUpload({
       return;
     }
 
+    // If onUpload is provided, use it
+    if (onUpload) {
+        await onUpload(file);
+        // We usually expect onUpload to handle the onChange update if valid, 
+        // OR we can still read it for preview. 
+        // Logic in MenuManager sets the image_url after upload.
+        // So we don't strictly need to do anything here except maybe show loading.
+        return;
+    }
+
+    // Fallback: Read as Data URL
     const reader = new FileReader();
     reader.onloadend = () => {
       onChange(reader.result as string);

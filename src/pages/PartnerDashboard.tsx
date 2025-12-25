@@ -147,18 +147,21 @@ export function PartnerDashboard() {
          </div>
 
          <div className="p-4 border-t hidden lg:block mt-auto flex-shrink-0 bg-white">
-             <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden flex-shrink-0">
-                    {vendor.image ? <ImageWithFallback src={vendor.image} alt={vendor.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-500 font-bold">{vendor.name.charAt(0)}</div>}
-                </div>
-                <div className="min-w-0">
-                    <p className="font-bold text-sm text-gray-900 truncate">{vendor.name}</p>
-                    <p className="text-xs text-gray-500 truncate">{vendor.is_open ? '● Online' : '○ Offline'}</p>
-                </div>
+             <div className="flex items-center justify-between">
+                 <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden flex-shrink-0">
+                        {vendor.image ? <ImageWithFallback src={vendor.image} alt={vendor.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-500 font-bold">{vendor.name.charAt(0)}</div>}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <p className="font-bold text-sm text-gray-900 truncate">{vendor.name}</p>
+                        <p className="text-xs text-gray-500 truncate">{vendor.is_open ? '● Online' : '○ Offline'}</p>
+                    </div>
+                 </div>
+                 <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 hover:bg-red-50 shrink-0 gap-2 px-2" onClick={handleLogoutClick}>
+                     <LogOut className="w-4 h-4" />
+                     <span className="font-medium">Logout</span>
+                 </Button>
              </div>
-             <Button variant="outline" className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 border-red-100" onClick={handleLogoutClick}>
-                 <LogOut className="w-4 h-4 mr-2" /> Logout
-             </Button>
          </div>
       </aside>
 

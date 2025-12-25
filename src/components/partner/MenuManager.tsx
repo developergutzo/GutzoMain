@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { v4 as uuidv4 } from 'uuid'; // Import uuid
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -260,6 +261,7 @@ function ProductForm({ vendorId, product, products = [], categories, onClose, on
       : [];
 
     const [formData, setFormData] = useState({
+        id: product?.id || uuidv4(), // Generate ID if new
         name: product?.name || '',
         description: product?.description || '',
         price: product?.price || '',
@@ -273,12 +275,24 @@ function ProductForm({ vendorId, product, products = [], categories, onClose, on
     const [loading, setLoading] = useState(false);
     const [openParentSelect, setOpenParentSelect] = useState(false);
     const [openAddonSelect, setOpenAddonSelect] = useState(false);
+    const [pendingImage, setPendingImage] = useState<File | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         try {
-            const payload = { ...formData, price: Number(formData.price) };
+            let finalImageUrl = formData.image_url;
+
+            if (pendingImage) {
+                const res = await apiService.uploadImage(pendingImage, vendorId, formData.id);
+                if (res.success && res.data.url) {
+                    finalImageUrl = res.data.url;
+                } else {
+                    throw new Error('Image upload failed');
+                }
+            }
+
+            const payload = { ...formData, price: Number(formData.price), image_url: finalImageUrl };
             if (product) {
                await apiService.updateVendorProduct(vendorId, product.id, payload);
                toast.success('Product updated');
@@ -361,7 +375,23 @@ function ProductForm({ vendorId, product, products = [], categories, onClose, on
                     <Label>Product Image</Label>
                     <ImageUpload 
                         value={formData.image_url} 
-                        onChange={val => setFormData(prev => ({ ...prev, image_url: val }))} 
+                        onChange={(val) => {
+                            // Only update if clearing (empty string)
+                            if (val === '') {
+                                setFormData(prev => ({ ...prev, image_url: '' }));
+                                setPendingImage(null);
+                            } else if (val.startsWith('data:')) {
+                                console.warn("Received base64 image in onChange, ignoring in favor of onUpload");
+                            } else {
+                                setFormData(prev => ({ ...prev, image_url: val }));
+                            }
+                        }}
+                        onUpload={async (file) => {
+                             // Create local preview and stage for upload
+                             const previewUrl = URL.createObjectURL(file);
+                             setFormData(prev => ({ ...prev, image_url: previewUrl }));
+                             setPendingImage(file);
+                        }}
                         maxSizeMB={5}
                     />
                 </div>
