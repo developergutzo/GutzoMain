@@ -607,11 +607,11 @@ export function CheckoutPage() {
             <div className="hidden lg:block">
                  <button 
                    className={`w-full text-white rounded-lg px-4 py-4 flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform relative overflow-hidden group ${
-                      isProcessing || !isServiceable ? 'cursor-not-allowed' : ''
+                      isProcessing || (!!user && !isServiceable) ? 'cursor-not-allowed' : ''
                    }`}
                    style={{ backgroundColor: '#1BA672' }}
                    onClick={handlePlaceOrder}
-                   disabled={isProcessing || !isServiceable}
+                   disabled={isProcessing || (!!user && !isServiceable)}
                  >
                      {isProcessing ? (
                          <div className="flex items-center gap-2">
@@ -647,11 +647,11 @@ export function CheckoutPage() {
            <div className="px-4 py-3">
                 <button 
                   className={`w-full text-white rounded-lg px-4 py-4 flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform relative overflow-hidden group ${
-                     isProcessing || !isServiceable ? 'cursor-not-allowed' : ''
+                     isProcessing || (!!user && !isServiceable) ? 'cursor-not-allowed' : ''
                   }`}
                   style={{ backgroundColor: '#1BA672' }}
                   onClick={handlePlaceOrder}
-                  disabled={isProcessing || !isServiceable}
+                  disabled={isProcessing || (!!user && !isServiceable)}
                 >
                     {isProcessing ? (
                         <div className="flex items-center gap-2">
