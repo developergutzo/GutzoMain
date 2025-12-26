@@ -934,7 +934,7 @@ export function AddressModal({
               left: 0 !important;
               right: 0 !important;
               width: 100% !important;
-              height: calc(100vh - 104px) !important;
+
               max-height: none !important;
               max-width: none !important;
               border-radius: 1.5rem 1.5rem 0 0 !important;
