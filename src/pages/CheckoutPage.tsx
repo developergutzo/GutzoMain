@@ -42,7 +42,7 @@ export function CheckoutPage() {
   const { navigate, goBack } = useRouter();
   const { items, updateQuantityOptimistic, removeItem } = useCart();
   const cartItems = items as unknown as CartItem[];
-  const { location: userLocation, locationDisplay } = useUserLocation();
+  const { location: userLocation, locationDisplay, locationLabel } = useUserLocation();
   
 
   
@@ -147,6 +147,22 @@ export function CheckoutPage() {
 
                         if (matchedAddress) {
                             console.log('📍 Synced Address with Header Selection:', matchedAddress.label || matchedAddress.type);
+                        } else {
+                             // NO MATCH found, but we have a user location.
+                             // Create transient address instead of falling back to default.
+                             console.log('📍 Using Global Context Location (Transient)');
+                             matchedAddress = {
+                                id: 'device_location',
+                                type: locationLabel || locationDisplay || 'Current Location',
+                                full_address: locationDisplay || 'Detected Location',
+                                street: '',
+                                area: '',
+                                latitude: ctxLat,
+                                longitude: ctxLng,
+                                is_default: false,
+                                label: locationLabel || locationDisplay || 'Current Location',
+                                address_type: locationLabel || locationDisplay || 'Current Location'
+                            };
                         }
                     }
 
@@ -170,15 +186,15 @@ export function CheckoutPage() {
                        // Guest/New User Fallback: Use device location
                        const fallbackAddress = {
                            id: 'device_location',
-                           type: 'Current Location',
+                           type: locationLabel || locationDisplay || 'Current Location',
                            full_address: locationDisplay || 'Detected Location',
                            street: '',
                            area: '',
                            latitude: userLocation.coordinates.latitude,
                            longitude: userLocation.coordinates.longitude,
                            is_default: false,
-                           label: 'Current Location',
-                           address_type: 'Current Location' 
+                           label: locationLabel || locationDisplay || 'Current Location',
+                           address_type: locationLabel || locationDisplay || 'Current Location' 
                        };
                        setSelectedAddress(fallbackAddress);
                     }
@@ -189,15 +205,15 @@ export function CheckoutPage() {
        // Guest Fallback: Use device location
        const fallbackAddress = {
            id: 'device_location',
-           type: 'Current Location',
+           type: locationLabel || locationDisplay || 'Current Location',
            full_address: locationDisplay || 'Detected Location',
            street: '',
            area: '',
            latitude: userLocation.coordinates.latitude,
            longitude: userLocation.coordinates.longitude,
            is_default: false,
-           label: 'Current Location',
-           address_type: 'Current Location' // for display consistency
+           label: locationLabel || locationDisplay || 'Current Location',
+           address_type: locationLabel || locationDisplay || 'Current Location' // for display consistency
        };
        setSelectedAddress(fallbackAddress);
        setAddresses([]); // Clear saved addresses
@@ -434,6 +450,7 @@ export function CheckoutPage() {
               setIsProcessing(false);
               toast.error('Network error loading payment gateway');
            };
+           script.appendChild(document.createTextNode(''));
            document.body.appendChild(script);
          } else {
               throw new Error('Invalid payment initiation response');
@@ -780,5 +797,3 @@ function CheckoutWithAddressPanel() {
     </>
   );
 }
-
-
