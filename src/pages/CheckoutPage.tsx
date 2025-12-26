@@ -13,6 +13,7 @@ import { ProfilePanel } from '../components/auth/ProfilePanel';
 import { Header } from '../components/Header';
 import { toast } from 'sonner';
 import { LoginPanel } from '../components/auth/LoginPanel';
+import { AddressModal } from '../components/auth/AddressModal';
 
 
 
@@ -79,6 +80,8 @@ export function CheckoutPage() {
   const [showProfilePanel, setShowProfilePanel] = useState(false);
   const [showLoginPanel, setShowLoginPanel] = useState(false);
   const [profilePanelContent, setProfilePanelContent] = useState<'profile' | 'orders' | 'address'>('address');
+  const [showSaveAddressModal, setShowSaveAddressModal] = useState(false);
+  const [addressToSave, setAddressToSave] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [dynamicEta, setDynamicEta] = useState<string | null>(null);
 
@@ -561,9 +564,9 @@ export function CheckoutPage() {
                 {vendor?.location && <p className="text-gray-500 text-base mt-1">{vendor.location}</p>}
             </div>
 
-            {/* Desktop Address Card (Inside Left Column) */}
-            <div className="hidden lg:block mb-6">
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex items-center justify-between">
+            {/* Address Card (Visible on ALL screens now) */}
+            <div className="mb-4 lg:mb-6">
+                <div className="bg-white rounded-xl p-4 lg:p-6 shadow-sm border border-gray-100 flex items-center justify-between">
                    <div className="flex items-center gap-4">
                        <div className="p-3 bg-gray-50 rounded-full">
                            <MapPin className="w-6 h-6 text-gray-700" />
@@ -580,15 +583,30 @@ export function CheckoutPage() {
                            </p>
                        </div>
                    </div>
-                   <button 
-                       onClick={() => {
-                           setShowProfilePanel(true);
-                           setProfilePanelContent('address');
-                       }}
-                       className="text-[#1BA672] font-bold text-sm hover:underline hover:text-[#14885E] transition-colors"
-                   >
-                       CHANGE
-                   </button>
+                   <div className="flex items-center">
+                       <button 
+                           onClick={() => {
+                               setShowProfilePanel(true);
+                               setProfilePanelContent('address');
+                           }}
+                           className="text-[#1BA672] font-bold text-sm hover:underline hover:text-[#14885E] transition-colors"
+                       >
+                           CHANGE
+                       </button>
+                       {selectedAddress?.id === 'device_location' && (
+                            <button 
+                                onClick={() => {
+                                    // Create a clean address object for pre-filling, removing the transient ID
+                                    const { id, ...addr } = selectedAddress;
+                                    setAddressToSave(addr);
+                                    setShowSaveAddressModal(true);
+                                }}
+                                className="ml-4 text-orange-600 font-bold text-sm hover:underline hover:text-orange-700 transition-colors"
+                            >
+                                SAVE
+                            </button>
+                       )}
+                   </div>
                 </div>
             </div>
 
@@ -784,6 +802,17 @@ export function CheckoutPage() {
         isOpen={showLoginPanel} 
         onClose={() => setShowLoginPanel(false)}
         onAuthComplete={() => setShowLoginPanel(false)}
+      />
+
+      <AddressModal 
+        isOpen={showSaveAddressModal}
+        onClose={() => setShowSaveAddressModal(false)}
+        editingAddress={addressToSave}
+        onSave={async () => {
+            setShowSaveAddressModal(false);
+            fetchAddresses(); // Refresh to get the newly saved address
+            toast.success("Address saved successfully");
+        }}
       />
     </div>
   );
