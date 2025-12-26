@@ -139,6 +139,43 @@ const AddressForm = ({
   const safeAvailableTypes = Array.isArray(availableTypes) ? availableTypes : ['home', 'work', 'other'];
   const { location, locationDisplay } = useLocation(); // Get device location in form component too
 
+  // Search State
+  const [searchText, setSearchText] = useState("");
+  const [predictions, setPredictions] = useState<any[]>([]);
+  const isSearching = searchText.trim().length > 0;
+  const placesServiceRef = useRef<any | null>(null);
+
+  const handlePredictionSelect = (prediction: any) => {
+     if (!window.google?.maps?.places) return;
+
+     if (!placesServiceRef.current) {
+        const dummyDiv = document.createElement('div');
+        placesServiceRef.current = new google.maps.places.PlacesService(dummyDiv);
+     }
+
+     const request = {
+        placeId: prediction.place_id,
+        fields: ['name', 'geometry', 'formatted_address', 'address_components']
+     };
+
+     placesServiceRef.current.getDetails(request, (place: any, status: any) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK && place && place.geometry && place.geometry.location) {
+             const lat = place.geometry.location.lat();
+             const lng = place.geometry.location.lng();
+             const address = place.formatted_address || place.name || '';
+             
+             // Update parent
+             onLocationSelect({ lat, lng }, address);
+             
+             // Clear search
+             setSearchText("");
+             setPredictions([]);
+        }
+     });
+  };
+
+
+
   // Uniqueness Checks
   // Check if Home exists
   const hasHome = existingAddresses.some((addr: any) => 
@@ -203,17 +240,44 @@ const AddressForm = ({
         {/* Search Input inline matching design */}
         <div className="mb-4">
            <LocationSearchInput 
-              onLocationSelect={(locationData) =>
-                onLocationSelect(
-                  { lat: locationData.lat, lng: locationData.lng },
-                  locationData.address,
-                )
-              }
+              onSearchChange={setSearchText}
+              onPredictionsChange={setPredictions}
+              onLocationSelect={() => {}} // Disabled as we handle it via predictions
            />
         </div>
 
+        {/* Search Results List */}
+        {isSearching && predictions.length > 0 ? (
+          <div className="space-y-3 px-1">
+             <h3 className="text-sm font-medium text-gray-500 mb-2">
+                Search Results
+             </h3>
+             {predictions.map((prediction) => (
+                <button
+                  key={prediction.place_id}
+                  onClick={() => handlePredictionSelect(prediction)}
+                  className="w-full flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors text-left border-b border-gray-50 last:border-0"
+                >
+                   <MapPin className="h-5 w-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                   <div>
+                      <h4 className="font-medium text-gray-900 text-sm">
+                         {prediction.structured_formatting?.main_text || prediction.description}
+                      </h4>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                         {prediction.structured_formatting?.secondary_text}
+                      </p>
+                   </div>
+                </button>
+             ))}
+             <div className="flex justify-end p-2">
+                 <span className="text-[10px] text-gray-400">powered by Google</span>
+             </div>
+          </div>
+        ) : (
+          <>
         {/* Google Maps Location Picker */}
         <GoogleMapPicker
+          key={`${newAddress.latitude}-${newAddress.longitude}`}
           onLocationSelect={(locationData) =>
             onLocationSelect(
               { lat: locationData.lat, lng: locationData.lng },
@@ -452,6 +516,8 @@ const AddressForm = ({
             </div>
           )}
         </div>
+          </>
+        )}
       </div>
 
       {/* Save Button - Sticky at bottom on mobile */}

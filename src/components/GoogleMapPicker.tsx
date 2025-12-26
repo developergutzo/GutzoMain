@@ -448,8 +448,13 @@ export function GoogleMapPicker({
     }
   }, [isMapLoaded, initializeMap, initializeAutocomplete, isMobile]);
 
-  // Auto-request current location when component mounts
+  // Auto-request current location when component mounts ONLY if no initial/default location provided
   useEffect(() => {
+    // If we have an initial location or default location, DO NOT auto-fetch GPS
+    if (initialLocation || defaultLocation) {
+      return;
+    }
+
     // Longer delay for mobile to ensure component is fully mounted
     const locationDelay = isMobile ? 1000 : 500;
     
@@ -458,7 +463,7 @@ export function GoogleMapPicker({
     }, locationDelay);
     
     return () => clearTimeout(timer);
-  }, [isMobile]);
+  }, [isMobile, initialLocation, defaultLocation]);
 
   // Touch interaction handler for mobile map readiness
   const handleContainerTouch = useCallback(() => {
