@@ -114,6 +114,7 @@ function AppContent() {
     };
   } | null>(null);
   const [showAddressModal, setShowAddressModal] = useState(false);
+  const [editingAddress, setEditingAddress] = useState<any>(null); // Added state
   const [showAddressPanel, setShowAddressPanel] = useState(false);
   const [returnToCheckout, setReturnToCheckout] = useState(false);
   const listingsRef = useRef<HTMLDivElement>(null);
@@ -123,7 +124,7 @@ function AppContent() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [addressRefreshTrigger, setAddressRefreshTrigger] = useState(0); // Trigger for address updates
   const [showLocationSheet, setShowLocationSheet] = useState(false);
-  const [returnToLocationSheet, setReturnToLocationSheet] = useState(false);
+  const returnToLocationSheetRef = useRef(false);
 
   // Next steps state for meal plan
   // (already declared above, remove duplicate)
@@ -221,10 +222,10 @@ function AppContent() {
   const handleCloseProfile = () => {
     setShowProfilePanel(false);
     setProfileOrderData(null);
-    if (returnToCheckout) {
+    if (returnToLocationSheetRef.current) {
       setTimeout(() => {
         setShowCheckoutPanel(true);
-        setReturnToCheckout(false);
+        returnToLocationSheetRef.current = false;
       }, 250);
     }
   };
@@ -318,22 +319,45 @@ function AppContent() {
     setShowAddressModal(false);
     
     // Check if we need to return to the location sheet
-    if (returnToLocationSheet) {
+    if (returnToLocationSheetRef.current) {
       setTimeout(() => {
         setShowLocationSheet(true);
-        setReturnToLocationSheet(false);
+        returnToLocationSheetRef.current = false;
       }, 300); // Small delay for smooth transition
     }
   };
 
+
+
   const handleOpenAddAddress = () => {
+    setEditingAddress(null);
     setShowLocationSheet(false);
     setShowAddressModal(true);
-    setReturnToLocationSheet(true);
+    returnToLocationSheetRef.current = true;
   };
-   const handleShowLocationSheet = () => {
-       setShowLocationSheet(true);
-   };
+
+  const handleEditAddress = (address: any) => {
+    setEditingAddress(address);
+    setShowLocationSheet(false);
+    setShowAddressModal(true);
+    returnToLocationSheetRef.current = true;
+  };
+
+  const handleShowLocationSheet = () => {
+    setShowLocationSheet(true);
+  };
+
+  const handleCloseAddressModal = () => {
+    setShowAddressModal(false);
+    setEditingAddress(null);
+    if (returnToLocationSheetRef.current) {
+      // Small delay to ensure modal teardown doesn't conflict with sheet mounting
+      setTimeout(() => {
+        setShowLocationSheet(true);
+        returnToLocationSheetRef.current = false;
+      }, 100);
+    }
+  };
   const handleAddressSelected = (address: any) => {
     setShowAddressPanel(false);
   };
@@ -548,15 +572,18 @@ function AppContent() {
           onContinueExploring={handleContinueExploringFromSuccess}
         />
       )}
-      <AddressModal
+  <AddressModal
         isOpen={showAddressModal}
-        onClose={() => setShowAddressModal(false)}
+        onClose={handleCloseAddressModal}
         onSave={handleAddressAdded}
+        editingAddress={editingAddress}
       />
       <LocationBottomSheet
         isOpen={showLocationSheet}
         onClose={() => setShowLocationSheet(false)}
         onAddAddress={handleOpenAddAddress}
+        onEditAddress={handleEditAddress}
+        refreshTrigger={addressRefreshTrigger}
       />
       <AddressListPanel
         isOpen={showAddressPanel}

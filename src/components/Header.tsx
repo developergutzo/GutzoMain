@@ -3,6 +3,16 @@ import MobileProfileIcon from "./MobileProfileIcon";
 import { useState } from "react";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback } from "./ui/avatar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "./ui/alert-dialog";
 import { ProfileDropdown } from "./auth/ProfileDropdown";
 import { useLocation } from "../contexts/LocationContext";
 import { useCart } from "../contexts/CartContext";
@@ -46,9 +56,11 @@ export function Header({ onShowLogin, onLogout, onShowProfile, onShowCart, onSho
   const { isAuthenticated, user, isLoading: authLoading } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
   // showLocationSheet state moved to App.tsx
+  // showLocationSheet state moved to App.tsx
   const [showSearchSheet, setShowSearchSheet] = useState(false);
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // Get display name from AuthContext
   const displayName = user?.name || 'User';
@@ -65,7 +77,7 @@ export function Header({ onShowLogin, onLogout, onShowProfile, onShowCart, onSho
 
   const handleDropdownOptionClick = (option: 'profile' | 'orders' | 'address' | 'logout') => {
     if (option === 'logout') {
-      onLogout?.();
+      setShowLogoutConfirm(true);
     } else {
       onShowProfile?.(option);
     }
@@ -344,6 +356,67 @@ export function Header({ onShowLogin, onLogout, onShowProfile, onShowCart, onSho
         searchQuery={searchQuery}
         onSearchChange={onSearchChange || (() => {})}
       />
+
+      <AlertDialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
+        <AlertDialogContent 
+          className="p-6 border-0 shadow-xl bg-white gap-0 overflow-hidden outline-none"
+          style={{ 
+            borderRadius: '24px',
+            width: '90vw',
+            maxWidth: '360px'
+          }}
+        >
+          {/* Close Icon (Top Right) */}
+          <button 
+            onClick={() => setShowLogoutConfirm(false)}
+            className="absolute right-4 top-4 p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors outline-none"
+          >
+             <X size={20} strokeWidth={2.5} />
+          </button>
+
+          <div className="flex flex-col gap-2 mt-2">
+            <AlertDialogHeader className="space-y-0">
+              <AlertDialogTitle 
+                className="text-left text-gray-900 leading-tight"
+                style={{ fontSize: '20px', fontWeight: 600 }}
+              >
+                Log Out?
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-left text-[14px] text-gray-600 font-normal leading-relaxed mt-2 mb-6">
+                Are you sure you want to log out?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+
+            <div className="grid grid-cols-2 gap-3 w-full">
+              <button 
+                className="w-full h-12 flex items-center justify-center font-bold text-[16px] uppercase tracking-wide transition-transform active:scale-95 outline-none"
+                style={{ 
+                  backgroundColor: '#E8F6F1',
+                  color: '#1BA672',
+                  borderRadius: '10px'
+                }}
+                onClick={() => setShowLogoutConfirm(false)}
+              >
+                No
+              </button>
+              
+              <button
+                className="w-full h-12 flex items-center justify-center text-white font-bold text-[16px] uppercase tracking-wide shadow-md transition-transform active:scale-95 outline-none"
+                style={{ 
+                   backgroundColor: '#1BA672',
+                   borderRadius: '10px'
+                }}
+                onClick={() => {
+                  onLogout?.();
+                  setShowLogoutConfirm(false);
+                }}
+              >
+                Yes
+              </button>
+            </div>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

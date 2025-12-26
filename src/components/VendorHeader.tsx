@@ -10,12 +10,13 @@ interface VendorHeaderProps {
   tags: string[];
   cuisineType?: string;
   userAddressLabel?: string;
+  isLoadingEta?: boolean;
   onAddressClick?: () => void;
   onBack?: () => void;
 }
 
 
-const VendorHeader: React.FC<VendorHeaderProps> = ({ name, rating, reviews, location, deliveryTime, tags, cuisineType, userAddressLabel, onAddressClick, onBack }) => {
+const VendorHeader: React.FC<VendorHeaderProps> = ({ name, rating, reviews, location, deliveryTime, tags, cuisineType, userAddressLabel, isLoadingEta, onAddressClick, onBack }) => {
   // Construct dynamic tagline: "Cuisine · First Tag"
   const tagline = [
     cuisineType,
@@ -82,7 +83,11 @@ const VendorHeader: React.FC<VendorHeaderProps> = ({ name, rating, reviews, loca
               <span style={{ color: '#6B6B6B', fontWeight: 500, fontSize: '0.95rem', marginLeft: 2 }}>{location}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', minHeight: 28 }}>
-              <span style={{ color: '#1A1A1A', fontWeight: 700, fontSize: '0.95rem', marginRight: 6 }}>{deliveryTime}</span>
+              {isLoadingEta ? (
+                 <div className="h-5 w-24 bg-gray-100 animate-pulse rounded mr-2 blur-[1px] opacity-70" style={{ marginRight: 6 }}></div>
+              ) : (
+                <span style={{ color: '#1A1A1A', fontWeight: 700, fontSize: '0.95rem', marginRight: 6 }}>{deliveryTime}</span>
+              )}
               <span 
                 onClick={onAddressClick}
                 style={{ 

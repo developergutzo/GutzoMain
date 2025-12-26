@@ -79,6 +79,7 @@ import { useLocation as useUserLocation } from '../contexts/LocationContext';
 import { Header } from "../components/Header";
 import WeeklyMealPlansSection from "../components/WeeklyMealPlansSection";
 import MealPlanBottomSheet from "./MealPlanBottomSheet";
+import VendorDetailsSkeleton from "./VendorDetailsSkeleton";
 
 
 function getVendorIdFromRoute(route: string) {
@@ -120,6 +121,7 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors
   const [profilePanelContent, setProfilePanelContent] = useState<'profile' | 'orders' | 'address'>('profile');
   const [dynamicEta, setDynamicEta] = useState<string | null>(null);
   const [isServiceable, setIsServiceable] = useState<boolean>(true);
+  const [isLoadingEta, setIsLoadingEta] = useState<boolean>(true);
 
   // Fallback: Fetch vendor if not found in list (e.g. refresh or deep link)
   useEffect(() => {
@@ -220,7 +222,11 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors
           }
         } catch (e) {
           console.error("Failed to fetch dynamic ETA", e);
+        } finally {
+          setIsLoadingEta(false);
         }
+      } else {
+        setIsLoadingEta(false);
       }
     };
 
@@ -309,6 +315,7 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors
             reviews={400}
             location={vendor.location}
             deliveryTime={!isServiceable ? "Not Serviceable" : (dynamicEta || vendor.deliveryTime)}
+            isLoadingEta={isLoadingEta}
             userAddressLabel={locationDisplay || "Location"}
             onAddressClick={() => {
               setProfilePanelContent('address');
@@ -408,7 +415,7 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors
   }
 
   if (loading) {
-    return <div className="vendor-details-page open"><p>Loading vendor details...</p></div>;
+    return <VendorDetailsSkeleton />;
   }
 
   return <div className="vendor-details-page open"><p>Vendor not found.</p></div>;

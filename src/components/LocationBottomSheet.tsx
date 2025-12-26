@@ -1,5 +1,11 @@
-import { MapPin, Loader2, AlertCircle, X, Navigation, Plus, ChevronRight, LocateFixed, Home, Building2, Trash2, Search, MoreVertical, Edit2 } from "lucide-react";
+import { MapPin, Loader2, AlertCircle, X, Navigation, Plus, ChevronRight, LocateFixed, Home, Building2, Search, MoreVertical, Edit2, Trash2 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "./ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,6 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "./ui/alert-dialog";
+
 import { Button } from "./ui/button";
 import { useLocation } from "../contexts/LocationContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -21,71 +28,56 @@ import { getGoogleMapsApiKey } from "../utils/googleMapsConfig";
 import { AddressApi } from "../utils/addressApi";
 import { UserAddress } from "../types/address";
 import { LocationSearchInput } from "./common/LocationSearchInput";
-import { AddressModal } from "./auth/AddressModal";
+
 import { useAddresses } from "../hooks/useAddresses";
 
 export interface LocationBottomSheetProps {
   isOpen: boolean;
   onClose: () => void;
   onAddAddress?: () => void;
+  onEditAddress?: (address: UserAddress) => void;
+  refreshTrigger?: number;
 }
 
-export function LocationBottomSheet({ isOpen, onClose, onAddAddress }: LocationBottomSheetProps) {
-  const { locationDisplay, isLoading, error, refreshLocation, isInCoimbatore, isDefaultAddress, locationLabel } = useLocation();
-  const { isAuthenticated, user } = useAuth();
-  
-  // Refactor to use hook
-  const { 
-    addresses: savedAddresses, 
-    loading: isLoadingAddresses, 
+export function LocationBottomSheet({ isOpen, onClose, onAddAddress, onEditAddress, refreshTrigger }: LocationBottomSheetProps) {
+  const {
+    addresses,
+    loading: addressesLoading,
+    error: addressesError,
+    deleteAddress,
+    setDefaultAddress,
     refreshAddresses,
-    deleteAddress 
+    refreshAvailableTypes,
+    defaultAddress
   } = useAddresses();
+  const {
+    location,
+    locationDisplay,
+    locationLabel,
+    isLoading: locationLoading,
+    refreshLocation,
+    error: locationError
+  } = useLocation();
+  const { isAuthenticated, user } = useAuth();
 
-  const [editingAddress, setEditingAddress] = useState<UserAddress | null>(null);
-  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [addressToDelete, setAddressToDelete] = useState<string | null>(null);
-  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  useEffect(() => {
+    if (isOpen) {
+       refreshAddresses();
+    }
+  }, [isOpen, refreshTrigger, refreshAddresses]);
+
+
+
 
   const navigate = useNavigate();
 
   // Close menu on outside click
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (activeMenuId && !(event.target as Element).closest('.address-menu-trigger') && !(event.target as Element).closest('.address-menu-content')) {
-         setActiveMenuId(null);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [activeMenuId]);
 
 
-  
-  const handleEditAddress = (address: UserAddress) => {
-     setEditingAddress(address);
-     setIsAddressModalOpen(true);
-     setActiveMenuId(null);
-  };
-   
-  const handleDeleteClick = (addressId: string) => {
-     setAddressToDelete(addressId);
-     setShowDeleteConfirm(true);
-     setActiveMenuId(null);
-  };
 
-  const confirmDelete = async () => {
-     if (addressToDelete) {
-        await deleteAddress(addressToDelete);
-        setShowDeleteConfirm(false);
-        setAddressToDelete(null);
-     }
-  };
 
   const handleAddAddress = () => {
-    setEditingAddress(null);
-    setIsAddressModalOpen(true);
+    onAddAddress?.();
   };
 
   const handleDetectLocation = async () => {
@@ -95,13 +87,14 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress }: LocationB
   };
 
   const [selectingAddressId, setSelectingAddressId] = useState<string | null>(null);
+  const [deleteConfirmationId, setDeleteConfirmationId] = useState<string | null>(null);
 
   const handleSelectAddress = async (address: UserAddress) => {
       if (user?.phone) {
           try {
             setSelectingAddressId(address.id);
             // Set as default address
-            await AddressApi.setDefaultAddress(address.id, user.phone);
+            await setDefaultAddress(address.id);
             // Refresh location context
             await refreshLocation();
             onClose();
@@ -114,15 +107,13 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress }: LocationB
       }
   };
 
-  const handleManageAddresses = () => {
-    onAddAddress?.();
-  };
+
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent 
-        side="bottom" 
-        className="rounded-t-3xl p-0 w-full max-w-full left-0 right-0 transition-transform duration-300 ease-in-out" 
+      <SheetContent
+        side="bottom"
+        className="rounded-t-3xl p-0 w-full max-w-full left-0 right-0 transition-transform duration-300 ease-in-out"
         style={{ top: '104px', bottom: 0, height: 'calc(100vh - 104px)', position: 'fixed', zIndex: 1100 }}
       >
         <style>{`
@@ -169,8 +160,8 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress }: LocationB
               <X className="h-5 w-5 text-gray-500" />
             </button>
           </div>
-          
-          <LocationSearchInput 
+
+          <LocationSearchInput
             onLocationSelect={(loc) => {
               console.log("Selected from search:", loc);
               // TODO: Handle selection (update context?)
@@ -183,12 +174,12 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress }: LocationB
           {/* Use Current Location Row */}
           <button
             onClick={handleDetectLocation}
-            disabled={isLoading}
+            disabled={locationLoading}
             className="w-full flex items-center justify-between p-4 rounded-[0.8rem] border border-gray-100 bg-white shadow-sm transition-colors hover:bg-gray-50 text-left group"
           >
             <div className="flex items-start gap-4 min-w-0">
               <div className="p-2 bg-gutzo-primary/10 rounded-full flex-shrink-0 group-hover:bg-gutzo-primary/20 transition-colors">
-                {isLoading ? (
+                {locationLoading ? (
                    <Loader2 className="h-5 w-5 text-gutzo-primary animate-spin" />
                 ) : (
                    <LocateFixed className="h-5 w-5 text-gutzo-primary" />
@@ -220,8 +211,8 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress }: LocationB
               {/* Saved Addresses Section */}
               <div className="pt-2">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Saved Addresses</h3>
-                
-                {isLoadingAddresses ? (
+
+                {addressesLoading ? (
                   /* Loading Skeletons */
                   <div className="space-y-3">
                     {[1, 2, 3].map((i) => (
@@ -237,14 +228,14 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress }: LocationB
                       </div>
                     ))}
                   </div>
-                ) : savedAddresses.length > 0 ? (
+                ) : addresses.length > 0 ? (
                   /* Address List */
                   <div className="space-y-3">
-                    {savedAddresses.map((addr) => {
+                    {addresses.map((addr) => {
                       const Icon = addr.type === 'home' ? Home : addr.type === 'work' ? Building2 : MapPin;
                       const label = addr.custom_label || (addr.type.charAt(0).toUpperCase() + addr.type.slice(1));
                       const isSelecting = selectingAddressId === addr.id;
-                      
+
                       return (
                         <div
                           key={addr.id}
@@ -259,12 +250,12 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress }: LocationB
                                 <h4 className="font-medium text-gray-900 mb-1 flex items-center gap-2">
                                 {label}
                                 {addr.is_default && (
-                                  <span 
+                                  <span
                                     className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border"
-                                    style={{ 
-                                      backgroundColor: '#E8F6F1', 
-                                      color: '#1BA672', 
-                                      borderColor: '#1BA672' 
+                                    style={{
+                                      backgroundColor: '#E8F6F1',
+                                      color: '#1BA672',
+                                      borderColor: '#1BA672'
                                     }}
                                   >
                                     Selected
@@ -280,43 +271,44 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress }: LocationB
                                 </p>
                               )}
                             </div>
-                            
-                            {/* 3-Dot Menu */}
-                            <div className="relative">
-                                <button 
-                                  className="p-2 -mr-2 -mt-2 text-gray-400 hover:text-gray-600 transition-colors address-menu-trigger"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setActiveMenuId(activeMenuId === addr.id ? null : addr.id);
-                                  }}
-                                >
-                                  <MoreVertical className="h-5 w-5" />
-                                </button>
 
-                                {activeMenuId === addr.id && (
-                                    <div className="absolute right-0 top-8 w-32 bg-white rounded-lg shadow-lg border border-gray-100 z-50 py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-200 address-menu-content">
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleEditAddress(addr);
-                                            }}
-                                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                                        >
-                                            <Edit2 className="h-3.5 w-3.5" />
-                                            Edit
-                                        </button>
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleDeleteClick(addr.id);
-                                            }}
-                                            className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                                        >
-                                            <Trash2 className="h-3.5 w-3.5" />
-                                            Delete
-                                        </button>
-                                    </div>
-                                )}
+                            <div
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault(); // Also prevent default
+                              }}
+                              onPointerDown={(e) => e.stopPropagation()} // Stop pointer down propagation too
+                            >
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <button
+                                    className="p-1 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0 ml-2 outline-none h-8 w-8 flex items-center justify-center cursor-pointer"
+                                  >
+                                    <MoreVertical className="h-5 w-5 text-gray-500" />
+                                  </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-40 bg-white rounded-xl shadow-lg border-gray-100 p-1 z-[9999]">
+                                  <DropdownMenuItem
+                                    className="flex items-center gap-2 cursor-pointer rounded-lg px-2 py-2 hover:bg-gray-50 text-gray-700 text-sm font-medium outline-none"
+                                    onClick={() => {
+                                      onEditAddress?.(addr);
+                                    }}
+                                  >
+                                    <Edit2 className="h-4 w-4" />
+                                    <span>Edit</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="flex items-center gap-2 cursor-pointer rounded-lg px-2 py-2 hover:bg-red-50 text-red-600 focus:bg-red-50 focus:text-red-600 text-sm font-medium outline-none"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setDeleteConfirmationId(addr.id);
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                    <span>Delete</span>
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
                           </div>
                         </div>
@@ -330,6 +322,69 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress }: LocationB
                   </div>
                 )}
               </div>
+
+              <AlertDialog open={!!deleteConfirmationId} onOpenChange={(open) => !open && setDeleteConfirmationId(null)}>
+                <AlertDialogContent 
+                  className="p-6 border-0 shadow-xl bg-white gap-0 overflow-hidden outline-none"
+                  style={{ 
+                    borderRadius: '24px',
+                    width: '90vw',
+                    maxWidth: '360px'
+                  }}
+                >
+                  {/* Close Icon (Top Right) */}
+                  <button 
+                    onClick={() => setDeleteConfirmationId(null)}
+                    className="absolute right-4 top-4 p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors outline-none"
+                  >
+                     <X size={20} strokeWidth={2.5} />
+                  </button>
+
+                  <div className="flex flex-col gap-2 mt-2">
+                    <AlertDialogHeader className="space-y-0">
+                      <AlertDialogTitle 
+                        className="text-left text-gray-900 leading-tight"
+                        style={{ fontSize: '20px', fontWeight: 600 }}
+                      >
+                        Delete Address?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription className="text-left text-[14px] text-gray-600 font-normal leading-relaxed mt-2 mb-6">
+                        Are you sure you want to delete this address?
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+
+                    <div className="grid grid-cols-2 gap-3 w-full">
+                      <button 
+                        className="w-full h-12 flex items-center justify-center font-bold text-[16px] uppercase tracking-wide transition-transform active:scale-95 outline-none"
+                        style={{ 
+                          backgroundColor: '#E8F6F1',
+                          color: '#1BA672',
+                          borderRadius: '10px'
+                        }}
+                        onClick={() => setDeleteConfirmationId(null)}
+                      >
+                        No
+                      </button>
+                      
+                      <button
+                        className="w-full h-12 flex items-center justify-center text-white font-bold text-[16px] uppercase tracking-wide shadow-md transition-transform active:scale-95 outline-none"
+                        style={{ 
+                           backgroundColor: '#1BA672',
+                           borderRadius: '10px'
+                        }}
+                        onClick={async () => {
+                          if (deleteConfirmationId) {
+                            await deleteAddress(deleteConfirmationId);
+                            setDeleteConfirmationId(null);
+                          }
+                        }}
+                      >
+                        Yes
+                      </button>
+                    </div>
+                  </div>
+                </AlertDialogContent>
+              </AlertDialog>
             </>
           )}
 
@@ -337,7 +392,7 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress }: LocationB
       </SheetContent>
 
       {/* Global Full Screen App Loader */}
-      {(selectingAddressId || isLoading) && createPortal(
+      {(selectingAddressId || locationLoading) && createPortal(
         <div className="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center animate-in fade-in duration-300">
             <div className="flex flex-col items-center gap-6">
                 <div className="relative">
@@ -346,64 +401,22 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress }: LocationB
                     <img
                         src="https://35-194-40-59.nip.io/service/storage/v1/object/public/Gutzo/GUTZO.svg"
                         alt="Gutzo"
-                        className="w-40 h-auto relative z-10 animate-bounce-slight" 
+                        className="w-40 h-auto relative z-10 animate-bounce-slight"
                         style={{ filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.1))' }}
                     />
                 </div>
                 
                 <div className="flex flex-col items-center gap-3 mt-8">
-                     <Loader2 className="h-8 w-8 text-gutzo-primary animate-spin" />
-                     <div className="text-center">
-                        <h3 className="text-lg font-semibold text-gray-900">
-                             {isLoading ? "Finding your spot..." : "Setting your location..."}
-                        </h3>
-                        <p className="text-sm text-gray-500 mt-1">
-                            Hang tight, bringing you the best food around!
+                     <p className="text-lg font-semibold text-gray-700">
+                             {locationLoading ? "Finding your spot..." : "Setting your location..."}
                         </p>
                      </div>
-                </div>
+
             </div>
         </div>,
         document.body
       )}
 
-      {/* Internal Address Modal for Add/Edit */}
-      <AddressModal
-        isOpen={isAddressModalOpen}
-        onClose={() => setIsAddressModalOpen(false)}
-        editingAddress={editingAddress}
-        onSave={async () => {
-            await refreshAddresses();
-            setIsAddressModalOpen(false);
-        }}
-      />
-
-      {/* Delete Confirmation Modal */}
-      {/* Delete Confirmation Modal */}
-      <AlertDialog open={showDeleteConfirm} onOpenChange={(open) => !open && setShowDeleteConfirm(false)}>
-        <AlertDialogContent className="z-[100001] rounded-2xl max-w-sm gap-4 p-6 shadow-xl">
-          <AlertDialogHeader className="items-start text-left">
-            <AlertDialogTitle className="text-lg font-bold text-gray-900">Delete Address?</AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-500 font-medium text-base">
-              Are you sure you want to delete this address? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-row gap-3 mt-2">
-            <AlertDialogCancel 
-              className="flex-1 rounded-xl h-12 font-semibold border-gray-200 mt-0 hover:bg-gray-50 hover:text-gray-900"
-              onClick={() => setShowDeleteConfirm(false)}
-            >
-              No
-            </AlertDialogCancel>
-            <AlertDialogAction 
-              className="flex-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl h-12 font-bold transition-colors shadow-none"
-              onClick={confirmDelete}
-            >
-              Yes
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </Sheet>
   );
 }

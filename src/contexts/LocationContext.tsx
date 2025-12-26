@@ -230,6 +230,16 @@ export function LocationProvider({ children }: LocationProviderProps) {
     enforceDefaultPriority();
   }, [isAuthenticated, user?.phone]);
 
+  // Reset location to GPS when user logs out
+  useEffect(() => {
+    if (!isAuthenticated) {
+      console.log('🔒 User logged out: Resetting location to detected GPS coordinates');
+      // Reset label immediately to avoid UI flash while refreshing
+      setLocationLabel(null);
+      refreshLocation();
+    }
+  }, [isAuthenticated]);
+
   return (
     <LocationContext.Provider
       value={{
