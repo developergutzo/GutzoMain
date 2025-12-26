@@ -43,7 +43,9 @@ app.use(cors({
     const allowedOrigins = [
       'http://localhost:8000', 
       'https://192-168-1-36.nip.io', 
-      'http://localhost:3001'
+      'http://localhost:3001',
+      'https://gutzo.in',
+      'https://35-194-40-59.nip.io'
     ];
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);

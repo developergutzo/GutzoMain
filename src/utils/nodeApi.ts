@@ -2,9 +2,8 @@ import { supabase } from "./supabase/client";
 
 class NodeApiService {
     private get baseUrl() {
-        // Use relative path (empty string) so requests go to localhost:8000/api
-        // and get proxied by Vite to localhost:3001. This fixes CORS.
-        return "";
+        // Use environment variable if set (for production), otherwise relative (for dev proxy)
+        return import.meta.env.VITE_SUPABASE_FUNCTION_URL || "";
     }
 
     private formatPhone(phone: string) {

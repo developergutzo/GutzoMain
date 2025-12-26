@@ -15,13 +15,13 @@ cat > Dockerfile.deploy << 'EOF'
 FROM node:18-alpine AS build
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm install --legacy-peer-deps
 COPY . .
 
 # Set environment variables directly (will be baked into the build)
 ENV VITE_SUPABASE_URL="https://35-194-40-59.nip.io/service"
 ENV VITE_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE"
-ENV VITE_SUPABASE_FUNCTION_URL="https://35-194-40-59.nip.io/deno"
+ENV VITE_SUPABASE_FUNCTION_URL="https://35-194-40-59.nip.io/api"
 ENV VITE_DUMMY_LOGIN=true
 
 RUN npm run build
@@ -52,9 +52,14 @@ mv Dockerfile Dockerfile.original
 # Use the deploy Dockerfile
 mv Dockerfile.deploy Dockerfile
 
-# Deploy
+# 1. Build the container image using Cloud Build (streams logs to console)
+echo "🔨 Building container image..."
+gcloud builds submit --tag gcr.io/${PROJECT_ID}/${SERVICE_NAME} .
+
+# 2. Deploy the built image to Cloud Run
+echo "🚀 Deploying container to Cloud Run..."
 gcloud run deploy ${SERVICE_NAME} \
-  --source . \
+  --image gcr.io/${PROJECT_ID}/${SERVICE_NAME} \
   --platform managed \
   --region ${REGION} \
   --allow-unauthenticated \
