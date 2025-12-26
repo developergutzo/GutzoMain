@@ -117,6 +117,12 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress, onEditAddre
   const [predictions, setPredictions] = useState<google.maps.places.AutocompletePrediction[]>([]);
   const isSearching = searchText.trim().length > 0;
 
+  // Reset search state when sheet is opened or closed
+  useEffect(() => {
+    setSearchText("");
+    setPredictions([]);
+  }, [isOpen]);
+
   // Use a ref for PlacesService to avoid re-creating it
   const placesServiceRef = useRef<google.maps.places.PlacesService | null>(null);
 
@@ -249,6 +255,7 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress, onEditAddre
           </div>
 
           <LocationSearchInput
+            key={isOpen ? 'search-active' : 'search-inactive'} 
             onSearchChange={setSearchText}
             onLocationSelect={() => {}} // Disabled as we handle it via predictions
             onPredictionsChange={setPredictions}
@@ -273,7 +280,7 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress, onEditAddre
               <div className="min-w-0">
                 <h4 className="font-semibold text-gutzo-primary">Use current location</h4>
                 <p className="text-sm text-gray-500 truncate mt-0.5">
-                   {locationDisplay}
+                   Using GPS
                 </p>
               </div>
             </div>
