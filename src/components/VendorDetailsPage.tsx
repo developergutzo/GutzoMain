@@ -151,25 +151,25 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors
       let userLng = userLocation?.coordinates?.longitude;
       let dropAddress = locationDisplay || "Customer Location";
 
-      // If authenticated, try to use default address coordinates for more precision
-      if (isAuthenticated && user?.phone) {
-        try {
-          const res = await AddressApi.getDefaultAddress(user.phone);
-          if (res.success && res.data) {
-            if (res.data.latitude && res.data.longitude) {
-              userLat = res.data.latitude;
-              userLng = res.data.longitude;
-            }
-            // Use precise address string if available
-            const formattedAddress = AddressApi.getAddressDisplayText(res.data);
-            if (formattedAddress) {
-              dropAddress = formattedAddress;
-            }
-          }
-        } catch (e) {
-          // Fallback to GPS/Context location
-        }
-      }
+      //// If authenticated, try to use default address coordinates for more precision
+      // if (isAuthenticated && user?.phone) {
+      //   try {
+      //     const res = await AddressApi.getDefaultAddress(user.phone);
+      //     if (res.success && res.data) {
+      //       if (res.data.latitude && res.data.longitude) {
+      //         userLat = res.data.latitude;
+      //         userLng = res.data.longitude;
+      //       }
+      //       // Use precise address string if available
+      //       const formattedAddress = AddressApi.getAddressDisplayText(res.data);
+      //       if (formattedAddress) {
+      //         dropAddress = formattedAddress;
+      //       }
+      //     }
+      //   } catch (e) {
+      //     // Fallback to GPS/Context location
+      //   }
+      // }
 
       if (userLat && userLng) {
         try {
