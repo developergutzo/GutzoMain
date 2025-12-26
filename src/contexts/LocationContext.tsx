@@ -7,6 +7,7 @@ interface LocationData {
   city: string;
   state: string;
   country: string;
+  formatted_address?: string;
   coordinates: {
     latitude: number;
     longitude: number;

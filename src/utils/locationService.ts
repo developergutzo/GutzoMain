@@ -2,6 +2,7 @@ interface LocationData {
   city: string;
   state: string;
   country: string;
+  formatted_address?: string;
   coordinates: {
     latitude: number;
     longitude: number;
@@ -60,7 +61,9 @@ export class LocationService {
 
   // Get location display string
   static getLocationDisplay(location: LocationData): string {
-    if (location.city && location.state) {
+    if (location.formatted_address) {
+      return location.formatted_address;
+    } else if (location.city && location.state) {
       return `${location.city}, ${location.state}`;
     } else if (location.city) {
       return location.city;

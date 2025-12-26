@@ -140,14 +140,34 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress, onEditAddre
              const lng = place.geometry.location.lng();
              const address = place.formatted_address || place.name || '';
              
+             // Extract City and State for logic (like isInCoimbatore)
+             let city = '';
+             let state = '';
+             let country = 'India';
+
+             if (place.address_components) {
+                for (const component of place.address_components) {
+                    if (component.types.includes('locality')) {
+                        city = component.long_name;
+                    }
+                    if (component.types.includes('administrative_area_level_1')) {
+                        state = component.long_name;
+                    }
+                    if (component.types.includes('country')) {
+                        country = component.long_name;
+                    }
+                }
+             }
+
              // Construct LocationData object
              const selectedLocation = {
-                city: '', // Helper function or leave blank
-                state: '',
-                country: 'India',
+                city,
+                state,
+                country,
+                formatted_address: address, // This will be used for display
                 coordinates: {
-                latitude: lat,
-                longitude: lng
+                  latitude: lat,
+                  longitude: lng
                 },
                 timestamp: Date.now()
              };
