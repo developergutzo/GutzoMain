@@ -1,6 +1,6 @@
 # Gutzo Marketplace - Database Schema & UML Design
 
-A comprehensive database design for the Gutzo multi-vendor healthy meals
+A comprehensive database design for the Gutzo multi-vendor everyday meals
 marketplace, covering all use cases from the current UI implementation.
 
 ---

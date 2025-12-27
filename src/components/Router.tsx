@@ -16,22 +16,22 @@ export function RouterProvider({ children }: { children: ReactNode }) {
   // Update document title based on route
   const updateDocumentTitle = useCallback((route: Route) => {
     const titles: Record<string, string> = {
-      '/': 'Gutzo - Healthy Meals in Coimbra',
-      '/T&C': 'Terms & Conditions - Gutzo',
-      '/refund_policy': 'Refund Policy - Gutzo',
-      '/privacy_policy': 'Privacy Policy - Gutzo',
-      '/payment-status': 'Payment Status - Gutzo',
-      '/contact': 'Contact Us - Gutzo',
-      '/about': 'About Us - Gutzo',
+      '/': 'Gutzo - Food you’ll eat again',
+      '/T&C': 'Terms & Conditions | Gutzo',
+      '/refund_policy': 'Refund Policy | Gutzo',
+      '/privacy_policy': 'Privacy Policy | Gutzo',
+      '/payment-status': 'Payment Status | Gutzo',
+      '/contact': 'Contact Us | Gutzo',
+      '/about': 'About Us | Gutzo',
       '/partner-with-gutzo': 'Partner with Gutzo',
-      '/partner/login': 'Partner Login - Gutzo',
-      '/partner/dashboard': 'Kitchen Dashboard - Gutzo',
-      '/checkout': 'Checkout - Gutzo',
-      '/phonepe-soon': 'PhonePe Integration - Gutzo'
+      '/partner/login': 'Partner Login | Gutzo',
+      '/partner/dashboard': 'Kitchen Dashboard | Gutzo',
+      '/checkout': 'Checkout | Gutzo',
+      '/phonepe-soon': 'PhonePe Integration | Gutzo'
     };
     // Handle vendor route explicitly as it's dynamic
     if (route.startsWith('/vendor/')) {
-       document.title = 'Gutzo - Healthy Kitchen';
+       document.title = 'Order Online | Gutzo';
     } else {
        document.title = titles[route] || 'Gutzo';
     }

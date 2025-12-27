@@ -14,6 +14,7 @@ import { Header } from '../components/Header';
 import { toast } from 'sonner';
 import { LoginPanel } from '../components/auth/LoginPanel';
 import { AddressModal } from '../components/auth/AddressModal';
+import { LocationBottomSheet } from '../components/LocationBottomSheet';
 
 
 
@@ -60,6 +61,10 @@ export function CheckoutPage() {
   };
 
   const handleShowProfile = (content: 'profile' | 'orders' | 'address') => {
+    if (content === 'address') {
+        setShowLocationSheet(true);
+        return;
+    }
     setProfilePanelContent(content);
     setShowProfilePanel(true);
   };
@@ -77,6 +82,8 @@ export function CheckoutPage() {
   const [addresses, setAddresses] = useState<any[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<any>(null);
   const [showAddressSheet, setShowAddressSheet] = useState(false);
+  const [showLocationSheet, setShowLocationSheet] = useState(false); // Added for New Sheet
+  const [addressRefreshTrigger, setAddressRefreshTrigger] = useState(0);
   const [showProfilePanel, setShowProfilePanel] = useState(false);
   const [showLoginPanel, setShowLoginPanel] = useState(false);
   const [profilePanelContent, setProfilePanelContent] = useState<'profile' | 'orders' | 'address'>('address');
@@ -517,11 +524,10 @@ export function CheckoutPage() {
                      </div>
                      
                      {/* Address Selection in Header */}
-                     <div onClick={() => {
-                       console.log('Address dropdown clicked');
-                       setShowProfilePanel(true);
-                       setProfilePanelContent('address');
-                     }} className="flex items-center gap-1 flex-1 min-w-0 cursor-pointer leading-none group lg:hidden mt-0.5">
+                      <div onClick={() => {
+                        console.log('Address dropdown clicked');
+                        setShowLocationSheet(true);
+                      }} className="flex items-center gap-1 flex-1 min-w-0 cursor-pointer leading-none group lg:hidden mt-0.5">
                          <span className="text-sm text-gray-600 truncate max-w-[280px]">
                             <span className={`font-medium ${!isServiceable ? 'text-red-500' : 'text-gray-900'}`}>
                                 {!isServiceable ? (
@@ -819,8 +825,7 @@ export function CheckoutPage() {
                          </div>
                          <button 
                            onClick={() => {
-                               setShowProfilePanel(true);
-                               setProfilePanelContent('address');
+                               setShowLocationSheet(true);
                            }}
                            className="w-full text-white rounded-lg px-4 py-4 flex items-center justify-center font-semibold shadow-md active:scale-95 transition-transform text-[15px] uppercase tracking-wider"
                            style={{ backgroundColor: '#E74C3C' }}
@@ -875,6 +880,25 @@ export function CheckoutPage() {
         } : null}
       />
       
+      <LocationBottomSheet
+        isOpen={showLocationSheet}
+        onClose={() => {
+            setShowLocationSheet(false);
+            fetchAddresses();
+        }}
+        onAddAddress={() => {
+            setAddressToSave(null);
+            setShowSaveAddressModal(true);
+            setShowLocationSheet(false);
+        }}
+        onEditAddress={(addr) => {
+             setAddressToSave(addr);
+             setShowSaveAddressModal(true);
+             setShowLocationSheet(false);
+        }}
+        refreshTrigger={addressRefreshTrigger}
+      />
+      
       <LoginPanel 
         isOpen={showLoginPanel} 
         onClose={() => setShowLoginPanel(false)}
@@ -888,7 +912,14 @@ export function CheckoutPage() {
         onSave={async () => {
             setShowSaveAddressModal(false);
             fetchAddresses(); // Refresh to get the newly saved address
+            setAddressRefreshTrigger(prev => prev + 1);
             toast.success("Address saved successfully");
+            // If we came from the sheet (e.g. Add New), maybe re-open sheet?
+            // Usually flows: Sheet -> Add -> Save -> Sheet (to select).
+            // But here we close modal. 
+            // If the user wants to select the new address, they might need the sheet again.
+            // App.tsx logic suggests re-opening sheet.
+            // Let's settle for just updating trigger for now.
         }}
       />
     </div>

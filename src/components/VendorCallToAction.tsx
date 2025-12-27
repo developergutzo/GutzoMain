@@ -17,7 +17,7 @@ export function VendorCallToAction({ onVendorDashboardClick }: VendorCallToActio
               <h3 className="text-xl font-semibold">Are you a food vendor?</h3>
             </div>
             <p className="text-white/90 mb-4">
-              Join Gutzo marketplace and reach health-conscious customers in Coimbatore. 
+              Join Gutzo marketplace and reach daily customers in Coimbatore. 
               Easy setup, no commissions, direct WhatsApp orders.
             </p>
             

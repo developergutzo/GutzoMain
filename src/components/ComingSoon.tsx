@@ -78,7 +78,7 @@ export function ComingSoon() {
           🎉 Gutzo Points — Coming Soon!
         </h2>
         <p className="text-gray-700 mb-6">
-          Earn rewards for healthy orders. Be the first to know when we launch.
+          Earn rewards for daily orders. Be the first to know when we launch.
         </p>
         
         <form onSubmit={handleSubmit} className="max-w-md mx-auto">

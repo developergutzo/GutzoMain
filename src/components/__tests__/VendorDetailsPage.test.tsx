@@ -21,7 +21,7 @@ jest.mock('../../utils/api');
 const mockVendor = {
   id: 'v1',
   name: 'Test Vendor',
-  description: 'Healthy food vendor',
+  description: 'Daily food vendor',
   location: 'Coimbatore',
   rating: 4.8,
   image: '',

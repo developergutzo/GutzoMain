@@ -137,7 +137,7 @@ export function CartPanel({ isOpen, onClose, isAuthenticated = false, onShowLogi
             </div>
             <h3 className="font-semibold text-gray-900 mb-2">Your cart is empty</h3>
             <p className="text-gray-600 mb-6 text-sm">
-              Add some delicious healthy meals to get started
+              Add some delicious everyday meals to get started
             </p>
             <Button
               onClick={onClose}

@@ -26,7 +26,7 @@ export function PartnerPage() {
           </h1>
           <p className="text-lg text-gray-600">
             We handle the logistics, marketing, and technology. 
-            You focus on cooking healthy, delicious meals.
+            You focus on cooking fresh, delicious meals.
           </p>
         </div>
         
@@ -39,7 +39,7 @@ export function PartnerPage() {
           />
           <Feature 
             title="Consistent Orders" 
-            desc="Reach thousands of health-conscious customers looking for subscription plans." 
+            desc="Reach thousands of quality-conscious customers looking for subscription plans." 
           />
           <Feature 
             title="Weekly Payouts" 

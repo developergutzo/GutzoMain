@@ -195,7 +195,7 @@ export function PaymentSuccessModal({
                     <div className="flex items-center justify-center space-x-2">
                       <Clock className="h-4 w-4 text-gutzo-primary animate-pulse" />
                       <span className="text-sm font-medium text-gray-800">
-                        Preparing your healthy meal...
+                        Preparing your fresh meal...
                       </span>
                     </div>
                   </div>
@@ -352,7 +352,7 @@ export function PaymentSuccessModal({
             <div className="text-center pb-6 px-6">
               <div className="bg-gutzo-highlight/20 rounded-lg p-3">
                 <p className="text-sm text-gray-700 font-medium">
-                  🌱 Thank you for choosing healthy with Gutzo!
+                  🌱 Thank you for choosing Gutzo!
                 </p>
                 <p className="text-xs text-gray-600 mt-1">
                   Your support helps us bring fresh, nutritious meals to your community

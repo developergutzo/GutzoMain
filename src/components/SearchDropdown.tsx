@@ -93,7 +93,7 @@ export function SearchDropdown({ isOpen, onClose, searchQuery, onSearchChange }:
             <h3 className="font-medium text-gray-900">Recent Searches</h3>
           </div>
           <div className="space-y-1">
-            {["Healthy Bowls", "Salads", "Protein Meals", "Smoothies"].map((item, index) => (
+            {["Fresh Bowls", "Salads", "Protein Meals", "Smoothies"].map((item, index) => (
               <button
                 key={index}
                 onClick={() => handleSearchSelect(item)}

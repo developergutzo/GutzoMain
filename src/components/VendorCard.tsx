@@ -52,7 +52,7 @@ export function VendorCard({ vendor, onClick }: VendorCardProps) {
           <span className="mx-1">•</span>
           <span style={{ color: '#222' }}>{vendor.deliveryTime || '20-30 mins'}</span>
         </div>
-        {/* Healthy Food Tags */}
+        {/* Daily Food Tags */}
         <div className="text-[15px] text-gray-500 mb-1" style={{ fontFamily: 'Poppins', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>
           {vendor.tags ? vendor.tags.join(', ') : 'Balanced Diet, South Indian Diet, High Protein, Low Carb'}
         </div>

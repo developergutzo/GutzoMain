@@ -331,7 +331,7 @@ export function PhoneSignIn({
         {/* Logo/Header - Mobile Optimized */}
         <div className="text-center mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-[#0B5F3B] mb-2">Gutzo</h1>
-          <p className="text-gray-600 text-sm sm:text-base">Healthy meals delivered fresh</p>
+          <p className="text-gray-600 text-sm sm:text-base">Daily meals delivered fresh</p>
         </div>
 
         {/* Sign In Form - Mobile Optimized */}
@@ -391,7 +391,7 @@ export function PhoneSignIn({
           <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full">
             <span className="text-2xl">🥗</span>
           </div>
-          <p className="text-sm text-gray-500 mt-2">Fresh & Healthy</p>
+          <p className="text-sm text-gray-500 mt-2">Fresh & Daily</p>
         </div>
       </div>
     </div>

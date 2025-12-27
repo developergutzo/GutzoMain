@@ -58,7 +58,7 @@ WITH new_vendors (
     ),
     (
         'Daily grubs',
-        'South Indian healthy meals',
+        'South Indian home-style meals',
         'Neelambur',
         4.1,
         'https://images.unsplash.com/photo-1502741338009-cac2772e18bc?auto=format&fit=crop&w=400&q=80',

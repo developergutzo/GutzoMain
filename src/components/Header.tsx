@@ -341,7 +341,7 @@ export function Header({ onShowLogin, onLogout, onShowProfile, onShowCart, onSho
                                 <span className="text-[14px] font-normal text-gray-900 leading-tight truncate">
                                     {isLoading ? <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"/> : error ? "Error" : title}
                                 </span>
-                                {!isLoading && !error && <ChevronDown className="h-3.5 w-3.5 text-gray-900 flex-shrink-0" strokeWidth={3} />}
+                                {!isLoading && <ChevronDown className="h-3.5 w-3.5 text-gray-900 flex-shrink-0" strokeWidth={3} />}
                             </div>
                             {subtitle && !isLoading && !error && (
                                 <span className="truncate text-xs text-gray-500 font-normal leading-tight w-full block">

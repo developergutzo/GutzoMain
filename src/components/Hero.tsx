@@ -22,10 +22,10 @@ export function Hero({ onScrollToListings }: HeroProps) {
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <h1 className="text-2xl lg:text-3xl font-bold text-white mb-2" style={{ fontFamily: 'Poppins' }}>
-          Healthy Meals, Delivered Fresh
+          Everyday Meals, Delivered Fresh
         </h1>
         <p className="text-base lg:text-lg text-white/90 mb-4 max-w-2xl mx-auto">
-          Browse verified healthy kitchens. Order on WhatsApp.
+          Browse verified kitchens. Order on WhatsApp.
         </p>
         <Button 
           onClick={onScrollToListings}

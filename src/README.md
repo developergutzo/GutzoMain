@@ -1,6 +1,6 @@
 # Gutzo Marketplace
 
-Multi-vendor marketplace for healthy meals in Coimbatore.
+Multi-vendor marketplace for everyday meals in Coimbatore.
 
 ## Recent Changes
 
@@ -25,5 +25,5 @@ Multi-vendor marketplace for healthy meals in Coimbatore.
 ## Brand Colors
 
 - Primary: #1BA672
-- Selected: #026254  
+- Selected: #026254
 - Highlight: #D9E86F

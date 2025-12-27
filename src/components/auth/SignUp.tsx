@@ -292,7 +292,7 @@ export function SignUp({
       <div className="w-full max-w-md min-h-screen sm:min-h-0 flex flex-col justify-center">
         <div className="text-center mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-[#0B5F3B] mb-2">Gutzo</h1>
-          <p className="text-gray-600 text-sm sm:text-base">Healthy meals delivered fresh</p>
+          <p className="text-gray-600 text-sm sm:text-base">Daily meals delivered fresh</p>
         </div>
 
         <div className="bg-white rounded-3xl shadow-lg p-6 sm:p-8 mx-2 sm:mx-0">
@@ -301,7 +301,7 @@ export function SignUp({
               Create Account
             </h2>
             <p className="text-gray-600 text-sm sm:text-base">
-              Join Gutzo to start ordering healthy meals
+              Join Gutzo to start ordering simple, daily meals
             </p>
           </div>
 

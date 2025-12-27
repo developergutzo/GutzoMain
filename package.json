@@ -1,6 +1,6 @@
 {
       "name": "gutzo-healthy-meals-coimbatore",
-      "title": "Order Healthy Meals in Coimbatore",
+      "title": "Order Everyday Meals in Coimbatore",
       "version": "0.1.0",
       "private": true,
       "dependencies": {
@@ -81,7 +81,7 @@
             "typescript": "^5.9.3",
             "vite": "6.3.5"
       },
-      "description": "This repository contains the Gutzo marketplace frontend for ordering fresh, healthy meals and subscriptions in Coimbatore. The original project is available at https://www.figma.com/design/VdwrBlG738QtEIN9aFcQ8Q/FNL1_Gutzo-Healthy-Meals-Marketplace--Copy-.",
+      "description": "This repository contains the Gutzo marketplace frontend for ordering fresh, everyday meals and subscriptions in Coimbatore. The original project is available at https://www.figma.com/design/VdwrBlG738QtEIN9aFcQ8Q/FNL1_Gutzo-Healthy-Meals-Marketplace--Copy-.",
       "main": "index.js",
       "repository": {
             "type": "git",

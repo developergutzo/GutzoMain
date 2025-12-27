@@ -215,6 +215,10 @@ function AppContent() {
     setShowLoginPanel(false);
   };
   const handleShowProfile = (content: 'profile' | 'orders' | 'address') => {
+    if (content === 'address') {
+      setShowLocationSheet(true);
+      return;
+    }
     setProfilePanelContent(content);
     setShowProfilePanel(true);
     if (content !== 'orders') {

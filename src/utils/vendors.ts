@@ -32,7 +32,7 @@ export const processVendorData = (vendor: any): Vendor => ({
   deliveryTime: vendor.delivery_time || vendor.deliveryTime || "25-30 mins",
   minimumOrder: vendor.minimum_order || vendor.minimumOrder || 0,
   deliveryFee: vendor.delivery_fee || vendor.deliveryFee || 0,
-  cuisineType: vendor.cuisine_type || vendor.cuisineType || "Healthy Meals",
+  cuisineType: vendor.cuisine_type || vendor.cuisineType || "Daily Meals",
   phone: vendor.phone || "",
   isActive: vendor.is_active !== undefined
     ? vendor.is_active

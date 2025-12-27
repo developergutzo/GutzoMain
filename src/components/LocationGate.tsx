@@ -63,7 +63,7 @@ export function LocationGate({ onLocationApproved }: LocationGateProps) {
                 Welcome to Gutzo! 🍎
               </h1>
               <p className="text-gray-600">
-                To serve you fresh, healthy meals, we need to know your location
+                To serve you fresh, daily meals, we need to know your location
               </p>
             </div>
 
@@ -132,7 +132,7 @@ export function LocationGate({ onLocationApproved }: LocationGateProps) {
               Perfect! You're in {locationState.city} 🎉
             </h2>
             <p className="text-gray-600">
-              Great news! Gutzo delivers fresh, healthy meals to your area.
+              Great news! Gutzo delivers fresh, daily meals to your area.
             </p>
           </div>
         );
@@ -156,7 +156,7 @@ export function LocationGate({ onLocationApproved }: LocationGateProps) {
             <div className="bg-gradient-to-br from-gutzo-highlight/30 to-gutzo-primary/10 rounded-xl p-6 mb-6">
               <h3 className="font-semibold text-gutzo-selected mb-3">Coming Soon to {displayCity}!</h3>
               <p className="text-sm text-gray-700 mb-4">
-                We're working hard to bring healthy, fresh meals to your area. Be the first to know when we launch!
+                We're working hard to bring fresh, daily meals to your area. Be the first to know when we launch!
               </p>
               
               <div className="flex items-center gap-3 text-sm">
@@ -194,7 +194,7 @@ export function LocationGate({ onLocationApproved }: LocationGateProps) {
 
             <div className="mt-6 pt-6 border-t border-gray-200 text-center">
               <p className="text-xs text-gray-500">
-                Meanwhile, follow us on social media for updates and healthy eating tips! 🌱
+                Meanwhile, follow us on social media for updates and daily food tips! 🌱
               </p>
             </div>
           </>

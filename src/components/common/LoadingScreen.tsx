@@ -9,7 +9,7 @@ interface LoadingScreenProps {
 
 const DEFAULT_MESSAGES = [
   "Finding the best kitchens...",
-  "Curating healthy options...",
+  "Curating meal options...",
   "Checking availability...",
   "Almost there..."
 ];

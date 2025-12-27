@@ -204,7 +204,7 @@ export function VendorInterestForm() {
               value={formData.kitchen_name}
               onChange={(e) => handleInputChange("kitchen_name", e.target.value)}
               onBlur={() => handleBlur("kitchen_name")}
-              placeholder="e.g. Grandma's Healthy Kitchen"
+              placeholder="e.g. Grandma's Daily Kitchen"
               className={errors.kitchen_name ? "border-red-500" : ""}
               required
             />

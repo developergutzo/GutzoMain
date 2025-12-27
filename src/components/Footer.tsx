@@ -20,12 +20,12 @@ export function Footer() {
                 src="https://35-194-40-59.nip.io/service/storage/v1/object/public/Gutzo/GUTZO.svg"
                 //src="http://192.168.1.39:54321/storage/v1/object/public/Gutzo/GUTZO.svg"
                 //src="https://jrpiqxajjpyxiitweoqc.supabase.co/storage/v1/object/public/Gutzo%20Logo/GUTZO.svg"
-                alt="Gutzo - Healthy Feels Good"
+                alt="Gutzo - Food You'll Eat Again"
                 className="h-12 sm:h-14 lg:h-16 w-auto"
               />
             </button>
             <p className="text-gray-400 text-sm leading-relaxed">
-              Connecting you with the healthiest kitchens in Coimbatore.
+              Connecting you with the best daily kitchens in Coimbatore.
             </p>
           </div>
           

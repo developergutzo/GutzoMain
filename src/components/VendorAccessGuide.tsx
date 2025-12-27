@@ -30,7 +30,7 @@ export function VendorAccessGuide({ onAccessDashboard }: VendorAccessGuideProps)
           <h1 className="text-3xl font-bold text-gutzo-primary">Vendor Management System</h1>
         </div>
         <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-          Join Gutzo marketplace and reach health-conscious customers in Coimbatore. 
+          Join Gutzo marketplace and reach daily customers in Coimbatore. 
           Our simple management system lets you register your business and add products without any manual database entry.
         </p>
       </div>
@@ -39,7 +39,7 @@ export function VendorAccessGuide({ onAccessDashboard }: VendorAccessGuideProps)
       <div className="bg-gradient-to-r from-gutzo-primary/10 to-gutzo-selected/10 rounded-xl p-6 text-center">
         <h2 className="text-xl font-semibold text-gray-900 mb-2">Ready to Get Started?</h2>
         <p className="text-gray-600 mb-4">
-          Access the vendor dashboard to register your business and start adding your healthy meal options
+          Access the vendor dashboard to register your business and start adding your fresh meal options
         </p>
         {onAccessDashboard && (
           <Button 
@@ -102,13 +102,13 @@ export function VendorAccessGuide({ onAccessDashboard }: VendorAccessGuideProps)
               </div>
               <div>
                 <CardTitle className="text-gutzo-selected">Step 2: Add Your Products</CardTitle>
-                <CardDescription>Build your healthy menu</CardDescription>
+                <CardDescription>Build your daily menu</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-gray-600">
-              Add your healthy meal options with detailed descriptions, pricing, and dietary tags.
+              Add your daily meal options with detailed descriptions, pricing, and dietary tags.
             </p>
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm">
@@ -137,7 +137,7 @@ export function VendorAccessGuide({ onAccessDashboard }: VendorAccessGuideProps)
         <CardHeader>
           <CardTitle className="text-center">Why Choose Gutzo?</CardTitle>
           <CardDescription className="text-center">
-            Everything you need to reach health-conscious customers
+            Everything you need to reach quality-conscious customers
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -176,9 +176,9 @@ export function VendorAccessGuide({ onAccessDashboard }: VendorAccessGuideProps)
               <div className="p-3 bg-gutzo-highlight/20 rounded-full w-fit mx-auto">
                 <UtensilsCrossed className="h-6 w-6 text-gutzo-selected" />
               </div>
-              <h3 className="font-medium">Health Focus</h3>
+              <h3 className="font-medium">Quality Focus</h3>
               <p className="text-sm text-gray-600">
-                Reach customers looking for healthy options
+                Reach customers looking for fresh options
               </p>
             </div>
           </div>
@@ -200,7 +200,7 @@ export function VendorAccessGuide({ onAccessDashboard }: VendorAccessGuideProps)
               <ul className="space-y-1 text-sm text-amber-700">
                 <li>• Valid WhatsApp business number</li>
                 <li>• Food business in Coimbatore</li>
-                <li>• Focus on healthy meal options</li>
+                <li>• Focus on fresh meal options</li>
                 <li>• Ability to fulfill orders via WhatsApp</li>
               </ul>
             </div>
@@ -223,7 +223,7 @@ export function VendorAccessGuide({ onAccessDashboard }: VendorAccessGuideProps)
           Ready to Join Gutzo Marketplace?
         </h2>
         <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-          Start reaching health-conscious customers today. No setup fees, no monthly charges - 
+          Start reaching everyday customers today. No setup fees, no monthly charges - 
           just a direct connection between you and your customers.
         </p>
         
