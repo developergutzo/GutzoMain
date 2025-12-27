@@ -48,6 +48,7 @@ app.use(cors({
       'https://www.gutzo.in',
       'https://35-194-40-59.nip.io',
       'http://localhost',       // Android Capacitor default
+      'https://localhost',      // Android Capacitor (HTTPS scheme)
       'capacitor://localhost'   // iOS Capacitor default
     ];
     // Allow requests with no origin (like mobile apps or curl requests)
