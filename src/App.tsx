@@ -62,6 +62,7 @@ import AddToHomeScreenPrompt from "./components/AddToHomeScreenPrompt";
 import { BrowserRouter } from 'react-router-dom';
 import VendorDetailsPage from './components/VendorDetailsPage';
 import { LocationBottomSheet } from "./components/LocationBottomSheet";
+import { LoadingScreen } from "./components/common/LoadingScreen";
 
 
 function AppContent() {
@@ -382,13 +383,10 @@ function AppContent() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-gutzo-primary mx-auto mb-4" />
-          <h3 className="font-semibold text-gray-900 mb-2">Gutzo</h3>
-          <p className="text-gray-600">Checking authentication...</p>
-        </div>
-      </div>
+      <LoadingScreen 
+        isOpen={true} 
+        messages={["Checking authentication...", "Securing your session...", "Almost ready..."]} 
+      />
     );
   }
   if (typeof currentRoute === 'string' && currentRoute.startsWith('/vendor/')) {
@@ -483,41 +481,44 @@ function AppContent() {
               </div>
             </div>
           )}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-full mx-auto w-full">
-              {loading ? (
-                // Show 4 skeletons while loading
-                [...Array(4)].map((_, i) => (
-                  <div key={i} className="w-full h-full">
-                    <VendorSkeleton />
-                  </div>
-                ))
-              ) : filteredVendors.length > 0 ? (
-                filteredVendors.map((vendor) => (
-                  <div key={vendor.id} className="flex justify-center items-stretch w-full h-full">
-                    <VendorCard
-                      vendor={vendor}
-                      onClick={handleVendorClick}
-                    />
-                  </div>
-                ))
-              ) : (
-                <div className="col-span-1 sm:col-span-2 md:col-span-3 lg:col-span-4 flex flex-col items-center justify-center py-12 text-center">
-                   <div className="bg-gray-100 p-6 rounded-full mb-4">
-                     <MapPin className="h-10 w-10 text-gray-400" />
-                   </div>
-                   <h3 className="text-xl font-semibold text-gray-900 mb-2">No Service Available Here</h3>
-                   <p className="text-gray-500 max-w-md mx-auto mb-6">
-                     We couldn't find any vendors delivering to your current location.
-                   </p>
-                   <Button 
-                     onClick={() => handleShowProfile('address')}
-                     className="bg-gutzo-brand hover:bg-gutzo-brand-hover text-white px-6 py-2 rounded-lg font-medium"
-                   >
-                     Change Location
-                   </Button>
-                </div>
-              )}
-            </div>
+            {isNoService ? (
+              <div className="flex flex-col items-center justify-center min-h-[60vh] text-center w-full max-w-lg mx-auto px-6">
+                 <div className="bg-green-50 p-6 rounded-full mb-6">
+                   <MapPin className="h-12 w-12 text-gutzo-brand" />
+                 </div>
+                 <h3 className="text-2xl font-bold text-gray-900 mb-3" style={{ fontFamily: 'Poppins' }}>No Service Available Here</h3>
+                 <p className="text-gray-500 text-base mb-8 leading-relaxed">
+                   We couldn't find any vendors delivering to your current location. Try changing your location to explore delicious choices.
+                 </p>
+                 <Button 
+                   onClick={() => handleShowProfile('address')}
+                   className="text-white px-6 py-2 rounded-lg font-medium shadow-md hover:shadow-lg transition-all duration-300"
+                   style={{ backgroundColor: 'var(--brand-green)', fontSize: '1rem' }}
+                 >
+                   Change Location
+                 </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-full mx-auto w-full">
+                {loading ? (
+                  // Show 4 skeletons while loading
+                  [...Array(4)].map((_, i) => (
+                    <div key={i} className="w-full h-full">
+                      <VendorSkeleton />
+                    </div>
+                  ))
+                ) : (
+                  filteredVendors.map((vendor) => (
+                    <div key={vendor.id} className="flex justify-center items-stretch w-full h-full">
+                      <VendorCard
+                        vendor={vendor}
+                        onClick={handleVendorClick}
+                      />
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
         </div>
       </main>
       <Footer />

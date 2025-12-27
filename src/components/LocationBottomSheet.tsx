@@ -29,6 +29,7 @@ import { AddressApi } from "../utils/addressApi";
 import { UserAddress } from "../types/address";
 import { LocationSearchInput } from "./common/LocationSearchInput";
 import { LocationService } from "../utils/locationService";
+import { LoadingScreen } from "./common/LoadingScreen";
 
 import { useAddresses } from "../hooks/useAddresses";
 
@@ -530,30 +531,14 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress, onEditAddre
       </SheetContent>
 
       {/* Global Full Screen App Loader */}
-      {(selectingAddressId || locationLoading) && createPortal(
-        <div className="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center animate-in fade-in duration-300">
-            <div className="flex flex-col items-center gap-6">
-                <div className="relative">
-                    {/* Pulsing Logo */}
-                    <div className="absolute inset-0 bg-gutzo-primary/20 rounded-full blur-xl animate-pulse scale-150"></div>
-                    <img
-                        src="https://35-194-40-59.nip.io/service/storage/v1/object/public/Gutzo/GUTZO.svg"
-                        alt="Gutzo"
-                        className="w-40 h-auto relative z-10 animate-bounce-slight"
-                        style={{ filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.1))' }}
-                    />
-                </div>
-                
-                <div className="flex flex-col items-center gap-3 mt-8">
-                     <p className="text-lg font-semibold text-gray-700">
-                             {locationLoading ? "Finding your spot..." : "Setting your location..."}
-                        </p>
-                     </div>
-
-            </div>
-        </div>,
-        document.body
-      )}
+      <LoadingScreen
+        isOpen={!!selectingAddressId || locationLoading}
+        messages={[
+           locationLoading ? "Finding your spot..." : "Setting your location...",
+           "Checking kitchens nearby...",
+           "Getting menus ready..."
+        ]}
+      />
 
     </Sheet>
   );
