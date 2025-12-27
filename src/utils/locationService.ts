@@ -170,11 +170,11 @@ export class LocationService {
   // Get location (cached or fresh)
   static async getLocation(): Promise<LocationData | null> {
     // Try cached location first
-    // const cached = this.getCachedLocation();
-    // if (cached) {
-    //   console.log('Using cached location:', this.getLocationDisplay(cached));
-    //   return cached;
-    // }
+    const cached = this.getCachedLocation();
+    if (cached) {
+      console.log("Using cached location:", this.getLocationDisplay(cached));
+      return cached;
+    }
 
     // If no cache, try to get fresh location
     try {

@@ -32,10 +32,10 @@ export const Inspiration: React.FC<InspirationProps> = ({ onOptionClick, loading
           Start Your Gutzo Journey Here
         </h2>
         <div className="mt-2" />
-        {/* Error/Empty State Debugging */}
+        {/* Error/Empty State Debugging - REMOVED for production */}
         {!isLoading && inspirationOptions.length === 0 && (
-          <div className="p-4 bg-yellow-50 text-yellow-700 rounded-lg text-sm mb-4">
-            <strong>Data is empty.</strong> The query returned 0 rows.
+          <div className="p-4 bg-gray-50 text-gray-500 rounded-lg text-sm mb-4 text-center">
+            Currently no inspiration categories available.
           </div>
         )}
 
@@ -164,13 +164,17 @@ export const Inspiration: React.FC<InspirationProps> = ({ onOptionClick, loading
                   boxShadow: 'none'
                 }}
               >
-                <img
-                  src={option.img}
-                  alt={option.label}
-                  className="w-full h-full object-cover rounded-full"
-                  style={{ aspectRatio: 1, display: 'block' }}
-                  loading="lazy"
-                />
+                {option.img ? (
+                  <img
+                    src={option.img}
+                    alt={option.label}
+                    className="w-full h-full object-cover rounded-full"
+                    style={{ aspectRatio: 1, display: 'block' }}
+                    loading="lazy"
+                  />
+                ) : (
+                   <div className="w-full h-full bg-gray-300 rounded-full flex items-center justify-center text-xs text-gray-500">Img</div>
+                )}
               </span>
               <span className="text-lg lg:text-xl font-medium text-gray-500 transition-colors mt-1 text-center truncate w-full" style={{ fontFamily: 'Poppins', fontWeight: 400 }}>{option.label}</span>
             </button>

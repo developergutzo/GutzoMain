@@ -305,7 +305,7 @@ export function Header({ onShowLogin, onLogout, onShowProfile, onShowCart, onSho
           <div className="flex items-center justify-between px-1">
             {/* Location Section - Opens Bottom Sheet */}
             <button 
-              className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity active:scale-95 py-1"
+              className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity active:scale-95 py-1 flex-1 min-w-0 mr-2"
               onClick={handleMobileLocationClick}
             >
               {isLoading ? (
@@ -315,23 +315,28 @@ export function Header({ onShowLogin, onLogout, onShowProfile, onShowCart, onSho
               ) : (
                 <MapPin className="h-4 w-4 text-gutzo-primary flex-shrink-0" />
               )}
-              <div className="flex flex-col min-w-0 text-left">
+              <div className="flex flex-col min-w-0 text-left w-full">
                 {locationLabel && !isLoading && !error ? (
                   <>
-                    <span className="text-[10px] font-bold text-gray-900 leading-tight uppercase tracking-wide">
-                      {locationLabel}
-                    </span>
-                    <span className="truncate text-xs text-gray-600 font-medium leading-tight max-w-[150px]">
+                    <div className="flex items-center gap-1">
+                      <span className="text-[14px] font-bold text-gray-900 leading-tight">
+                        {locationLabel}
+                      </span>
+                      <ChevronDown className="h-3.5 w-3.5 text-gray-900 flex-shrink-0" strokeWidth={3} />
+                    </div>
+                    <span className="truncate text-xs text-gray-500 font-medium leading-tight w-full">
                       {locationDisplay}
                     </span>
                   </>
                 ) : (
-                  <span className="truncate text-sm text-gray-900 font-medium">
-                    {isLoading ? <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"/> : error ? "Error" : locationDisplay}
-                  </span>
+                  <div className="flex items-center gap-1">
+                    <span className="truncate text-sm text-gray-900 font-bold">
+                        {isLoading ? <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"/> : error ? "Error" : locationDisplay}
+                    </span>
+                     {!isLoading && !error && <ChevronDown className="h-3.5 w-3.5 text-gray-900 flex-shrink-0" strokeWidth={3} />}
+                  </div>
                 )}
               </div>
-              <ChevronDown className="h-3.5 w-3.5 text-gray-600 flex-shrink-0" />
             </button>
 
             {/* Search Icon - Opens Bottom Sheet */}

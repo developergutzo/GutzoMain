@@ -548,12 +548,6 @@ export function ProfilePanel({ isOpen, onClose, onLogout, content, userInfo, onV
     if (ordersLoading) {
       return (
         <div className="space-y-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4">
-            <div className="flex items-center space-x-2">
-              <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
-              <span className="text-sm text-blue-700 font-medium">Loading Orders from Database...</span>
-            </div>
-          </div>
           {[...Array(3)].map((_, i) => (
             <div key={i} className="animate-pulse">
               <div className="bg-gray-200 rounded-xl p-4 space-y-3">
@@ -754,33 +748,43 @@ export function ProfilePanel({ isOpen, onClose, onLogout, content, userInfo, onV
 
           {/* Dynamic Content */}
           <div className="flex-1 overflow-y-auto min-h-0 scrollbar-hide">
-            {/* Loading States */}
             {content === 'profile' && userDataLoading && !realUserData && (
-              <div className="space-y-4">
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
-                  <div className="flex items-center space-x-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
-                    <span className="text-sm text-blue-700 font-medium">Loading Profile from Database...</span>
-                  </div>
-                  <p className="text-xs text-blue-600 mt-1">
-                    Fetching your profile data from Supabase
-                  </p>
+              <div className="space-y-6">
+                <div className="text-center">
+                  <div className="h-20 w-20 mx-auto mb-4 bg-gray-200 rounded-full animate-pulse"></div>
+                  <div className="h-6 w-24 bg-gray-200 rounded mx-auto animate-pulse"></div>
+                </div>
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="animate-pulse">
+                      <div className="bg-gray-200 rounded-xl p-4 space-y-3">
+                        <div className="flex items-center space-x-3">
+                           <div className="w-5 h-5 bg-gray-300 rounded"></div>
+                           <div className="w-20 h-4 bg-gray-300 rounded"></div>
+                        </div>
+                        <div className="w-full h-4 bg-gray-300 rounded"></div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
             
             {content === 'address' && addressesLoading && realAddresses.length === 0 && (
-              <div className="space-y-4">
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
-                  <div className="flex items-center space-x-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
-                    <span className="text-sm text-blue-700 font-medium">Loading Addresses from Database...</span>
-                  </div>
-                  <p className="text-xs text-blue-600 mt-1">
-                    Fetching your saved addresses from Supabase
-                  </p>
-                </div>
-              </div>
+               <div className="space-y-4">
+                 {[...Array(2)].map((_, i) => (
+                   <div key={i} className="animate-pulse">
+                     <div className="bg-gray-200 rounded-xl p-4 space-y-3">
+                       <div className="flex items-center space-x-3">
+                         <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
+                         <div className="w-16 h-4 bg-gray-300 rounded"></div>
+                       </div>
+                       <div className="w-full h-4 bg-gray-300 rounded"></div>
+                       <div className="w-3/4 h-4 bg-gray-300 rounded"></div>
+                     </div>
+                   </div>
+                 ))}
+               </div>
             )}
 
 

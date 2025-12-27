@@ -68,7 +68,7 @@ export function CheckoutPage() {
   const [syncedItems, setSyncedItems] = useState<any[]>([]);
   const [deliveryFee, setDeliveryFee] = useState<number>(0);
   const [isServiceable, setIsServiceable] = useState(true);
-  const [loadingFee, setLoadingFee] = useState(false);
+  const [loadingFee, setLoadingFee] = useState(true); // Default to true to prevent "Success" flash
   const [loadingPrices, setLoadingPrices] = useState(false);
   
   const [donationAmount, setDonationAmount] = useState(3);
@@ -124,9 +124,7 @@ export function CheckoutPage() {
   }, [cartItems]);
 
   // Fetch Addresses
-  // Fetch Addresses Function
   const fetchAddresses = () => {
-    // Dynamic import to avoid circular dependency issues if any
     if (user?.phone) {
         const phone = user.phone.startsWith('+91') ? user.phone : `+91${user.phone}`;
         import('../utils/addressApi').then(({ AddressApi }) => {
@@ -134,14 +132,10 @@ export function CheckoutPage() {
                 if (res.success && res.data && res.data.length > 0) {
                     setAddresses(res.data);
                     
-                    // Address Synchronization Logic
                     let matchedAddress = null;
 
-                    // 1. Check for manual override from LocationContext (most recent user selection)
                     if (userLocation && userLocation.coordinates) {
                         const { latitude: ctxLat, longitude: ctxLng } = userLocation.coordinates;
-                        
-                        // Find address matching these coordinates (with small epsilon for float precision)
                         matchedAddress = res.data.find((addr: any) => {
                              const latDiff = Math.abs((addr.latitude || 0) - ctxLat);
                              const lngDiff = Math.abs((addr.longitude || 0) - ctxLng);
@@ -151,8 +145,6 @@ export function CheckoutPage() {
                         if (matchedAddress) {
                             console.log('📍 Synced Address with Header Selection:', matchedAddress.label || matchedAddress.type);
                         } else {
-                             // NO MATCH found, but we have a user location.
-                             // Create transient address instead of falling back to default.
                              console.log('📍 Using Global Context Location (Transient)');
                              matchedAddress = {
                                 id: 'device_location',
@@ -169,24 +161,19 @@ export function CheckoutPage() {
                         }
                     }
 
-                    // 2. Fallback to Default Address if no context match
                     if (!matchedAddress) {
                         matchedAddress = res.data.find((a: any) => a.is_default);
                     }
 
-                    // 3. Fallback to first address
                     if (!matchedAddress) {
                         matchedAddress = res.data[0];
                     }
                     
-                    // Only update if we found something
                     if (matchedAddress) {
                         setSelectedAddress(matchedAddress);
                     }
                 } else if (res.success && (!res.data || res.data.length === 0)) {
-                    // No addresses found, but maybe we have a location from context?
                      if (userLocation && userLocation.coordinates) {
-                       // Guest/New User Fallback: Use device location
                        const fallbackAddress = {
                            id: 'device_location',
                            type: locationLabel || locationDisplay || 'Current Location',
@@ -205,7 +192,6 @@ export function CheckoutPage() {
             });
         });
     } else if (userLocation && userLocation.coordinates) {
-       // Guest Fallback: Use device location
        const fallbackAddress = {
            id: 'device_location',
            type: locationLabel || locationDisplay || 'Current Location',
@@ -216,10 +202,10 @@ export function CheckoutPage() {
            longitude: userLocation.coordinates.longitude,
            is_default: false,
            label: locationLabel || locationDisplay || 'Current Location',
-           address_type: locationLabel || locationDisplay || 'Current Location' // for display consistency
+           address_type: locationLabel || locationDisplay || 'Current Location'
        };
        setSelectedAddress(fallbackAddress);
-       setAddresses([]); // Clear saved addresses
+       setAddresses([]);
     }
   };
 
@@ -232,7 +218,23 @@ export function CheckoutPage() {
   // Calculate Delivery Fee
   useEffect(() => {
       async function fetchFee() {
-          if (!vendor?.id || !selectedAddress) return;
+          // If we don't have necessary data yet, keep loading or stop if we know we won't get it?
+          // But actually, we want to show loading UNTIL we have verified serviceability.
+          // If selectedAddress is missing because it's loading, keep loadingFee true.
+          // If selectedAddress is missing because there are none, we should probably stop loading and show empty/error?
+          // For now, let's ensure we don't return early without managing state if we can avoid it.
+          // But fetchAddresses is async.
+          
+          if (!vendor?.id) {
+               setLoadingFee(false);
+               return;
+          }
+          if (!selectedAddress) {
+               // If address is still loading, wait. If addresses loaded but none selected (should be rare/handled by default), 
+               // we might want to unblock.
+               // Assuming fetchAddresses will eventually trigger this effect when it sets selectedAddress.
+               return; 
+          }
           
           setLoadingFee(true);
           try {
@@ -273,7 +275,6 @@ export function CheckoutPage() {
                          
                          // Fetch dynamic ETA
                          const pickupEtaStr = res.data.pickup_eta || res.data.value?.pickup_eta;
-                         console.log('Pickup ETA from API:', pickupEtaStr);
                          
                          if (pickupEtaStr && vendorLat && vendorLng && selectedAddress.latitude && selectedAddress.longitude) {
                              try {
@@ -292,11 +293,9 @@ export function CheckoutPage() {
                                          totalEtaDisplay = `${totalMins}-${totalMins + 5} mins`;
                                      }
                                  }
-                                 console.log('Setting dynamic ETA:', totalEtaDisplay);
                                  setDynamicEta(totalEtaDisplay);
                              } catch (e) {
                                  console.error('Failed to calculate ETA:', e);
-                                 // Fallback to just the pickup ETA if travel time fails
                                  setDynamicEta(pickupEtaStr);
                              }
                          } else if (pickupEtaStr) {
@@ -304,7 +303,7 @@ export function CheckoutPage() {
                          }
                     } else {
                          // Not serviceable
-                         setDeliveryFee(0); // or keep as is, but button should be disabled
+                         setDeliveryFee(0);
                          setDynamicEta(null);
                     }
                } else {
@@ -486,7 +485,7 @@ export function CheckoutPage() {
    }
 
    return (
-     <div className="min-h-screen bg-[#F4F5F7] pb-32 lg:pb-8">
+     <div className="min-h-screen bg-gray-50 pb-32 lg:pb-0 relative overflow-x-hidden">
        {/* Desktop Header */}
        <div className="hidden lg:block">
          <Header 
@@ -502,15 +501,18 @@ export function CheckoutPage() {
        </div>
 
        {/* Mobile Header */}
-       <div className="bg-white sticky top-0 z-40 shadow-[0_1px_3px_rgba(0,0,0,0.05)] lg:hidden">
+       <div 
+         className="bg-white sticky top-0 z-40 shadow-[0_1px_3px_rgba(0,0,0,0.05)] lg:hidden"
+         style={{ paddingTop: 'env(safe-area-inset-top)' }}
+       >
          <div className="max-w-7xl mx-auto w-full">
-             <div className="flex items-center px-4 !py-4 justify-between min-h-[64px]">
+             <div className="flex items-center px-4 py-3 justify-between min-h-[56px]">
              <div className="flex items-center gap-3 flex-1 overflow-hidden">
                  <button onClick={goBack} className="p-1 -ml-1 flex-shrink-0">
                      <ArrowLeft className="w-6 h-6 text-gray-800" />
                  </button>
                  <div className="flex-1 flex flex-col justify-center overflow-hidden">
-                     <div className="text-[17px] font-extrabold text-gray-600 leading-tight mb-2 truncate">
+                     <div className="text-[17px] font-extrabold text-gray-600 leading-tight truncate">
                          {vendor?.name || 'Restaurant'}
                      </div>
                      
@@ -519,20 +521,30 @@ export function CheckoutPage() {
                        console.log('Address dropdown clicked');
                        setShowProfilePanel(true);
                        setProfilePanelContent('address');
-                     }} className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer leading-none group lg:hidden">
+                     }} className="flex items-center gap-1 flex-1 min-w-0 cursor-pointer leading-none group lg:hidden mt-0.5">
                          <span className="text-sm text-gray-600 truncate max-w-[280px]">
                             <span className={`font-medium ${!isServiceable ? 'text-red-500' : 'text-gray-900'}`}>
-                                {!isServiceable ? 'Not Serviceable' : (dynamicEta || '30-35 mins')} {!isServiceable ? '' : 'to'} {
-                                    !user 
-                                    ? 'Current Location' 
-                                    : (() => {
-                                        if (!selectedAddress) return 'Location';
-                                        if (selectedAddress.label === 'Other' || selectedAddress.type === 'Other') {
-                                            return selectedAddress.custom_label || selectedAddress.label || selectedAddress.type || 'Other';
+                                {!isServiceable ? (
+                                    <>
+                                        Not Serviceable <span className="text-gray-400 mx-1">•</span> <span className="text-gray-500 font-normal">{
+                                            !user ? 'Current Location' : (selectedAddress?.address_line1 || selectedAddress?.full_address || selectedAddress?.label || 'Location')
+                                        }</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        {dynamicEta || '30-35 mins'} to {
+                                            !user 
+                                            ? 'Current Location' 
+                                            : (() => {
+                                                if (!selectedAddress) return 'Location';
+                                                if (selectedAddress.label === 'Other' || selectedAddress.type === 'Other') {
+                                                    return selectedAddress.custom_label || selectedAddress.label || selectedAddress.type || 'Other';
+                                                }
+                                                return selectedAddress.label || selectedAddress.type || 'Location';
+                                            })()
                                         }
-                                        return selectedAddress.label || selectedAddress.type || 'Location';
-                                    })()
-                                }
+                                    </>
+                                )}
                             </span>
                          </span>
                          <ChevronDown className="w-3.5 h-3.5 text-gray-500 mt-0.5 flex-shrink-0" />
@@ -540,8 +552,8 @@ export function CheckoutPage() {
                 </div>
             </div>
             
-            <button className="p-2 -mr-2 flex-shrink-0 lg:hidden">
-                <Share className="w-5 h-5 text-gray-700" />
+            <button className="p-2 -mr-2 flex-shrink-0 lg:hidden text-gray-700">
+                <Share className="w-5 h-5" />
             </button>
         </div>
       </div>
@@ -564,14 +576,14 @@ export function CheckoutPage() {
                 {vendor?.location && <p className="text-gray-500 text-base mt-1">{vendor.location}</p>}
             </div>
 
-            {/* Address Card (Visible on ALL screens now) */}
-            <div className="mb-4 lg:mb-6">
+            {/* Address Card (Visible on ALL screens now -> Hidden on Mobile, Visible on Desktop) */}
+            <div className="hidden lg:block mb-4 lg:mb-6">
                 <div className="bg-white rounded-xl p-4 lg:p-6 shadow-sm border border-gray-100 flex items-center justify-between">
-                   <div className="flex items-center gap-4">
-                       <div className="p-3 bg-gray-50 rounded-full">
+                   <div className="flex items-center gap-4 flex-1 min-w-0">
+                       <div className="p-3 bg-gray-50 rounded-full flex-shrink-0">
                            <MapPin className="w-6 h-6 text-gray-700" />
                        </div>
-                       <div>
+                       <div className="flex-1 min-w-0">
                            <div className="flex items-center gap-2 mb-1">
                                <h3 className="font-bold text-lg text-gray-900">Delivery to {selectedAddress?.address_type || 'Home'}</h3>
                                <span className="px-2 py-0.5 bg-green-50 text-green-700 text-xs font-bold rounded-full uppercase tracking-wide">
@@ -583,7 +595,7 @@ export function CheckoutPage() {
                            </p>
                        </div>
                    </div>
-                   <div className="flex items-center">
+                   <div className="flex items-center flex-shrink-0 ml-4">
                        <button 
                            onClick={() => {
                                setShowProfilePanel(true);
@@ -715,27 +727,58 @@ export function CheckoutPage() {
 
             {/* Desktop Pay Button */}
             <div className="hidden lg:block">
-                 <button 
-                   className={`w-full text-white rounded-lg px-4 py-4 flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform relative overflow-hidden group ${
-                      isProcessing || (!!user && !isServiceable) ? 'cursor-not-allowed' : ''
-                   }`}
-                   style={{ backgroundColor: '#1BA672' }}
-                   onClick={handlePlaceOrder}
-                   disabled={isProcessing || (!!user && !isServiceable)}
-                 >
-                     {isProcessing ? (
-                         <div className="flex items-center gap-2">
-                             <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
-                             <span className="text-lg font-bold">Processing...</span>
+                 {loadingFee ? (
+                     <div className="w-full">
+                         <div className="w-full h-12 bg-gray-200 animate-pulse rounded-lg mb-2"></div>
+                         <div className="w-32 h-4 bg-gray-200 animate-pulse rounded mx-auto"></div>
+                     </div>
+                 ) : (!isServiceable && !!selectedAddress) ? (
+                    <div className="w-full">
+                         <div className="bg-red-50 border border-red-100 rounded-lg p-4 mb-4 flex items-start gap-3">
+                             <div className="p-1.5 bg-white rounded-full shadow-sm mt-0.5">
+                                 <MapPin className="w-4 h-4 text-red-500" />
+                             </div>
+                             <div>
+                                 <h4 className="text-sm font-bold text-gray-900">Location Unserviceable</h4>
+                                 <p className="text-xs text-gray-600 mt-1">We don't deliver to this location yet.</p>
+                             </div>
                          </div>
-                     ) : (
-                         <div className="flex items-center gap-2">
-                             <span className="text-lg font-semibold">Proceed to Pay</span>
-                              <span className="text-xl">→</span>
-                         </div>
-                     )}
-                 </button>
-                 <p className="text-center text-xs text-gray-400 mt-2 font-medium">100% Secure Payments</p>
+                         <button 
+                           onClick={() => {
+                               setShowProfilePanel(true);
+                               setProfilePanelContent('address');
+                           }}
+                           className="w-full text-white rounded-lg px-4 py-4 font-bold shadow-lg active:scale-95 transition-transform"
+                           style={{ backgroundColor: '#E74C3C' }}
+                         >
+                             Change Delivery Address
+                         </button>
+                    </div>
+                 ) : (
+                     <>
+                         <button 
+                           className={`w-full text-white rounded-lg px-4 py-4 flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform relative overflow-hidden group ${
+                              isProcessing || (!!user && !isServiceable) ? 'cursor-not-allowed opacity-70' : ''
+                           }`}
+                           style={{ backgroundColor: isProcessing || (!!user && !isServiceable) ? '#9CA3AF' : '#1BA672' }}
+                           onClick={handlePlaceOrder}
+                           disabled={isProcessing || (!!user && !isServiceable)}
+                         >
+                             {isProcessing ? (
+                                 <div className="flex items-center gap-2">
+                                     <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
+                                     <span className="text-lg font-bold">Processing...</span>
+                                 </div>
+                             ) : (
+                                 <div className="flex items-center gap-2">
+                                     <span className="text-lg font-semibold">Proceed to Pay</span>
+                                      <span className="text-xl">→</span>
+                                 </div>
+                             )}
+                         </button>
+                         <p className="text-center text-xs text-gray-400 mt-2 font-medium">100% Secure Payments</p>
+                     </>
+                 )}
             </div>
 
             {/* Cancellation Policy */}
@@ -752,30 +795,64 @@ export function CheckoutPage() {
 
 
       {/* Fixed Footer (Mobile Only) */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.08)] z-50 rounded-t-2xl lg:hidden">
+      <div 
+        className="fixed bottom-0 left-0 right-0 bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.08)] z-50 rounded-t-2xl lg:hidden"
+        style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom))' }}
+      >
 
-           <div className="px-4 py-3">
-                <button 
-                  className={`w-full text-white rounded-lg px-4 py-4 flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform relative overflow-hidden group ${
-                     isProcessing || (!!user && !isServiceable) ? 'cursor-not-allowed' : ''
-                  }`}
-                  style={{ backgroundColor: '#1BA672' }}
-                  onClick={handlePlaceOrder}
-                  disabled={isProcessing || (!!user && !isServiceable)}
-                >
-                    {isProcessing ? (
-                        <div className="flex items-center gap-2">
-                            <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
-                            <span className="text-lg font-bold">Processing...</span>
-                        </div>
-                    ) : (
-                        <div className="flex items-center gap-2">
-                             <span className="text-lg font-semibold">Proceed to Pay</span>
-                             <span className="text-xl">→</span>
-                        </div>
-                    )}
-                </button>
-                <p className="text-center text-xs text-gray-400 mt-2 font-medium">100% Secure Payments</p>
+           <div className="px-4 py-4">
+                {loadingFee ? (
+                    <div className="w-full">
+                         <div className="w-full h-12 bg-gray-200 animate-pulse rounded-lg mb-2"></div>
+                         <div className="w-32 h-4 bg-gray-200 animate-pulse rounded mx-auto"></div>
+                    </div>
+                ) : (!isServiceable && !!selectedAddress) ? (
+                    <div className="w-full flex flex-col gap-3">
+                         <div className="bg-red-50 border border-red-100 rounded-lg p-3 flex items-start gap-3">
+                             <div className="p-1 px-1.5 bg-white rounded-full shadow-sm">
+                                 <MapPin className="w-3.5 h-3.5 text-red-500" />
+                             </div>
+                             <div className="flex-1">
+                                 <h4 className="text-sm font-bold text-gray-900 leading-tight">Location Unserviceable</h4>
+                                 <p className="text-xs text-gray-600 mt-1 leading-normal">Sorry, we don't deliver here yet.</p>
+                             </div>
+                         </div>
+                         <button 
+                           onClick={() => {
+                               setShowProfilePanel(true);
+                               setProfilePanelContent('address');
+                           }}
+                           className="w-full text-white rounded-lg px-4 py-4 flex items-center justify-center font-semibold shadow-md active:scale-95 transition-transform text-[15px] uppercase tracking-wider"
+                           style={{ backgroundColor: '#E74C3C' }}
+                         >
+                             Change Delivery Location
+                         </button>
+                    </div>
+                ) : (
+                    <>
+                        <button 
+                          className={`w-full text-white rounded-lg px-4 py-4 flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform relative overflow-hidden group ${
+                             isProcessing || (!!user && !isServiceable) ? 'cursor-not-allowed opacity-70' : ''
+                          }`}
+                          style={{ backgroundColor: isProcessing || (!!user && !isServiceable) ? '#9CA3AF' : '#1BA672' }}
+                          onClick={handlePlaceOrder}
+                          disabled={isProcessing || (!!user && !isServiceable)}
+                        >
+                            {isProcessing ? (
+                                <div className="flex items-center gap-2">
+                                    <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
+                                    <span className="text-lg font-bold">Processing...</span>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2">
+                                     <span className="text-lg font-semibold">Proceed to Pay</span>
+                                     <span className="text-xl">→</span>
+                                </div>
+                            )}
+                        </button>
+                        <p className="text-center text-xs text-gray-400 mt-2 font-medium">100% Secure Payments</p>
+                    </>
+                )}
            </div>
       </div>
 

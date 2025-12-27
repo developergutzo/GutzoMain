@@ -556,6 +556,8 @@ function AppContent() {
             vendorImage={cartItems[0].vendor?.image}
             onViewCart={handleShowCart} 
             isOpen={
+                // If vendor not found (e.g. No Service / Location Error), default to TRUE so user can still access cart/checkout
+                // This allows them to change location from checkout or view their existing items
                 (vendors.find(v => v.id === (cartItems[0].vendorId || cartItems[0].vendor?.id))?.isOpen ?? true)
             }
           />
