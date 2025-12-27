@@ -92,9 +92,9 @@ export function OrdersPanel({ className = "", onViewOrderDetails, recentOrderDat
     setLoading(true);
     setErrorMsg(null);
     try {
-      console.log('Fetching orders for:', phone);
+      // console.log('Fetching orders for:', phone);
       const resp = await apiService.getOrders(phone);
-      console.log('Orders response:', resp);
+      // console.log('Orders response:', resp);
       // API returns { success: true, data: [...], pagination: ... }
       // The orders list is in resp.data, not resp.orders
       setOrders(resp.data || []);

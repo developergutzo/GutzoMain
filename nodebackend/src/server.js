@@ -45,15 +45,15 @@ app.use(cors({
       'https://192-168-1-36.nip.io', 
       'http://localhost:3001',
       'https://gutzo.in',
+      'https://www.gutzo.in',
       'https://35-194-40-59.nip.io'
     ];
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
     if (allowedOrigins.indexOf(origin) === -1) {
-      // In development, allow all, but log it
       if (process.env.NODE_ENV === 'development') {
-        console.log('⚠️ CORS Warning: Origin not in allow list but allowed in DEV:', origin);
+        // console.log('⚠️ CORS Warning: Origin not in allow list but allowed in DEV:', origin);
         return callback(null, true);
       }
       
@@ -73,8 +73,8 @@ app.use(helmet());
 
 // DEBUG: Log Origin (Simplified)
 app.use((req, res, next) => {
-  console.log('DEBUG: Incoming Request:', req.method, req.path);
-  console.log('DEBUG: Origin Header:', req.headers.origin);
+  // console.log('DEBUG: Incoming Request:', req.method, req.path);
+  // console.log('DEBUG: Origin Header:', req.headers.origin);
   next();
 });
 

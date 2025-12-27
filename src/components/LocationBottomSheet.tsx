@@ -192,7 +192,7 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress, onEditAddre
                 timestamp: Date.now()
              };
 
-            console.log("📍 Location details fetched:", selectedLocation);
+            // console.log("📍 Location details fetched:", selectedLocation);
 
             // Override location in context
             if (context?.overrideLocation) {

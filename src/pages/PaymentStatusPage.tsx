@@ -15,7 +15,7 @@ export default function PaymentStatusPage() {
 
 
   useEffect(() => {
-    console.log('Payment status response1:');
+    // console.log('Payment status response1:');
     // Payment gateway redirects back with merchantTransactionId in query or we used our own orderId
     const params = new URLSearchParams(window.location.search);
     const txnId = params.get('transactionId') || params.get('merchantTransactionId') || params.get('orderId');
@@ -45,7 +45,12 @@ export default function PaymentStatusPage() {
       try {
         const res = await apiService.getPaymentStatus(orderId);
         const result = (res as any)?.data || res; // handle either shape
-        console.log('Payment status response:', JSON.stringify(result, null, 2));
+        if (result.success) {
+        // console.log('Payment status response:', JSON.stringify(result, null, 2));
+         
+          // The backend should return the status
+          const status = result.data?.body?.resultInfo?.resultStatus;
+        }
         
         const code = result?.code || result?.data?.code;
         const state = result?.state || result?.data?.state;

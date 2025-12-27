@@ -188,16 +188,16 @@ export function LoginPanel({ isOpen, onClose, onAuthComplete }: LoginPanelProps)
         if (otp !== expected) {
           throw new Error('Invalid OTP');
         }
-        console.log(`✅ Dummy OTP verification successful for ${formattedPhone}`);
+        // console.log(`✅ Dummy OTP verification successful for ${formattedPhone}`);
       } else {
-        console.log(`🔐 Verifying OTP with server for ${formattedPhone}`);
+        // console.log(`🔐 Verifying OTP with server for ${formattedPhone}`);
         const result = await nodeApiService.verifyOtp(phoneNumber, otp);
 
         if (!result.success) {
           throw new Error(result.error || result.message || 'Invalid OTP');
         }
 
-        console.log(`✅ OTP verification successful for ${formattedPhone}`);
+        // console.log(`✅ OTP verification successful for ${formattedPhone}`);
       }
 
       if (authMode === 'signup') {
@@ -208,9 +208,9 @@ export function LoginPanel({ isOpen, onClose, onAuthComplete }: LoginPanelProps)
           '9876543210': '123456'
         };
         if (DUMMY_ENABLED && DUMMY_ACCOUNTS[phoneNumber]) {
-          console.log('📝 Skipping create-user in dummy mode');
+          // console.log('📝 Skipping create-user in dummy mode');
         } else {
-          console.log('📝 Creating user account for signup...');
+          // console.log('📝 Creating user account for signup...');
           const createResult = await nodeApiService.createUser({
             phone: phoneNumber,
             name: userInfo.name,
@@ -221,7 +221,7 @@ export function LoginPanel({ isOpen, onClose, onAuthComplete }: LoginPanelProps)
           if (!createResult.success) {
             throw new Error(createResult.error || createResult.message || 'Failed to create user account');
           }
-          console.log('✅ User account created successfully');
+          // console.log('✅ User account created successfully');
         }
       }
       

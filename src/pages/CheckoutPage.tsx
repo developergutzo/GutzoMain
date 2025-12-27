@@ -150,9 +150,9 @@ export function CheckoutPage() {
                         });
 
                         if (matchedAddress) {
-                            console.log('📍 Synced Address with Header Selection:', matchedAddress.label || matchedAddress.type);
+                            // console.log('📍 Synced Address with Header Selection:', matchedAddress.label || matchedAddress.type);
                         } else {
-                             console.log('📍 Using Global Context Location (Transient)');
+                             // console.log('📍 Using Global Context Location (Transient)');
                              matchedAddress = {
                                 id: 'device_location',
                                 type: locationLabel || locationDisplay || 'Current Location',
@@ -269,7 +269,7 @@ export function CheckoutPage() {
                   longitude: selectedAddress.longitude 
               };
               
-              console.log('Serviceability API Request:', { pickup, drop });
+              // console.log('Serviceability API Request:', { pickup, drop });
 
                const res = await apiService.getDeliveryServiceability(pickup, drop);
                if (res.success && res.data) {
@@ -417,7 +417,7 @@ export function CheckoutPage() {
                      },
                        handler: {
                        notifyMerchant: function(eventName: string, eventData: any) {
-                         console.log('Paytm Event:', eventName, eventData);
+                         // console.log('Paytm Event:', eventName, eventData);
                        },
                        transactionStatus: function(paymentStatus: any) {
                          // @ts-ignore
@@ -525,7 +525,6 @@ export function CheckoutPage() {
                      
                      {/* Address Selection in Header */}
                       <div onClick={() => {
-                        console.log('Address dropdown clicked');
                         setShowLocationSheet(true);
                       }} className="flex items-center gap-1 flex-1 min-w-0 cursor-pointer leading-none group lg:hidden mt-0.5">
                          <span className="text-sm text-gray-600 truncate max-w-[280px]">

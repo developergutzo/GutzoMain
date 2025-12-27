@@ -100,7 +100,7 @@ export function GoogleMapPicker({
     const checkMobile = () => {
       const mobile = isMobileDevice();
       setIsMobile(mobile);
-      console.log(`📱 Device detection: ${mobile ? 'Mobile' : 'Desktop'}`);
+      // console.log(`📱 Device detection: ${mobile ? 'Mobile' : 'Desktop'}`);
     };
     
     checkMobile();
@@ -119,7 +119,7 @@ export function GoogleMapPicker({
       (entries) => {
         const [entry] = entries;
         if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
-          console.log('📱 Mobile container ready and visible');
+          // console.log('📱 Mobile container ready and visible');
           setContainerReady(true);
           observer.disconnect();
         }
@@ -136,40 +136,41 @@ export function GoogleMapPicker({
   }, [isMobile]);
 
   // Debug effect to track button visibility
+  // Debug effect to track button visibility
   useEffect(() => {
-    console.log(`🔍 Button visibility states:`, {
-      isMapLoaded,
-      mapError,
-      showLocationButton,
-      shouldShowButton: isMapLoaded && !mapError
-    });
+    // console.log(`🔍 Button visibility states:`, {
+    //   isMapLoaded,
+    //   mapError,
+    //   showLocationButton,
+    //   shouldShowButton: isMapLoaded && !mapError
+    // });
   }, [isMapLoaded, mapError, showLocationButton]);
 
   const loadGoogleMapsScript = useCallback(() => {
     // Check if Google Maps is already loaded
     if (window.google?.maps) {
-      console.log('✅ Google Maps already loaded');
+      // console.log('✅ Google Maps already loaded');
       setIsMapLoaded(true);
       return Promise.resolve();
     }
 
     // Check if script is already loading or loaded globally
     if (isScriptLoaded) {
-      console.log('✅ Google Maps script already loaded globally');
+      // console.log('✅ Google Maps script already loaded globally');
       setIsMapLoaded(true);
       return Promise.resolve();
     }
 
     // Check if script is already loading
     if (isScriptLoading && scriptLoadPromise) {
-      console.log('⏳ Google Maps script already loading, waiting...');
+      // console.log('⏳ Google Maps script already loading, waiting...');
       return scriptLoadPromise.then(() => {
         setIsMapLoaded(true);
       });
     }
 
     if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.includes('YOUR_GOOGLE')) {
-      console.log('❌ No valid Google Maps API key found');
+      // console.log('❌ No valid Google Maps API key found');
       setMapError("Google Maps API key not configured");
       setShowManualEntry(true);
       return Promise.reject(new Error("No API key"));
@@ -178,13 +179,13 @@ export function GoogleMapPicker({
     // Check if script with same src already exists in DOM
     const existingScript = document.querySelector(`script[src*="maps.googleapis.com/maps/api/js"]`);
     if (existingScript) {
-      console.log('⚠️ Google Maps script already exists in DOM, waiting for it to load...');
+      // console.log('⚠️ Google Maps script already exists in DOM, waiting for it to load...');
       
       // Return a promise that resolves when Google Maps is ready
       return new Promise((resolve, reject) => {
         const checkLoaded = () => {
           if (window.google?.maps) {
-            console.log('✅ Existing Google Maps script loaded');
+            // console.log('✅ Existing Google Maps script loaded');
             setIsMapLoaded(true);
             resolve(undefined);
           } else {
@@ -206,7 +207,7 @@ export function GoogleMapPicker({
 
     // Create the promise
     scriptLoadPromise = new Promise<void>((resolve, reject) => {
-      console.log(`🚀 Loading Google Maps for ${isMobile ? 'mobile' : 'desktop'}...`);
+      // console.log(`🚀 Loading Google Maps for ${isMobile ? 'mobile' : 'desktop'}...`);
       
       // Use a simple global callback name
       const callbackName = 'initGoogleMapsCallback';
@@ -218,7 +219,7 @@ export function GoogleMapPicker({
       
       // Create global callback
       (window as any)[callbackName] = () => {
-        console.log('✅ Google Maps script loaded successfully');
+        // console.log('✅ Google Maps script loaded successfully');
         
         // Add mobile-specific delay
         const delay = isMobile ? 500 : 100;
@@ -261,13 +262,12 @@ export function GoogleMapPicker({
     
     // Wait for container readiness on mobile
     if (isMobile && !containerReady) {
-      console.log('📱 Waiting for mobile container readiness...');
+      // console.log('📱 Waiting for mobile container readiness...');
       return;
     }
 
     try {
-      console.log(`🗺️ Initializing Google Map for ${isMobile ? 'mobile' : 'desktop'}...`);
-
+      // console.log(`🗺️ Initializing Google Map for ${isMobile ? 'mobile' : 'desktop'}...`);
       // Mobile-specific container preparation
       if (isMobile && mapRef.current) {
         // Force layout calculation
@@ -315,7 +315,7 @@ export function GoogleMapPicker({
             const lat = center.lat();
             const lng = center.lng();
             
-            console.log('🗺️ Map center changed to:', { lat, lng });
+            // console.log('🗺️ Map center changed to:', { lat, lng });
             
             // Debounce the location update to avoid too many updates
             clearTimeout(window.mapCenterTimeout);
@@ -335,7 +335,7 @@ export function GoogleMapPicker({
 
                 // Get formatted address from geocoding result
                 const formattedAddress = geocodeResult[0].formatted_address;
-                console.log('✅ Geocoded address:', formattedAddress);
+                // console.log('✅ Geocoded address:', formattedAddress);
                 
                 const newLocation = { lat, lng, address: formattedAddress };
                 setCurrentLocation(newLocation);
@@ -362,11 +362,11 @@ export function GoogleMapPicker({
       // Mobile-specific map ready event
       if (isMobile) {
         google.maps.event.addListenerOnce(mapInstanceRef.current, 'idle', () => {
-          console.log('📱 Mobile map fully loaded and ready');
+          // console.log('📱 Mobile map fully loaded and ready');
         });
       }
 
-      console.log(`✅ Google Map initialized successfully for ${isMobile ? 'mobile' : 'desktop'}`);
+      // console.log(`✅ Google Map initialized successfully for ${isMobile ? 'mobile' : 'desktop'}`);
       
       // Show location button once map is fully initialized
       setShowLocationButton(true);
@@ -381,7 +381,7 @@ export function GoogleMapPicker({
     if (!searchInputRef.current || !isMapLoaded || autocompleteRef.current) return;
 
     try {
-      console.log('🔍 Initializing Google Places Autocomplete...');
+      // console.log('🔍 Initializing Google Places Autocomplete...');
       
       const autocomplete = new google.maps.places.Autocomplete(searchInputRef.current, {
         types: ['establishment', 'geocode'],
@@ -391,14 +391,14 @@ export function GoogleMapPicker({
 
       autocomplete.addListener('place_changed', () => {
         const place = autocomplete.getPlace();
-        console.log('🏢 Place selected:', place);
+        // console.log('🏢 Place selected:', place);
         
         if (place.geometry?.location) {
           const lat = place.geometry.location.lat();
           const lng = place.geometry.location.lng();
           const address = place.formatted_address || place.name || `${lat}, ${lng}`;
           
-          console.log('📍 Autocomplete location:', { lat, lng, address });
+          // console.log('📍 Autocomplete location:', { lat, lng, address });
           
           const newLocation = { lat, lng, address };
           setCurrentLocation(newLocation);
@@ -415,7 +415,7 @@ export function GoogleMapPicker({
       });
 
       autocompleteRef.current = autocomplete;
-      console.log('✅ Autocomplete initialized successfully');
+      // console.log('✅ Autocomplete initialized successfully');
     } catch (error) {
       console.error('❌ Failed to initialize autocomplete:', error);
     }
@@ -468,13 +468,13 @@ export function GoogleMapPicker({
   // Touch interaction handler for mobile map readiness
   const handleContainerTouch = useCallback(() => {
     if (isMobile && isMapLoaded && !mapInstanceRef.current) {
-      console.log('📱 Touch triggered mobile map initialization');
+      // console.log('📱 Touch triggered mobile map initialization');
       initializeMap();
     }
   }, [isMobile, isMapLoaded, initializeMap]);
 
   const handleGetCurrentLocation = () => {
-    console.log('📱 Requesting current location...');
+    // console.log('📱 Requesting current location...');
     
     if (!navigator.geolocation) {
       console.error('❌ Geolocation not supported');
@@ -488,7 +488,7 @@ export function GoogleMapPicker({
       maximumAge: isMobile ? 300000 : 600000 // 5 minutes cache for mobile
     };
 
-    console.log('🔄 Getting current location automatically...');
+    // console.log('🔄 Getting current location automatically...');
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
@@ -496,7 +496,7 @@ export function GoogleMapPicker({
         const lng = position.coords.longitude;
         const accuracy = position.coords.accuracy;
         
-        console.log('✅ Auto location obtained:', { lat, lng, accuracy });
+        // console.log('✅ Auto location obtained:', { lat, lng, accuracy });
         
         try {
           // Use Google Geocoding API to get formatted address
@@ -514,7 +514,7 @@ export function GoogleMapPicker({
 
             // Get formatted address from geocoding result
             const formattedAddress = geocodeResult[0].formatted_address;
-            console.log('✅ Auto location geocoded address:', formattedAddress);
+            // console.log('✅ Auto location geocoded address:', formattedAddress);
             
             const newLocation = { lat, lng, address: formattedAddress };
             setCurrentLocation(newLocation);
@@ -549,15 +549,15 @@ export function GoogleMapPicker({
         
         // More detailed error logging for debugging
         if (error) {
-          console.log('📍 Auto geolocation error details:', {
-            code: error.code,
-            message: error.message,
-            PERMISSION_DENIED: error.PERMISSION_DENIED,
-            POSITION_UNAVAILABLE: error.POSITION_UNAVAILABLE,
-            TIMEOUT: error.TIMEOUT
-          });
+          // console.log('📍 Auto geolocation error details:', {
+          //   code: error.code,
+          //   message: error.message,
+          //   PERMISSION_DENIED: error.PERMISSION_DENIED,
+          //   POSITION_UNAVAILABLE: error.POSITION_UNAVAILABLE,
+          //   TIMEOUT: error.TIMEOUT
+          // });
         } else {
-          console.log('📍 Auto geolocation error: No error object provided');
+          // console.log('📍 Auto geolocation error: No error object provided');
         }
         
         // For auto-location requests, just silently fall back to default location
@@ -569,7 +569,7 @@ export function GoogleMapPicker({
 
   // Manual location request with user feedback
   const handleManualLocationRequest = () => {
-    console.log('📱 Manual location request...');
+    // console.log('📱 Manual location request...');
     
     if (!navigator.geolocation) {
       alert('Your browser doesn\'t support location services. Please enter your address manually.');
@@ -597,7 +597,7 @@ export function GoogleMapPicker({
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
         
-        console.log('✅ Manual location obtained:', { lat, lng });
+        // console.log('✅ Manual location obtained:', { lat, lng });
         
         // Use coordinates as address - no geocoding
         const address = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
@@ -680,7 +680,7 @@ export function GoogleMapPicker({
     setCurrentLocation(manualLocation);
     onLocationSelect(manualLocation);
     setManualAddress(fullAddress);
-    console.log('✅ Manual address submitted:', fullAddress);
+    // console.log('✅ Manual address submitted:', fullAddress);
   };
 
   const handleUseManualAddress = () => {
@@ -698,12 +698,12 @@ export function GoogleMapPicker({
 
     setCurrentLocation(manualLocation);
     onLocationSelect(manualLocation);
-    console.log('✅ Manual address used:', manualAddress);
+    // console.log('✅ Manual address used:', manualAddress);
   };
 
   // Current location button handler with loading state
   const handleCurrentLocationButton = () => {
-    console.log('🎯 Current location button clicked...');
+    // console.log('🎯 Current location button clicked...');
     
     if (!navigator.geolocation) {
       alert('Your browser doesn\'t support location services.');
@@ -723,7 +723,7 @@ export function GoogleMapPicker({
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
         
-        console.log('✅ Current location button - location obtained:', { lat, lng });
+        // console.log('✅ Current location button - location obtained:', { lat, lng });
         
         try {
           // Use Google Geocoding API to get formatted address
@@ -741,7 +741,7 @@ export function GoogleMapPicker({
 
             // Get formatted address from geocoding result
             const formattedAddress = geocodeResult[0].formatted_address;
-            console.log('✅ Current location button geocoded address:', formattedAddress);
+            // console.log('✅ Current location button geocoded address:', formattedAddress);
             
             const newLocation = { lat, lng, address: formattedAddress };
             setCurrentLocation(newLocation);
@@ -770,7 +770,7 @@ export function GoogleMapPicker({
           mapInstanceRef.current.setZoom(17); // Closer zoom for current location
         }
         
-        console.log('✅ Map centered to current location');
+        // console.log('✅ Map centered to current location');
       },
       (error) => {
         console.error('❌ Current location button geolocation error:', error || 'Unknown geolocation error');

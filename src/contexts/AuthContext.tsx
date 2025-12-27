@@ -60,7 +60,7 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  console.log('🚀 AuthProvider initializing...');
+  // console.log('🚀 AuthProvider initializing...');
   
   const [authState, setAuthState] = useState({
     isAuthenticated: false,
@@ -76,11 +76,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Get auth data from localStorage with validation
   const getStoredAuthData = (): AuthData | null => {
     try {
-      console.log('🔍 Checking localStorage for gutzo_auth...');
+      // console.log('🔍 Checking localStorage for gutzo_auth...');
       const authData = localStorage.getItem('gutzo_auth');
       
       if (!authData) {
-        console.log('📱 No gutzo_auth found in localStorage');
+        // console.log('📱 No gutzo_auth found in localStorage');
         return null;
       }
 
@@ -89,13 +89,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Validate required fields - allow empty name but ensure it exists as a property
       if (!parsed.phone || typeof parsed.name !== 'string' || typeof parsed.verified !== 'boolean') {
-        console.log('❌ Invalid auth data structure, clearing. Found:', {
-          phone: parsed.phone,
-          name: parsed.name,
-          nameType: typeof parsed.name,
-          verified: parsed.verified,
-          verifiedType: typeof parsed.verified
-        });
+        // console.log('❌ Invalid auth data structure, clearing. Found:', {
+        //   phone: parsed.phone,
+        //   name: parsed.name,
+        //   nameType: typeof parsed.name,
+        //   verified: parsed.verified,
+        //   verifiedType: typeof parsed.verified
+        // });
         localStorage.removeItem('gutzo_auth');
         return null;
       }
@@ -104,19 +104,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const tokenAge = Date.now() - parsed.timestamp;
       const isExpired = tokenAge > AUTH_CONFIG.TOKEN_EXPIRY;
       
-      console.log('⏰ Token age check:', {
-        tokenAge: Math.round(tokenAge / (1000 * 60 * 60 * 24)) + ' days',
-        maxAge: Math.round(AUTH_CONFIG.TOKEN_EXPIRY / (1000 * 60 * 60 * 24)) + ' days',
-        isExpired
-      });
+      // console.log('⏰ Token age check:', {
+      //   tokenAge: Math.round(tokenAge / (1000 * 60 * 60 * 24)) + ' days',
+      //   maxAge: Math.round(AUTH_CONFIG.TOKEN_EXPIRY / (1000 * 60 * 60 * 24)) + ' days',
+      //   isExpired
+      // });
       
       if (isExpired) {
-        console.log('❌ Auth token expired, clearing');
+        // console.log('❌ Auth token expired, clearing');
         localStorage.removeItem('gutzo_auth');
         return null;
       }
 
-      console.log('✅ Valid auth data found in localStorage');
+      // console.log('✅ Valid auth data found in localStorage');
       return parsed;
     } catch (error) {
       console.error('❌ Error parsing auth data:', error);
@@ -136,7 +136,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       };
       
       localStorage.setItem('gutzo_auth', JSON.stringify(enhancedAuth));
-      console.log('✅ Auth data saved to localStorage');
+      // console.log('✅ Auth data saved to localStorage');
     } catch (error) {
       console.error('❌ Error saving auth data:', error);
     }
@@ -149,10 +149,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const justLoggedIn = timeSinceLogin < (10 * 60 * 1000); // 10 minutes
     
     if (justLoggedIn) {
-      console.log('⏱️ Recent login detected, skipping validation:', {
-        timeSinceLogin: Math.round(timeSinceLogin / (1000 * 60)) + ' minutes ago',
-        justLoggedIn
-      });
+      // console.log('⏱️ Recent login detected, skipping validation:', {
+      //   timeSinceLogin: Math.round(timeSinceLogin / (1000 * 60)) + ' minutes ago',
+      //   justLoggedIn
+      // });
       return false;
     }
     
@@ -160,12 +160,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const timeSinceValidation = Date.now() - lastValidated;
     const needsValidation = timeSinceValidation > AUTH_CONFIG.VALIDATION_INTERVAL;
     
-    console.log('⏱️ Validation check:', {
-      lastValidated: lastValidated ? new Date(lastValidated).toISOString() : 'Never',
-      timeSinceValidation: Math.round(timeSinceValidation / (1000 * 60)) + ' minutes ago',
-      validationInterval: Math.round(AUTH_CONFIG.VALIDATION_INTERVAL / (1000 * 60)) + ' minutes',
-      needsValidation
-    });
+    // console.log('⏱️ Validation check:', {
+    //   lastValidated: lastValidated ? new Date(lastValidated).toISOString() : 'Never',
+    //   timeSinceValidation: Math.round(timeSinceValidation / (1000 * 60)) + ' minutes ago',
+    //   validationInterval: Math.round(AUTH_CONFIG.VALIDATION_INTERVAL / (1000 * 60)) + ' minutes',
+    //   needsValidation
+    // });
     
     return needsValidation;
   };
@@ -173,28 +173,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Validate user against database with fallback logic
   const validateUserWithFallback = async (authData: AuthData): Promise<boolean> => {
     try {
-      console.log('🔍 Validating user via nodeApiService...');
+      // console.log('🔍 Validating user via nodeApiService...');
       const result = await nodeApiService.validateUser(authData.phone);
       
       if (!result.success) {
-         console.log('❌ User validation failed - API error:', result.error);
+         // console.log('❌ User validation failed - API error:', result.error);
          return false;
       }
 
       const isValid = result.data?.userExists && result.data?.verified;
-      console.log(`✅ User validation result: exists=${result.data?.userExists}, verified=${result.data?.verified}, valid=${isValid}`);
+      // console.log(`✅ User validation result: exists=${result.data?.userExists}, verified=${result.data?.verified}, valid=${isValid}`);
       
       if (isValid) {
         const updatedAuth = { ...authData, lastValidated: Date.now() };
         saveAuthData(updatedAuth);
       } else {
-        console.log('❌ User validation failed - user not found or not verified');
+        // console.log('❌ User validation failed - user not found or not verified');
         return false;
       }
       return isValid;
     } catch (error: any) {
       if (error.message && (error.message.includes('Network') || error.message.includes('server'))) {
-        console.log('⚠️ Network/server error during validation, keeping user logged in:', error.message);
+        // console.log('⚠️ Network/server error during validation, keeping user logged in:', error.message);
         return true;
       }
       return true;
@@ -204,12 +204,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Fetch detailed user data
   const fetchUserData = async (phone: string): Promise<UserData | null> => {
     try {
-      console.log('📱 Fetching detailed user data via nodeApiService for phone:', phone);
+      // console.log('📱 Fetching detailed user data via nodeApiService for phone:', phone);
       const response = await nodeApiService.getUser(phone);
       
       if (response.success && response.data?.exists && response.data?.user) {
         const userData = response.data.user;
-        console.log('✅ User data fetched successfully');
+        // console.log('✅ User data fetched successfully');
         return {
           id: userData.id,
           name: userData.name,
@@ -228,13 +228,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Initialize authentication state
   const initializeAuth = async (): Promise<void> => {
     try {
-      console.log('🔄 Initializing authentication...');
-      console.log('🔍 Checking localStorage for auth data...');
+      // console.log('🔄 Initializing authentication...');
+      // console.log('🔍 Checking localStorage for auth data...');
       
       const storedAuth = getStoredAuthData();
       
       if (!storedAuth) {
-        console.log('📱 No valid auth data found in localStorage');
+        // console.log('📱 No valid auth data found in localStorage');
         setAuthState({
           isAuthenticated: false,
           isLoading: false,
@@ -243,23 +243,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return;
       }
 
-      console.log('✅ Found stored auth data:', {
-        phone: storedAuth.phone,
-        name: storedAuth.name,
-        verified: storedAuth.verified,
-        timestamp: new Date(storedAuth.timestamp).toISOString(),
-        lastValidated: storedAuth.lastValidated ? new Date(storedAuth.lastValidated).toISOString() : 'Never'
-      });
+      // console.log('✅ Found stored auth data:', {
+      //   phone: storedAuth.phone,
+      //   name: storedAuth.name,
+      //   verified: storedAuth.verified,
+      //   timestamp: new Date(storedAuth.timestamp).toISOString(),
+      //   lastValidated: storedAuth.lastValidated ? new Date(storedAuth.lastValidated).toISOString() : 'Never'
+      // });
 
       // Check if validation is needed
       const needsValidation = shouldValidateUser(storedAuth);
       
       if (needsValidation) {
-        console.log('🔍 Auth data needs validation (older than 1 hour)...');
+        // console.log('🔍 Auth data needs validation (older than 1 hour)...');
         const isValid = await validateUserWithFallback(storedAuth);
         
         if (!isValid) {
-          console.log('❌ Validation failed, clearing auth');
+          // console.log('❌ Validation failed, clearing auth');
           localStorage.removeItem('gutzo_auth');
           setAuthState({
             isAuthenticated: false,
@@ -268,9 +268,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           });
           return;
         }
-        console.log('✅ Validation passed, user is valid');
+        // console.log('✅ Validation passed, user is valid');
       } else {
-        console.log('✅ Auth data is recent (< 1 hour), skipping validation');
+        // console.log('✅ Auth data is recent (< 1 hour), skipping validation');
       }
 
       // Create user object from stored auth
@@ -280,7 +280,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         verified: storedAuth.verified
       };
 
-      console.log('👤 Creating user object from stored auth:', userData);
+      // console.log('👤 Creating user object from stored auth:', userData);
 
       // Set authenticated state immediately with stored data
       setAuthState({
@@ -289,22 +289,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         user: userData
       });
 
-      console.log('✅ User authenticated successfully with stored data');
+      // console.log('✅ User authenticated successfully with stored data');
 
       // Try to fetch additional user data in background (non-blocking)
       fetchUserData(storedAuth.phone).then(detailedUserData => {
         if (detailedUserData) {
-          console.log('📊 Updated user data from database:', detailedUserData);
+          // console.log('📊 Updated user data from database:', detailedUserData);
           setAuthState(prev => ({
             ...prev,
             user: detailedUserData
           }));
         }
       }).catch(error => {
-        console.log('⚠️ Failed to fetch detailed user data, using stored data:', error.message);
+        // console.log('⚠️ Failed to fetch detailed user data, using stored data:', error.message);
       });
 
-      console.log('✅ Authentication initialized successfully');
+      // console.log('✅ Authentication initialized successfully');
       
     } catch (error) {
       console.error('❌ Error initializing auth:', error);
@@ -320,14 +320,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Create user in database if they don't exist
   const createUserInDatabase = async (authData: AuthData): Promise<void> => {
     try {
-      console.log('👤 Creating user in database via nodeApiService...');
+      // console.log('👤 Creating user in database via nodeApiService...');
       await nodeApiService.createUser({
         phone: authData.phone,
         name: authData.name || 'User',
         verified: authData.verified,
         email: (authData as any).email || null
       });
-      console.log('✅ User created/updated in database');
+      // console.log('✅ User created/updated in database');
     } catch (error) {
       console.error('❌ Error creating user in database:', error);
     }
@@ -335,7 +335,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Login function
   const login = async (authData: AuthData): Promise<void> => {
-    console.log('🔐 User logging in...');
+    // console.log('🔐 User logging in...');
     
     saveAuthData(authData);
     
@@ -364,7 +364,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     });
 
-    console.log('✅ User logged in successfully');
+    // console.log('✅ User logged in successfully');
   };
 
   // Logout function
@@ -379,7 +379,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       user: null
     });
 
-    console.log('✅ User logged out successfully');
+    // console.log('✅ User logged out successfully');
   };
 
   // Refresh user data
@@ -387,7 +387,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!authState.isAuthenticated || !authState.user) return;
 
     try {
-      console.log('🔄 Refreshing user data...');
+      // console.log('🔄 Refreshing user data...');
       const detailedData = await fetchUserData(authState.user.phone);
       
       if (detailedData) {
@@ -395,7 +395,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           ...prev,
           user: detailedData
         }));
-        console.log('✅ User data refreshed');
+        // console.log('✅ User data refreshed');
       }
     } catch (error) {
       console.error('❌ Error refreshing user data:', error);

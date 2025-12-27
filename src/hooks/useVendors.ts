@@ -30,7 +30,7 @@ export const useVendors = () => {
   const loadVendors = async () => {
     try {
       setLoading(true);
-      console.log("Starting to load vendors...");
+      // console.log("Starting to load vendors...");
       const response: any = await apiService.getVendors();
 
       let vendorList: any[] = [];
@@ -58,7 +58,7 @@ export const useVendors = () => {
 
       // 2. Filter by Serviceability (if location available)
       if (userLocation && userLocation.coordinates) {
-        console.log("Checking serviceability for vendors...");
+        // console.log("Checking serviceability for vendors...");
         const servicedVendors: Vendor[] = [];
 
         await Promise.all(validVendors.map(async (vendor) => {
@@ -94,9 +94,9 @@ export const useVendors = () => {
             if (isServiceable) {
               servicedVendors.push(vendor);
             } else {
-              console.log(
-                `Vendor ${vendor.name} is not serviceable at current location.`,
-              );
+              // console.log(
+              //   `Vendor ${vendor.name} is not serviceable at current location.`,
+              // );
             }
           } catch (err) {
             console.error(
@@ -109,9 +109,9 @@ export const useVendors = () => {
 
         validVendors = servicedVendors;
       } else {
-        console.log(
-          "No user location found, skipping serviceability check (showing all non-blacklisted).",
-        );
+        // console.log(
+        //   "No user location found, skipping serviceability check (showing all non-blacklisted).",
+        // );
       }
 
       console.log(`Vendors after filtering: ${validVendors.length}`);

@@ -37,7 +37,7 @@ router.post('/serviceability', async (req, res) => {
       }
     };
 
-    console.log('Sending Serviceability Request:', JSON.stringify(formattedPayload, null, 2));
+    // console.log('Sending Serviceability Request:', JSON.stringify(formattedPayload, null, 2));
 
     const response = await fetch(`${SHADOWFAX_API_URL}/order/serviceability/`, {
       method: 'POST',

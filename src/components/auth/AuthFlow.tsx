@@ -37,19 +37,24 @@ export function AuthFlow({ onAuthComplete, onClose }: AuthFlowProps) {
 
   const handleVerifyOTP = async (otp: string) => {
     setLoading(true);
-    console.log(`🔧 DEVELOPMENT BYPASS ACTIVE`);
-    console.log(`📱 Phone: +91${phoneNumber}`);
-    console.log(`🔑 OTP: "${otp}" (length: ${otp.length})`);
+    // console.log(`🔧 DEVELOPMENT BYPASS ACTIVE`);
+    // console.log(`📱 Phone: +91${phoneNumber}`);
+    // console.log(`🔑 OTP: "${otp}" (length: ${otp.length})`);
     
     // DEVELOPMENT BYPASS - Accept any 6-digit OTP
+    // DEVELOPMENT BYPASS - Accept any 6-digit OTP
+    // DEVELOPMENT BYPASS - Accept any 6-digit OTP
     try {
-      console.log(`✅ Bypassing server verification - accepting any OTP`);
+      // console.log(`✅ Bypassing server verification - accepting any OTP`);
+      
+      // Simulate realistic API delay
       
       // Simulate realistic API delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
+      
       // Always succeed for development
-      console.log(`🎉 Development bypass successful!`);
+      // console.log(`🎉 Development bypass successful!`);
       setCurrentStep('success');
       toast.success("✅ Phone verified! (Dev mode - any OTP works)");
       

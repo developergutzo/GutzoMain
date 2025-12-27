@@ -140,7 +140,7 @@ router.post('/sync', asyncHandler(async (req, res) => {
       throw new ApiError(500, `Failed to sync cart: ${batchError.message}`);
     }
 
-    console.log(`✅ Recovered ${savedItems.length}/${formattedItems.length} items via serial insert`);
+    // console.log(`✅ Recovered ${savedItems.length}/${formattedItems.length} items via serial insert`);
     successResponse(res, { items: savedItems }, 'Cart synced (some invalid items removed)');
   }
 }));

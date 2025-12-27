@@ -91,8 +91,9 @@ router.post('/initiate', authenticate, asyncHandler(async (req, res) => {
   };
 
   try {
+    // const checksum = await PaytmChecksum.generateSignature(JSON.stringify(paytmParams), PAYTM_MERCHANT_KEY);
+    // console.log('Generated Paytm Checksum:', checksum);
     const checksum = await PaytmChecksum.generateSignature(JSON.stringify(paytmParams), PAYTM_MERCHANT_KEY);
-    console.log('Generated Paytm Checksum:', checksum);
 
     const payload = {
       body: paytmParams,
@@ -109,7 +110,7 @@ router.post('/initiate', authenticate, asyncHandler(async (req, res) => {
     );
 
     const data = await response.json();
-    console.log('Paytm initiateTransaction response:', data);
+    // console.log('Paytm initiateTransaction response:', data);
 
     // Create payment record
     await supabaseAdmin.from('payments').insert({
@@ -165,7 +166,7 @@ router.post('/initiate-transaction', asyncHandler(async (req, res) => {
 
   try {
     const checksum = await PaytmChecksum.generateSignature(JSON.stringify(paytmParams), key);
-    console.log('Generated Checksum:', checksum);
+    // console.log('Generated Checksum:', checksum);
 
     const payload = {
       body: paytmParams,
@@ -182,7 +183,7 @@ router.post('/initiate-transaction', asyncHandler(async (req, res) => {
     );
 
     const data = await response.json();
-    console.log('Paytm initiateTransaction response:', data);
+    // console.log('Paytm initiateTransaction response:', data);
 
   // Lookup order UUID from order_number
     const { data: orderData } = await supabaseAdmin
@@ -214,7 +215,7 @@ router.post('/initiate-transaction', asyncHandler(async (req, res) => {
 // PAYTM CALLBACK/WEBHOOK (REDIRECT FLOW)
 router.post('/callback', asyncHandler(async (req, res) => {
   const paytmParams = req.body;
-  console.log('[Paytm Callback] Received:', paytmParams);
+  // console.log('[Paytm Callback] Received:', paytmParams);
 
   const receivedChecksum = paytmParams.CHECKSUMHASH;
   delete paytmParams.CHECKSUMHASH;
@@ -281,7 +282,7 @@ router.post('/callback', asyncHandler(async (req, res) => {
     });
   }
 
-  console.log(`[Paytm Callback] Order ${orderId} updated to ${orderStatus}`);
+  // console.log(`[Paytm Callback] Order ${orderId} updated to ${orderStatus}`);
 
   // Redirect based on status
   if (txnStatus === 'TXN_SUCCESS') {
@@ -297,7 +298,7 @@ router.post('/webhook', asyncHandler(async (req, res) => {
   // Express body-parser handles this automatically if configured.
   
   const paytmParams = req.body;
-  console.log('[Paytm Webhook] Received:', JSON.stringify(paytmParams));
+  // console.log('[Paytm Webhook] Received:', JSON.stringify(paytmParams));
 
   const receivedChecksum = paytmParams.CHECKSUMHASH;
 
@@ -324,7 +325,7 @@ router.post('/webhook', asyncHandler(async (req, res) => {
   const txnId = paytmParams.TXNID;
   const txnAmount = paytmParams.TXNAMOUNT;
 
-  console.log(`[Paytm Webhook] Processing Order: ${orderId}, Status: ${txnStatus}`);
+  // console.log(`[Paytm Webhook] Processing Order: ${orderId}, Status: ${txnStatus}`);
 
   // Fetch existing order to check idempotency
   const { data: existingOrder } = await supabaseAdmin
@@ -340,7 +341,7 @@ router.post('/webhook', asyncHandler(async (req, res) => {
 
   // Idempotency: If already paid, do nothing
   if (existingOrder.payment_status === 'paid' && txnStatus === 'TXN_SUCCESS') {
-    console.log(`[Paytm Webhook] Order ${orderId} already paid. Skipping update.`);
+    // console.log(`[Paytm Webhook] Order ${orderId} already paid. Skipping update.`);
     return res.status(200).send('OK');
   }
 
@@ -389,7 +390,7 @@ router.post('/webhook', asyncHandler(async (req, res) => {
     });
   }
 
-  console.log(`[Paytm Webhook] Successfully processed ${orderId}`);
+  // console.log(`[Paytm Webhook] Successfully processed ${orderId}`);
   return res.status(200).send('OK');
 }));
 
@@ -493,7 +494,7 @@ router.post('/refund', authenticate, asyncHandler(async (req, res) => {
     );
 
     const data = await response.json();
-    console.log('Paytm refund response:', data);
+    // console.log('Paytm refund response:', data);
 
     // Create support ticket for tracking
     await supabaseAdmin

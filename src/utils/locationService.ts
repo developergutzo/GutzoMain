@@ -172,21 +172,21 @@ export class LocationService {
     // Try cached location first
     const cached = this.getCachedLocation();
     if (cached) {
-      console.log("Using cached location:", this.getLocationDisplay(cached));
+      // console.log("Using cached location:", this.getLocationDisplay(cached));
       return cached;
     }
 
     // If no cache, try to get fresh location
     try {
-      console.log("Fetching fresh location...");
+      // console.log("Fetching fresh location...");
       const location = await this.getCurrentLocation();
-      console.log(
-        "Fresh location obtained:",
-        this.getLocationDisplay(location),
-      );
+      // console.log(
+      //   "Fresh location obtained:",
+      //   this.getLocationDisplay(location),
+      // );
       return location;
     } catch (error) {
-      console.log("Could not get fresh location:", error);
+      // console.log("Could not get fresh location:", error);
       return null;
     }
   }

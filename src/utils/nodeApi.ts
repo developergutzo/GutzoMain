@@ -43,7 +43,7 @@ class NodeApiService {
         };
 
         try {
-            console.log(`NodeAPI Request: ${url} [${options.method || "GET"}]`);
+            // console.log(`NodeAPI Request: ${url} [${options.method || "GET"}]`);
             const response = await fetch(url, {
                 method: options.method || "GET",
                 headers,

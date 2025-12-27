@@ -127,7 +127,7 @@ router.post('/', validate(schemas.createOrder), asyncHandler(async (req, res) =>
       order_source = 'app'
     } = req.body;
 
-    console.log('📦 Creating Order:', { vendor_id, itemCount: items.length });
+    // console.log('📦 Creating Order:', { vendor_id, itemCount: items.length });
 
     // Verify vendor is open
     const { data: vendor, error: vendorError } = await supabaseAdmin
@@ -148,7 +148,7 @@ router.post('/', validate(schemas.createOrder), asyncHandler(async (req, res) =>
     if (!vendor.is_open) throw new ApiError(400, 'Vendor is currently closed');
 
     // Calculate totals
-    console.log('🧮 Calculating totals...');
+    // console.log('🧮 Calculating totals...');
     const calculation = await calculateOrderTotal(items, vendor_id, coupon_code);
 
     // Check minimum order
@@ -162,7 +162,7 @@ router.post('/', validate(schemas.createOrder), asyncHandler(async (req, res) =>
     const orderNumber = generateOrderNumber();
     const deliveryOtp = Math.floor(1000 + Math.random() * 9000).toString();
 
-    console.log('📝 Inserting Order:', orderNumber);
+    // console.log('📝 Inserting Order:', orderNumber);
 
     // Create order
     const { data: order, error: orderError } = await supabaseAdmin
@@ -318,11 +318,11 @@ router.get('/', asyncHandler(async (req, res) => {
 
   const { data: orders, error, count } = await query;
 
-  console.log(`[DEBUG] GET /orders for User ${req.user.id} (${req.user.phone}) - Found: ${count}`);
+  // console.log(`[DEBUG] GET /orders for User ${req.user.id} (${req.user.phone}) - Found: ${count}`);
   if (orders && orders.length > 0) {
-      console.log(`[DEBUG] First order ID: ${orders[0].id} Status: ${orders[0].status}`);
+      // console.log(`[DEBUG] First order ID: ${orders[0].id} Status: ${orders[0].status}`);
   } else {
-      console.log(`[DEBUG] No orders found for query details.`);
+      // console.log(`[DEBUG] No orders found for query details.`);
   }
 
   if (error) throw new ApiError(500, 'Failed to fetch orders');

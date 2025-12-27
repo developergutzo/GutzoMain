@@ -400,7 +400,7 @@ const CART_MIGRATION_KEY = 'gutzo_cart_migrated';
 
 // Helper function to transform API cart response to frontend format (with fresh product data)
 const transformCartFromAPI = (apiCart: any): { items: CartItem[]; totalItems: number; totalAmount: number } => {
-  console.log('🔄 Transforming cart from API (with fresh product data):', { apiCart });
+  // console.log('🔄 Transforming cart from API (with fresh product data):', { apiCart });
   
   if (!apiCart || !apiCart.items) {
     console.log('📭 API cart is empty or invalid');
@@ -409,7 +409,7 @@ const transformCartFromAPI = (apiCart: any): { items: CartItem[]; totalItems: nu
 
   // Handle new lean cart structure with fresh product data from API
   const items: CartItem[] = apiCart.items.map((item: any, index: number) => {
-    console.log(`🔄 Transforming cart item ${index + 1} with fresh product data:`, item);
+    // console.log(`🔄 Transforming cart item ${index + 1} with fresh product data:`, item);
     
     const transformedItem = {
       // Use the actual database ID if available, otherwise generate one (for guest/optimistic)
@@ -433,7 +433,7 @@ const transformCartFromAPI = (apiCart: any): { items: CartItem[]; totalItems: nu
       }
     };
     
-    console.log(`✅ Transformed cart item ${index + 1} with fresh data:`, transformedItem);
+    // console.log(`✅ Transformed cart item ${index + 1} with fresh data:`, transformedItem);
     return transformedItem;
   });
 
@@ -443,13 +443,13 @@ const transformCartFromAPI = (apiCart: any): { items: CartItem[]; totalItems: nu
     totalAmount: apiCart.totalAmount || items.reduce((sum, item) => sum + (item.price * item.quantity), 0)
   };
   
-  console.log('✅ Final transformed cart with fresh product data:', result);
+  // console.log('✅ Final transformed cart with fresh product data:', result);
   return result;
 };
 
 // Helper function to transform frontend cart to API format (lean structure)
 const transformCartToAPI = (cartItems: CartItem[]) => {
-  console.log('🔄 Transforming cart to lean API format:', cartItems);
+  // console.log('🔄 Transforming cart to lean API format:', cartItems);
   
   const leanCartItems = cartItems.map(item => {
     // Validate critical fields
@@ -472,14 +472,14 @@ const transformCartToAPI = (cartItems: CartItem[]) => {
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, initialState);
   useEffect(() => {
-    console.log('[CartProvider] totalItems:', state.totalItems, 'items:', state.items);
+    // console.log('[CartProvider] totalItems:', state.totalItems, 'items:', state.items);
   }, [state.totalItems, state.items]);
   const { isAuthenticated, user } = useAuth();
 
   // Load appropriate cart on mount and auth state changes
   useEffect(() => {
     const loadInitialCart = async () => {
-      console.log('🛒 Loading initial cart state...', { isAuthenticated, user: user?.phone });
+      // console.log('🛒 Loading initial cart state...', { isAuthenticated, user: user?.phone });
 
       if (isAuthenticated && user) {
         // User is logged in - check if cart migration is needed
@@ -501,47 +501,47 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       // If a guest cart exists in localStorage, it means we have new items to merge,
       // because we strictly delete GUEST_CART_KEY after every successful migration.
 
-      console.log('🔍 Checking cart migration status:', {
-        hasGuestCart: !!hasGuestCart,
-        userPhone,
-        guestCartContent: hasGuestCart ? JSON.parse(hasGuestCart) : null
-      });
+      // console.log('🔍 Checking cart migration status:', {
+      //   hasGuestCart: !!hasGuestCart,
+      //   userPhone,
+      //   guestCartContent: hasGuestCart ? JSON.parse(hasGuestCart) : null
+      // });
 
       if (hasGuestCart) {
-        console.log('🚀 Starting cart migration process...');
+        // console.log('🚀 Starting cart migration process...');
         await migrateGuestCartOnLogin(userPhone);
         
         // Clear guest cart after successful migration
-        console.log('🧹 Clearing guest cart after successful migration');
+        // console.log('🧹 Clearing guest cart after successful migration');
         localStorage.removeItem(GUEST_CART_KEY);
       } else {
-        console.log('📥 Loading user cart from database...');
+        // console.log('📥 Loading user cart from database...');
         await loadUserCartFromDB(userPhone);
       }
     } catch (error) {
       console.error('❌ Error handling authenticated cart load:', error);
       // Fallback to guest cart if user cart fails
-      console.log('🔄 Falling back to guest cart due to error');
+      // console.log('🔄 Falling back to guest cart due to error');
       loadGuestCart();
     }
   };
 
   // Load guest cart from localStorage
   const loadGuestCart = () => {
-    console.log('👤 Loading guest cart from localStorage...');
+    // console.log('👤 Loading guest cart from localStorage...');
     const savedGuestCart = localStorage.getItem(GUEST_CART_KEY);
     
     if (savedGuestCart) {
       try {
         const cartData = JSON.parse(savedGuestCart);
-        console.log('✅ Guest cart loaded:', { items: cartData.items?.length || 0 });
+        // console.log('✅ Guest cart loaded:', { items: cartData.items?.length || 0 });
         dispatch({ type: 'LOAD_CART', payload: cartData });
       } catch (error) {
         console.error('❌ Error loading guest cart:', error);
         localStorage.removeItem(GUEST_CART_KEY);
       }
     } else {
-      console.log('📝 No guest cart found, starting with empty cart');
+      // console.log('📝 No guest cart found, starting with empty cart');
     }
   };
 
@@ -553,13 +553,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (isAuthenticated && user) {
         // For authenticated users, we don't save to localStorage
         // Cart is managed in the database
-        console.log('🔒 User authenticated - cart managed in database');
+        // console.log('🔒 User authenticated - cart managed in database');
         return;
       } else {
         // For guests, save to localStorage
         if (state.items.length > 0 || localStorage.getItem(GUEST_CART_KEY)) {
           localStorage.setItem(GUEST_CART_KEY, JSON.stringify(cartToSave));
-          console.log('💾 Guest cart saved to localStorage:', { items: state.items.length });
+          // console.log('💾 Guest cart saved to localStorage:', { items: state.items.length });
         }
       }
     };
@@ -569,7 +569,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // Clear guest cart (used on logout)
   const clearGuestCart = useCallback(() => {
-    console.log('🧹 Clearing guest cart from localStorage...');
+    // console.log('🧹 Clearing guest cart from localStorage...');
     localStorage.removeItem(GUEST_CART_KEY);
     // Also clear migration flags
     const migrationKeys = Object.keys(localStorage).filter(key => 
@@ -581,7 +581,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // Clear cart with API sync for authenticated users
   const clearCart = useCallback(async () => {
-    console.log('🧹 Clearing cart...', { isAuthenticated, userPhone: user?.phone });
+    // console.log('🧹 Clearing cart...', { isAuthenticated, userPhone: user?.phone });
     
     // Set loading state
     dispatch({ type: 'SET_LOADING', payload: true });
@@ -629,7 +629,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     
     // Only clear cart if user was authenticated and is now not authenticated (actual logout)
     if (wasAuthenticated && !isNowAuthenticated && state.items.length > 0) {
-      console.log('👋 User logged out (auth state changed from true to false) - clearing cart...');
+      // console.log('👋 User logged out (auth state changed from true to false) - clearing cart...');
       clearGuestCart();
     }
   }, [isAuthenticated, clearGuestCart, state.items.length]);
@@ -655,27 +655,27 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // Migrate guest cart on login - enhanced for immediate sync
   const migrateGuestCartOnLogin = useCallback(async (userId: string) => {
-    console.log('🔄 Starting guest cart migration for user:', userId);
+    // console.log('🔄 Starting guest cart migration for user:', userId);
     dispatch({ type: 'SET_MIGRATION_STATUS', payload: 'pending' });
 
     try {
       const guestCartData = localStorage.getItem(GUEST_CART_KEY);
       if (!guestCartData) {
-        console.log('📭 No guest cart to migrate');
+        // console.log('📭 No guest cart to migrate');
         dispatch({ type: 'SET_MIGRATION_STATUS', payload: 'completed' });
         await loadUserCartFromDB(userId);
         return;
       }
 
       const guestCart = JSON.parse(guestCartData);
-      console.log('📦 Guest cart found:', { 
-        items: guestCart.items?.length || 0,
-        guestCartStructure: guestCart
-      });
+      // console.log('📦 Guest cart found:', { 
+      //   items: guestCart.items?.length || 0,
+      //   guestCartStructure: guestCart
+      // });
 
       // Validate guest cart structure
       if (!guestCart.items || !Array.isArray(guestCart.items) || guestCart.items.length === 0) {
-        console.log('📭 Guest cart is empty or invalid, loading user cart...');
+        // console.log('📭 Guest cart is empty or invalid, loading user cart...');
         dispatch({ type: 'SET_MIGRATION_STATUS', payload: 'completed' });
         await loadUserCartFromDB(userId);
         return;
@@ -687,12 +687,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         const existingCartResponse = await apiService.getUserCart(userId);
         // Correctly unwrap API response
         existingCartData = transformCartFromAPI(existingCartResponse.data || existingCartResponse);
-        console.log('🔍 Existing user cart check:', {
-          hasExistingCart: existingCartData.items.length > 0,
-          existingItems: existingCartData.items.length
-        });
+        // console.log('🔍 Existing user cart check:', {
+        //   hasExistingCart: existingCartData.items.length > 0,
+        //   existingItems: existingCartData.items.length
+        // });
       } catch (error) {
-        console.log('📭 No existing user cart found (expected for new users)');
+        // console.log('📭 No existing user cart found (expected for new users)');
         existingCartData = { items: [], totalItems: 0, totalAmount: 0 };
       }
 
@@ -700,10 +700,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       let finalCartToMigrate = guestCart;
 
       if (existingCartData.items && existingCartData.items.length > 0) {
-        console.log('🔗 Existing user cart found, merging carts...', {
-          guestItems: guestCart.items.length,
-          existingItems: existingCartData.items.length
-        });
+        // console.log('🔗 Existing user cart found, merging carts...', {
+        //   guestItems: guestCart.items.length,
+        //   existingItems: existingCartData.items.length
+        // });
         
   // Merge carts manually to get the final result
   const mergedItems: CartItem[] = [...existingCartData.items];
@@ -735,10 +735,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           totalAmount
         };
         
-        console.log('✅ Carts merged, final cart:', { items: finalCartToMigrate.items.length });
+        // console.log('✅ Carts merged, final cart:', { items: finalCartToMigrate.items.length });
         toast.success('Cart merged successfully! 🛒');
       } else {
-        console.log('📝 No existing user cart, migrating guest cart as-is...');
+        // console.log('📝 No existing user cart, migrating guest cart as-is...');
         toast.success('Welcome back! Your cart has been restored. 🛒');
       }
 
@@ -746,15 +746,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       dispatch({ type: 'LOAD_CART', payload: finalCartToMigrate });
       
       // Save to database immediately 
-      console.log('💾 Saving migrated cart to database...');
+      // console.log('💾 Saving migrated cart to database...');
       if (finalCartToMigrate.items && finalCartToMigrate.items.length > 0) {
         try {
           await saveCartToDB(userId, finalCartToMigrate.items);
-          console.log('✅ Migrated cart saved to database');
+          // console.log('✅ Migrated cart saved to database');
           
           // CRITICAL: Reload from DB to replace synthetic IDs with real DB UUIDs
           // This prevents "Cart item not found" errors on subsequent updates
-          console.log('🔄 Reloading cart to sync real IDs...');
+          // console.log('🔄 Reloading cart to sync real IDs...');
           await loadUserCartFromDB(userId);
         } catch (saveError) {
           console.error('❌ Error saving migrated cart:', saveError);
@@ -762,7 +762,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
 
       dispatch({ type: 'SET_MIGRATION_STATUS', payload: 'completed' });
-      console.log('✅ Cart migration completed successfully');
+      // console.log('✅ Cart migration completed successfully');
 
     } catch (error) {
       console.error('❌ Error migrating guest cart:', error);
@@ -775,7 +775,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         if (fallbackGuestCartData) {
           const fallbackGuestCart = JSON.parse(fallbackGuestCartData);
           if (fallbackGuestCart.items && fallbackGuestCart.items.length > 0) {
-            console.log('🔄 Loading guest cart as fallback...');
+            // console.log('🔄 Loading guest cart as fallback...');
             dispatch({ type: 'LOAD_CART', payload: fallbackGuestCart });
           }
         }
@@ -789,7 +789,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // Load user cart from database
   const loadUserCartFromDB = useCallback(async (userId: string) => {
-    console.log('📥 Loading user cart from database for:', userId);
+    // console.log('📥 Loading user cart from database for:', userId);
     dispatch({ type: 'SET_LOADING', payload: true });
 
     try {
@@ -797,20 +797,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       // Backend returns { success: true, data: { items: [...] } }
       // We must pass the inner 'data' object to the transformer
       const cartData = transformCartFromAPI(cartResponse.data || cartResponse);
-      console.log('✅ User cart loaded from database:', { 
-        items: cartData.items?.length || 0,
-        cartData 
-      });
+
       
       if (cartData.items && cartData.items.length > 0) {
         dispatch({ type: 'LOAD_CART', payload: cartData });
       } else {
-        console.log('📭 User cart is empty, starting fresh');
+        // console.log('📭 User cart is empty, starting fresh');
         dispatch({ type: 'CLEAR_CART' });
       }
     } catch (error) {
       console.error('❌ Error loading user cart from database:', error);
-      console.log('📭 No user cart found in database or API error, starting with empty cart');
+      // console.log('📭 No user cart found in database or API error, starting with empty cart');
       dispatch({ type: 'CLEAR_CART' });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
@@ -822,7 +819,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // NOT for saving orders after payment. Order saving is handled separately.
   const saveCartToDB = async (userId: string, items: CartItem[]) => {
     try {
-      console.log('💾 Saving cart to database...', { userId, items: items.length });
+      // console.log('💾 Saving cart to database...', { userId, items: items.length });
       const apiItems = transformCartToAPI(items);
       await apiService.saveUserCart(userId, apiItems);
       console.log('✅ Cart saved to database successfully');
@@ -834,10 +831,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // Force cart reload for authenticated user
   const forceCartReload = useCallback(async () => {
     if (isAuthenticated && user) {
-      console.log('🔄 Forcing cart reload for authenticated user:', user.phone);
+      // console.log('🔄 Forcing cart reload for authenticated user:', user.phone);
       await handleAuthenticatedCartLoad(user.phone);
     } else {
-      console.log('🔄 Forcing guest cart reload');
+      // console.log('🔄 Forcing guest cart reload');
       loadGuestCart();
     }
   }, [isAuthenticated, user]);
@@ -863,7 +860,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const currentItem = state.items.find(item => item.productId === productId);
     const previousQuantity = currentItem ? currentItem.quantity : 0;
 
-    console.log('🔄 Optimistic quantity update:', { productId, quantity, previousQuantity });
+    // console.log('🔄 Optimistic quantity update:', { productId, quantity, previousQuantity });
 
     // Apply optimistic update immediately
     dispatch({ 
@@ -883,7 +880,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
       // Check if we have a synthetic ID (temporary local ID)
       if (typeof cartItemId === 'string' && cartItemId.includes('_')) {
-        console.log('⚠️ Detected synthetic ID for update. Attempting to resolve real DB ID...', cartItemId);
+        // console.log('⚠️ Detected synthetic ID for update. Attempting to resolve real DB ID...', cartItemId);
         
         try {
           // Attempt to fetch fresh cart data to find the real ID
@@ -892,7 +889,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           const freshItem = freshData.items.find(i => i.productId === productId);
           
           if (freshItem && freshItem.id && !freshItem.id.includes('_')) {
-            console.log('✅ Resolved real ID from server:', freshItem.id);
+            // console.log('✅ Resolved real ID from server:', freshItem.id);
             cartItemId = freshItem.id;
             
             // Update local state with the real ID for future operations
@@ -930,7 +927,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
-        console.log('🔄 Syncing update with API using Cart Item ID:', cartItemId);
+        // console.log('🔄 Syncing update with API using Cart Item ID:', cartItemId);
         const success = await apiService.updateCartItem(user.phone, cartItemId, { quantity });
         
         if (success) {
@@ -950,7 +947,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
              error.message?.includes('invalid input syntax') ||
              error.message?.includes('500')
            ) {
-            console.log('⚠️ Cart item issue identified (ID mismatch/Invalid). Recovering...');
+            // console.log('⚠️ Cart item issue identified (ID mismatch/Invalid). Recovering...');
             
             try {
                 // 1. Fetch fresh cart directly
@@ -961,7 +958,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                 const freshItem = freshData.items.find(i => i.productId === productId);
                 
                 if (freshItem && freshItem.id) {
-                     console.log('✅ Found fresh item in DB:', { oldId: cartItemId, newId: freshItem.id });
+                     // console.log('✅ Found fresh item in DB:', { oldId: cartItemId, newId: freshItem.id });
                      
                      // 3. Update local state with the correct ID
                      dispatch({ 
@@ -970,16 +967,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                      });
                      
                      // 4. Retry the update with the fresh ID
-                     console.log('🔄 Retrying update with fresh ID...');
+                     // console.log('🔄 Retrying update with fresh ID...');
                      const retrySuccess = await apiService.updateCartItem(user.phone, freshItem.id, { quantity });
                      
                      if (retrySuccess) {
-                        console.log('✅ Retry successful! Cart synced.');
+                        // console.log('✅ Retry successful! Cart synced.');
                         dispatch({ type: 'CONFIRM_UPDATE', payload: { productId } });
                         return; // Exit successfully
                      }
                 } else {
-                    console.log('❌ Item not found in fresh cart - it must have been deleted.');
+                    // console.log('❌ Item not found in fresh cart - it must have been deleted.');
                     dispatch({ type: 'REMOVE_ITEM', payload: { productId } });
                     return;
                 }
@@ -1061,8 +1058,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
        return; // STOP here
     }
 
-    console.log('🔄 Adding item optimistically:', { productId: product.id, quantity });
-
     // Apply optimistic addition immediately
     dispatch({ type: 'ADD_ITEM', payload: { product, vendor, quantity } });
 
@@ -1077,7 +1072,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
              const success = await apiService.updateCartItem(user.phone, existingItem.id, { quantity: newQuantity });
              
              if (success) {
-               console.log('✅ Cart item update synced with API successfully');
+               // console.log('✅ Cart item update synced with API successfully');
              } else {
                throw new Error('Update failed');
              }
@@ -1097,7 +1092,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
              
              if (responseData && (responseData.id || responseData.cart_id)) {
                 const realId = responseData.id || responseData.cart_id;
-                console.log('✅ Added to cart, got real ID:', realId);
+                // console.log('✅ Added to cart, got real ID:', realId);
                 
                 // CRITICAL: Update local state with real ID so next update uses it
                 dispatch({ 
@@ -1124,7 +1119,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // Handle remove item with API sync for authenticated users
   const handleRemoveItem = useCallback(async (productId: string) => {
-    console.log('🗑️ Removing item:', { productId });
+    // console.log('🗑️ Removing item:', { productId });
 
     // Remove immediately from local state
     dispatch({ type: 'REMOVE_ITEM', payload: { productId } });
@@ -1146,7 +1141,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // Handle clear cart with API sync for authenticated users
   const handleClearCart = useCallback(async () => {
-    console.log('🧹 Clearing all cart items...');
+    // console.log('🧹 Clearing all cart items...');
 
     // Clear immediately from local state
     dispatch({ type: 'CLEAR_CART' });

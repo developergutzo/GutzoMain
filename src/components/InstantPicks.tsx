@@ -98,30 +98,32 @@ const InstantPicksItem: React.FC<{ product: Product; isLast: boolean; noPadding:
 const InstantPicks: React.FC<InstantPicksProps> = ({ noPadding = false, vendorId, disabled, isOpen = true }) => {
   const [products, setProducts] = React.useState<Product[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     const loadProducts = async () => {
       try {
         setLoading(true); // Reset loading state on vendor change
-        let response;
+        setError(null); // Clear previous errors
+        let result;
         if (vendorId) {
-          console.log(`Fetching products for vendor ${vendorId}...`);
-          response = await nodeApiService.getVendorProducts(vendorId);
+          // console.log(`Fetching products for vendor ${vendorId}...`);
+          result = await nodeApiService.getVendorProducts(vendorId);
         } else {
-          console.log('Fetching instant picks (bestsellers)...');
-          response = await nodeApiService.getBestsellerProducts();
+          // console.log('Fetching instant picks (bestsellers)...');
+          result = await nodeApiService.getBestsellerProducts();
         }
         
-        if (response.success) {
-          let productsList = [];
-          if (Array.isArray(response.data)) {
-            productsList = response.data;
-          } else if (response.data && Array.isArray(response.data.products)) {
-            productsList = response.data.products;
+        if (result.success) {
+          let responseProducts = [];
+          if (Array.isArray(result.data)) {
+            responseProducts = result.data;
+          } else if (result.data && Array.isArray(result.data.products)) {
+            responseProducts = result.data.products;
           }
           
-          if (productsList.length > 0) {
-            const mappedProducts = productsList.map((p: any) => ({
+          if (responseProducts.length > 0) {
+            const mappedProducts = responseProducts.map((p: any) => ({
               ...p,
               ratingAccount: p.review_count || p.ratingCount || 0, // Handle DB vs Type mismatch
               action: !p.is_available ? 'soldout' : 'add', // Logic for action button
@@ -129,11 +131,13 @@ const InstantPicks: React.FC<InstantPicksProps> = ({ noPadding = false, vendorId
             }));
             setProducts(mappedProducts);
           } else {
-             console.log('No products found in response');
+             // console.log('No products found in response');
+             setError('No instant picks available at the moment.');
              setProducts([]); // Clear products if none found
           }
         } else {
-            console.error('Failed to load products:', response);
+            console.error('Failed to load products:', result);
+            setError(result.message || 'Failed to load instant picks.');
             setProducts([]); // Clear on error/failure
         }
       } catch (error) {

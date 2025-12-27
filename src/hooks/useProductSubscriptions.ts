@@ -12,8 +12,7 @@ export const useProductSubscriptions = () => {
   const getProductSubscription = useCallback(async (productId: string) => {
     try {
       setLoading(true);
-      console.log(`Fetching subscription status for product: ${productId}`);
-
+      // console.log(`Fetching subscription status for product: ${productId}`);
       const subscription = await apiService.getProductSubscription(productId);
 
       if (subscription) {
@@ -60,9 +59,9 @@ export const useProductSubscriptions = () => {
         setLoading(true);
         const newStatus = !currentStatus;
 
-        console.log(
-          `Toggling subscription for product ${productId}: ${currentStatus} → ${newStatus}`,
-        );
+        // console.log(
+        //   `Toggling subscription for product ${productId}: ${currentStatus} → ${newStatus}`,
+        // );
 
         const updatedSubscription = await apiService.updateProductSubscription(
           productId,
@@ -108,7 +107,7 @@ export const useProductSubscriptions = () => {
   const loadAllSubscriptions = useCallback(async () => {
     try {
       setLoading(true);
-      console.log("Loading all product subscriptions...");
+      // console.log("Loading all product subscriptions...");
 
       const allSubscriptions = await apiService.getAllSubscriptions();
 
@@ -120,7 +119,7 @@ export const useProductSubscriptions = () => {
         });
 
         setSubscriptions(newSubscriptionsMap);
-        console.log(`Loaded ${allSubscriptions.length} product subscriptions`);
+        // console.log(`Loaded ${allSubscriptions.length} product subscriptions`);
       }
     } catch (error) {
       console.error("Failed to load all subscriptions:", error);

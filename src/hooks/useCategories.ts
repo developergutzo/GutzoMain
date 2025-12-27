@@ -9,26 +9,26 @@ export const useCategories = () => {
 
   const loadCategories = async () => {
     try {
-      console.log("Loading categories from database...");
+      // console.log("Loading categories from database...");
       // Using nodeApiService via alias
       const response = await apiService.getCategories();
 
       // Node backend response wrapper check
       const data = response.success ? response.data : response;
 
-      console.log(
-        "Loaded categories from API:",
-        Array.isArray(data) ? data.length : 0,
-      );
+      // console.log(
+      //   "Loaded categories from API:",
+      //   Array.isArray(data) ? data.length : 0,
+      // );
 
       if (!data || !Array.isArray(data)) {
-        console.log("No categories received from API");
+        // console.log("No categories received from API");
         setCategories([]);
         return;
       }
 
       setCategories(data);
-      console.log("Categories loaded successfully:", data);
+      // console.log("Categories loaded successfully:", data);
     } catch (error) {
       console.error("Failed to load categories:", error);
       toast.error(

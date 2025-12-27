@@ -12,7 +12,7 @@ const router = express.Router();
 router.post('/send-otp', validate(schemas.sendOtp), asyncHandler(async (req, res) => {
   const { phone } = req.body;
 
-  console.log('Sending OTP to phone:', phone);
+
 
   // Generate 6-digit OTP
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -49,7 +49,7 @@ router.post('/send-otp', validate(schemas.sendOtp), asyncHandler(async (req, res
     
     // In development, still return success with OTP for testing
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[DEV] OTP for ${phone}: ${otp}`);
+      // console.log(`[DEV] OTP for ${phone}: ${otp}`);
       return successResponse(res, { 
         phone,
         message: 'OTP generated (WhatsApp not configured)',
@@ -112,7 +112,7 @@ router.post('/send-otp', validate(schemas.sendOtp), asyncHandler(async (req, res
     }
 
     const whatsappResult = await whatsappResponse.json();
-    console.log('WhatsApp message sent successfully:', whatsappResult);
+    // console.log('WhatsApp message sent successfully:', whatsappResult);
 
     successResponse(res, { 
       phone,
@@ -133,7 +133,7 @@ router.post('/send-otp', validate(schemas.sendOtp), asyncHandler(async (req, res
 router.post('/verify-otp', validate(schemas.verifyOtp), asyncHandler(async (req, res) => {
   const { phone, otp } = req.body;
 
-  console.log('Verifying OTP for phone:', phone);
+
 
   // Query for matching OTP record
   const { data: otpRecord, error: queryError } = await supabaseAdmin
@@ -225,7 +225,7 @@ router.post('/verify-otp', validate(schemas.verifyOtp), asyncHandler(async (req,
       .eq('phone', phone);
   }
 
-  console.log('OTP verified successfully for phone:', phone);
+
 
   successResponse(res, {
     user,
@@ -245,7 +245,7 @@ router.post('/check-user', asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Phone number is required');
   }
 
-  console.log('Checking if user exists for phone:', phone);
+
 
   const { data: user, error } = await supabaseAdmin
     .from('users')
@@ -259,7 +259,7 @@ router.post('/check-user', asyncHandler(async (req, res) => {
   }
 
   const exists = !!user;
-  console.log(`User ${exists ? 'exists' : 'does not exist'} for phone: ${phone}`);
+
 
   successResponse(res, {
     exists,
@@ -278,7 +278,7 @@ router.post('/validate-user', asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Phone number is required');
   }
 
-  console.log(`🔍 Validating user with phone: ${phone}`);
+
 
   const { data: user, error } = await supabaseAdmin
     .from('users')
@@ -288,7 +288,7 @@ router.post('/validate-user', asyncHandler(async (req, res) => {
 
   if (error) {
     if (error.code === 'PGRST116') {
-      console.log(`❌ User not found for phone: ${phone}`);
+      // console.log(`❌ User not found for phone: ${phone}`);
       return successResponse(res, { userExists: false, verified: false });
     }
     throw new ApiError(500, 'Database validation failed');
@@ -297,7 +297,7 @@ router.post('/validate-user', asyncHandler(async (req, res) => {
   const userExists = !!user;
   const verified = user?.verified || false;
 
-  console.log(`✅ User validation: phone=${phone}, exists=${userExists}, verified=${verified}`);
+
 
   successResponse(res, { userExists, verified });
 }));
@@ -314,7 +314,7 @@ router.post('/create-user', asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Phone number is required');
   }
 
-  console.log('Creating new user for phone:', phone);
+
 
   // Check if user already exists - if so, return them (idempotent)
   const { data: existingUser } = await supabaseAdmin
@@ -324,7 +324,7 @@ router.post('/create-user', asyncHandler(async (req, res) => {
     .single();
 
   if (existingUser) {
-    console.log('User already exists, returning existing profile:', phone);
+    // console.log('User already exists, returning existing profile:', phone);
     return successResponse(res, { user: existingUser }, 'User already exists', 200);
   }
 
@@ -354,7 +354,7 @@ router.post('/create-user', asyncHandler(async (req, res) => {
     throw new ApiError(500, 'Failed to create user');
   }
 
-  console.log('User created successfully:', phone);
+
 
   successResponse(res, { user: newUser }, 'Account created successfully', 201);
 }));
