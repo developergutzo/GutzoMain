@@ -6,7 +6,7 @@ const router = express.Router();
 
 // GET ALL DELIVERY ZONES
 router.get('/', asyncHandler(async (req, res) => {
-  const { city = 'Coimbatore' } = req.query;
+  const { city = '' } = req.query;
 
   const { data: zones, error } = await supabaseAdmin
     .from('delivery_zones')

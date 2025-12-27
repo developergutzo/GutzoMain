@@ -932,9 +932,9 @@ export function AddressModal({
         area: addressData.area || '',
         landmark: addressData.landmark || '',
         full_address: addressData.fullAddress || '',
-        city: 'Coimbatore', // Default city
-        state: 'Tamil Nadu', // Default state
-        zipcode: addressData.zipcode || '641001', // Fallback zipcode if not extracted
+        city: '', // Default city
+        state: '', // Default state
+        zipcode: addressData.zipcode || '', // Fallback zipcode if not extracted
         latitude: addressData.latitude,
         longitude: addressData.longitude,
         delivery_notes: undefined,
