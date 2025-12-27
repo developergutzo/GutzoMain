@@ -554,9 +554,7 @@ const AddressForm = ({
         </Button>
         
         {loadingTypes && (
-          <p className="text-xs text-gray-500 text-center mt-2">
-            Loading available address types...
-          </p>
+          <div className="h-4" />
         )}
       </div>
     </div>

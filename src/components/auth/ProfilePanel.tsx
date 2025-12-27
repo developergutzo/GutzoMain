@@ -129,7 +129,7 @@ export function ProfilePanel({ isOpen, onClose, onLogout, content, userInfo, onV
       if (profileData && profileData.name) {
         setRealUserData(profileData);
       } else {
-        console.log('ℹ️ User not found or no additional data found');
+        // User not found
       }
     } catch (error) {
       console.error('❌ Error fetching user profile:', error);
@@ -159,7 +159,6 @@ export function ProfilePanel({ isOpen, onClose, onLogout, content, userInfo, onV
     try {
       // Use dedicated address API to fetch addresses from Supabase edge function
       const response = await apiService.getUserAddresses(userData.phone);
-      console.log('[ProfilePanel] API getUserAddresses response:', response);
       if (Array.isArray(response)) {
         setRealAddresses(response);
       } else if (response.success && Array.isArray(response.data)) {
@@ -168,7 +167,6 @@ export function ProfilePanel({ isOpen, onClose, onLogout, content, userInfo, onV
         setRealAddresses([]);
       }
     } catch (error) {
-      console.error('[ProfilePanel] Error fetching user addresses:', error);
       setRealAddresses([]);
     } finally {
       setAddressesLoading(false);
@@ -192,7 +190,6 @@ export function ProfilePanel({ isOpen, onClose, onLogout, content, userInfo, onV
 
   // Sync addresses with real data
   useEffect(() => {
-  console.log('[ProfilePanel] Syncing addresses to local state:', realAddresses);
   setAddresses(realAddresses);
   setLoadingAddresses(addressesLoading);
   }, [realAddresses, addressesLoading]);
@@ -292,7 +289,6 @@ export function ProfilePanel({ isOpen, onClose, onLogout, content, userInfo, onV
     const isDeletingDefault = addressToDelete?.is_default;
 
     try {
-      console.log('🗑️ Deleting address via API service:', addressId);
       await apiService.deleteAddress(userData.phone, addressId);
       
       // Update local state by removing deleted address
@@ -313,7 +309,6 @@ export function ProfilePanel({ isOpen, onClose, onLogout, content, userInfo, onV
         }
 
         if (newDefault) {
-          console.log(`📍 Priority Fallback: Setting ${newDefault.type} (${newDefault.custom_label || ''}) as new default`);
           const setDefaultResult = await AddressApi.setDefaultAddress(newDefault.id, userData.phone);
           if (setDefaultResult.success) {
             handleSetDefaultAddress(newDefault.id);

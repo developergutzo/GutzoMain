@@ -67,9 +67,8 @@ export function LocationProvider({ children }: LocationProviderProps) {
       // to keep this function focused on fetching GPS location.
       
       if (locationData) {
-        console.log('Location loaded:', LocationService.getLocationDisplay(locationData));
+        // Location loaded
       } else {
-        console.log('No location available');
         setError('Location not available');
       }
     } catch (err) {
@@ -117,7 +116,6 @@ export function LocationProvider({ children }: LocationProviderProps) {
             setLocationLabel(label);
             
             isDefaultAddressFound = true;
-            console.log('📍 Using default address for location display:', display, 'Label:', label);
 
             // CRITICAL FIX: Update the main location object if coordinates exist
             // This ensures hooks like useVendors use the correct override location
@@ -133,7 +131,6 @@ export function LocationProvider({ children }: LocationProviderProps) {
 
                // Simple epsilon check or direct comparison
                if (currentLat !== newLat || currentLng !== newLng) {
-                   console.log('🔄 Syncing Location Context with Default Address Coordinates:', { newLat, newLng });
                    setLocation({
                        city: result.data.city,
                        state: result.data.state,
@@ -220,7 +217,6 @@ export function LocationProvider({ children }: LocationProviderProps) {
 
           // Strict Enforcement: If we have a target, and it's NOT the current default, switch it.
           if (targetDefault && (!currentDefault || currentDefault.id !== targetDefault.id)) {
-             console.log(`🏠 Enforcing Startup Priority: Switching default to ${targetDefault.type}`);
              await AddressApi.setDefaultAddress(targetDefault.id, user.phone);
              // Trigger display update AND WAIT for it
              await refreshLocation(); 
@@ -240,7 +236,6 @@ export function LocationProvider({ children }: LocationProviderProps) {
   // Reset location to GPS when user logs out
   useEffect(() => {
     if (!isAuthenticated) {
-      console.log('🔒 User logged out: Resetting location to detected GPS coordinates');
       // Reset label immediately to avoid UI flash while refreshing
       setLocationLabel(null);
       refreshLocation();

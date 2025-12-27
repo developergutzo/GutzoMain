@@ -34,7 +34,6 @@ export function useAddresses() {
       } else {
         // If user not found, provide empty addresses (they're new)
         if (response.error?.includes("User not found")) {
-          console.log("ℹ️ New user detected, starting with empty addresses");
           setAddresses([]);
           setError(null); // Don't show error for new users
         } else {
@@ -43,7 +42,6 @@ export function useAddresses() {
         }
       }
     } catch (err) {
-      console.error("Error fetching addresses:", err);
       setError("Failed to fetch addresses");
       setAddresses([]);
     } finally {
@@ -66,7 +64,6 @@ export function useAddresses() {
       }
       setAvailableTypes(types);
     } catch (err) {
-      console.error("Error fetching available types:", err);
       setAvailableTypes(["home", "work", "other"]);
     }
   }, [isAuthenticated, user]);

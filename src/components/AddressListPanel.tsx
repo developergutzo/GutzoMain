@@ -16,7 +16,7 @@ export function AddressListPanel({
   onClose,
   onSelectAddress
 }: AddressListPanelProps) {
-  console.log('Rendering AddressListPanel, isOpen:', isOpen);
+
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [loading, setLoading] = useState(false);
   const [userPhone, setUserPhone] = useState<string>('');
@@ -26,7 +26,6 @@ export function AddressListPanel({
   // Load user addresses
   useEffect(() => {
     if (isOpen) {
-      console.log('=isOpen:', isOpen);
       loadAddresses();
     }
   }, [isOpen]);
@@ -42,27 +41,23 @@ export function AddressListPanel({
           const parsed = JSON.parse(authData);
           userPhone = parsed.phone || '';
           setUserPhone(userPhone);
-          console.log('[AddressListPanel] userPhone for address fetch:', userPhone);
         }
       } catch (err) {
         console.error('[AddressListPanel] Error parsing auth data:', err);
       }
       if (!userPhone) {
-        console.log('[AddressListPanel] No userPhone, skipping address fetch');
         setAddresses([]);
         setLoading(false);
         return;
       }
-  const response = await AddressApi.getUserAddresses(userPhone);
-      console.log('[AddressListPanel] Raw API response:', response);
+      const response = await AddressApi.getUserAddresses(userPhone);
       if (response.success && response.data) {
-        console.log('[AddressListPanel] Setting addresses:', response.data);
         setAddresses(response.data);
       } else {
-        console.log('[AddressListPanel] No addresses found or API error:', response);
+        // Handle no addresses or error silently or show toast
       }
     } catch (error) {
-      console.error('[AddressListPanel] Error loading addresses:', error);
+      // Error handling
     } finally {
       setLoading(false);
     }
