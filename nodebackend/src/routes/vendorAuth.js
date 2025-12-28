@@ -369,4 +369,120 @@ router.get('/:id/products', asyncHandler(async (req, res) => {
       successResponse(res, null, 'Password reset successful. Please login.');
   }));
 
+  // ============================================
+  // GET VENDOR ORDERS
+  // GET /api/vendor-auth/:id/orders
+  // ============================================
+  router.get('/:id/orders', asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { status, limit = 50 } = req.query;
+
+    let query = supabaseAdmin
+      .from('orders')
+      .select(`
+        *,
+        items:order_items(*),
+        user:users(name, phone)
+      `)
+      .eq('vendor_id', id)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (status) {
+        // Support comma separated statuses e.g. "placed,confirmed,preparing"
+        const statuses = status.split(',');
+        query = query.in('status', statuses);
+    }
+
+    const { data: orders, error } = await query;
+
+    if (error) throw new ApiError(500, 'Failed to fetch vendor orders');
+
+    successResponse(res, { orders });
+  }));
+
+  // ============================================
+  // UPDATE VENDOR ORDER STATUS
+  // PATCH /api/vendor-auth/:id/orders/:orderId/status
+  // ============================================
+  router.patch('/:id/orders/:orderId/status', asyncHandler(async (req, res) => {
+    const { id, orderId } = req.params;
+    const { status } = req.body;
+
+    if (!['preparing', 'ready', 'completed'].includes(status)) {
+        throw new ApiError(400, 'Invalid status update');
+    }
+
+    // Verify order belongs to vendor
+    const { data: order, error } = await supabaseAdmin
+        .from('orders')
+        .update({ status })
+        .eq('id', orderId)
+        .eq('vendor_id', id)
+        .select()
+        .single();
+    
+    if (error || !order) throw new ApiError(404, 'Order not found or update failed');
+
+    // Send Notification to User if needed (e.g. "Your food is being prepared")
+    if (status === 'preparing') {
+         await supabaseAdmin.from('notifications').insert({
+             user_id: order.user_id,
+             type: 'order_update',
+             title: 'Order Preparing 🍳',
+             message: `The kitchen has started preparing your order #${order.order_number}`,
+             data: { order_id: order.id }
+         });
+
+         // 🚀 TRIGGER SHADOWFAX DELIVERY
+         try {
+             // Fetch full vendor details for pickup location
+             const { data: vendorDetails } = await supabaseAdmin
+                 .from('vendors')
+                 .select('*')
+                 .eq('id', id)
+                 .single();
+
+             if (vendorDetails) {
+                 // Dynamic import to avoid top-level failures if file missing/error
+                 const { createShadowfaxOrder } = await import('../utils/shadowfax.js');
+                 const deliveryResp = await createShadowfaxOrder(order, vendorDetails);
+                 
+                 if (deliveryResp && deliveryResp.is_order_created) {
+                     console.log('✅ Shadowfax Order Created:', deliveryResp);
+                     
+                     // Save details to DB
+                     await supabaseAdmin.from('orders').update({ 
+                         delivery_partner_details: {
+                             provider: 'shadowfax',
+                             flash_order_id: deliveryResp.flash_order_id,
+                             pickup_otp: deliveryResp.pickup_otp,
+                             drop_otp: deliveryResp.drop_otp,
+                             rider_incentive: deliveryResp.rain_rider_incentive,
+                             surge: deliveryResp.high_demand_surge
+                         },
+                         delivery_otp: deliveryResp.drop_otp // Also save to main column if handy
+                     }).eq('id', orderId);
+                 }
+             }
+         } catch (deliveryError) {
+             console.error('❌ Failed to create Shadowfax order:', deliveryError);
+             // We logic: Don't fail the vendor "Accept" action just because delivery API failed?
+             // Or maybe we should warn? For now, we log error and proceed.
+         }
+
+    } else if (status === 'ready') {
+        await supabaseAdmin.from('notifications').insert({
+            user_id: order.user_id,
+            type: 'order_update',
+            title: 'Order Ready! 🍽️',
+            message: `Your order #${order.order_number} is ready for pickup/delivery`,
+            data: { order_id: order.id }
+        });
+   }
+
+    successResponse(res, { order });
+  }));
+
+
 export default router;

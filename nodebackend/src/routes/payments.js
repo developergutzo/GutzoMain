@@ -215,76 +215,79 @@ router.post('/initiate-transaction', asyncHandler(async (req, res) => {
 // PAYTM CALLBACK/WEBHOOK (REDIRECT FLOW)
 router.post('/callback', asyncHandler(async (req, res) => {
   const paytmParams = req.body;
-  // console.log('[Paytm Callback] Received:', paytmParams);
+  console.log('[Paytm Callback] Received (Logic Commented Out for Webhook Test):', paytmParams);
 
-  const receivedChecksum = paytmParams.CHECKSUMHASH;
-  delete paytmParams.CHECKSUMHASH;
+  // const receivedChecksum = paytmParams.CHECKSUMHASH;
+  // delete paytmParams.CHECKSUMHASH;
 
-  const isValid = PaytmChecksum.verifySignature(paytmParams, PAYTM_MERCHANT_KEY, receivedChecksum);
+  // const isValid = PaytmChecksum.verifySignature(paytmParams, PAYTM_MERCHANT_KEY, receivedChecksum);
 
-  if (!isValid) {
-    console.error('[Paytm Callback] Invalid checksum');
-    return res.status(400).json({ success: false, error: 'Invalid checksum' });
-  }
+  // if (!isValid) {
+  //   console.error('[Paytm Callback] Invalid checksum');
+  //   return res.status(400).json({ success: false, error: 'Invalid checksum' });
+  // }
 
-  const orderId = paytmParams.ORDERID;
-  const txnStatus = paytmParams.STATUS;
-  const txnId = paytmParams.TXNID;
-  const bankTxnId = paytmParams.BANKTXNID;
-  const txnAmount = paytmParams.TXNAMOUNT;
+  // const orderId = paytmParams.ORDERID;
+  // const txnStatus = paytmParams.STATUS;
+  // const txnId = paytmParams.TXNID;
+  // const bankTxnId = paytmParams.BANKTXNID;
+  // const txnAmount = paytmParams.TXNAMOUNT;
 
-  let paymentStatus = 'failed';
-  let orderStatus = 'payment_failed';
+  // let paymentStatus = 'failed';
+  // let orderStatus = 'payment_failed';
 
-  if (txnStatus === 'TXN_SUCCESS') {
-    paymentStatus = 'paid';
-    orderStatus = 'confirmed';
-  } else if (txnStatus === 'PENDING') {
-    paymentStatus = 'pending';
-    orderStatus = 'pending';
-  }
+  // if (txnStatus === 'TXN_SUCCESS') {
+  //   paymentStatus = 'paid';
+  //   orderStatus = 'confirmed';
+  // } else if (txnStatus === 'PENDING') {
+  //   paymentStatus = 'pending';
+  //   orderStatus = 'pending';
+  // }
 
-  // Update order
-  const { data: updatedOrder } = await supabaseAdmin
-    .from('orders')
-    .update({
-      payment_status: paymentStatus,
-      payment_method: 'paytm',
-      payment_id: txnId,
-      status: orderStatus,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('order_number', orderId)
-    .select()
-    .single();
+  // // Update order
+  // const { data: updatedOrder } = await supabaseAdmin
+  //   .from('orders')
+  //   .update({
+  //     payment_status: paymentStatus,
+  //     payment_method: 'paytm',
+  //     payment_id: txnId,
+  //     status: orderStatus,
+  //     updated_at: new Date().toISOString(),
+  //   })
+  //   .eq('order_number', orderId)
+  //   .select()
+  //   .single();
 
-  // Update payment record
-  await supabaseAdmin
-    .from('payments')
-    .update({
-      transaction_id: txnId,
-      status: paymentStatus,
-      gateway_response: paytmParams,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('merchant_order_id', orderId);
+  // // Update payment record
+  // await supabaseAdmin
+  //   .from('payments')
+  //   .update({
+  //     transaction_id: txnId,
+  //     status: paymentStatus,
+  //     gateway_response: paytmParams,
+  //     updated_at: new Date().toISOString(),
+  //   })
+  //   .eq('merchant_order_id', orderId);
 
-  // Create notification for user
-  if (updatedOrder) {
-    await supabaseAdmin.from('notifications').insert({
-      user_id: updatedOrder.user_id,
-      type: paymentStatus === 'paid' ? 'payment_success' : 'payment_failed',
-      title: paymentStatus === 'paid' ? 'Payment Successful!' : 'Payment Failed',
-      message: paymentStatus === 'paid' 
-        ? `Payment of ₹${txnAmount} received for order #${orderId}`
-        : `Payment failed for order #${orderId}. Please try again.`,
-      data: { order_id: orderId, txn_id: txnId }
-    });
-  }
+  // // Create notification for user
+  // if (updatedOrder) {
+  //   await supabaseAdmin.from('notifications').insert({
+  //     user_id: updatedOrder.user_id,
+  //     type: paymentStatus === 'paid' ? 'payment_success' : 'payment_failed',
+  //     title: paymentStatus === 'paid' ? 'Payment Successful!' : 'Payment Failed',
+  //     message: paymentStatus === 'paid' 
+  //       ? `Payment of ₹${txnAmount} received for order #${orderId}`
+  //       : `Payment failed for order #${orderId}. Please try again.`,
+  //     data: { order_id: orderId, txn_id: txnId }
+  //   });
+  // }
 
   // console.log(`[Paytm Callback] Order ${orderId} updated to ${orderStatus}`);
 
-  // Redirect based on status
+  // Redirect based on status (SIMULATED FOR NOW)
+  const orderId = paytmParams.ORDERID;
+  const txnStatus = paytmParams.STATUS;
+  
   if (txnStatus === 'TXN_SUCCESS') {
     res.redirect(`${process.env.FRONTEND_URL}/payment-status?orderId=${orderId}`);
   } else {

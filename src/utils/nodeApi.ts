@@ -206,6 +206,28 @@ class NodeApiService {
         });
     }
 
+    async getVendorOrders(vendorId: string, status?: string) {
+        let url = `/vendor-auth/${vendorId}/orders`;
+        if (status) {
+            url += `?status=${status}`;
+        }
+        return this.request(url);
+    }
+
+    async updateVendorOrderStatus(
+        vendorId: string,
+        orderId: string,
+        status: string,
+    ) {
+        return this.request(
+            `/vendor-auth/${vendorId}/orders/${orderId}/status`,
+            {
+                method: "PATCH",
+                body: { status },
+            },
+        );
+    }
+
     async uploadImage(file: File, vendorId: string, productId: string) {
         const formData = new FormData();
         formData.append("file", file);

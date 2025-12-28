@@ -524,6 +524,9 @@ router.get('/:id/track', asyncHandler(async (req, res) => {
 
   if (error || !order) throw new ApiError(404, 'Order not found');
 
+  /* 
+     Update Status Flow based on Vendor/Delivery Status 
+  */
   const statusFlow = [
     { status: 'placed', label: 'Order Placed', icon: '📝' },
     { status: 'confirmed', label: 'Confirmed', icon: '✅' },
@@ -535,6 +538,28 @@ router.get('/:id/track', asyncHandler(async (req, res) => {
 
   const currentIndex = statusFlow.findIndex(s => s.status === order.status);
 
+  // 🚚 Fetch 3rd Party Tracking if available
+  let deliveryTracking = null;
+  if (order.delivery_partner_details && order.delivery_partner_details.provider === 'shadowfax') {
+      const flashId = order.delivery_partner_details.flash_order_id;
+      if (flashId) {
+          try {
+              const { trackShadowfaxOrder } = await import('../utils/shadowfax.js');
+              const sfData = await trackShadowfaxOrder(flashId);
+              if (sfData) {
+                  deliveryTracking = {
+                      provider: 'shadowfax',
+                      awb: sfData.awb_number,
+                      rider_name: sfData.rider_details?.name,
+                      rider_phone: sfData.rider_details?.contact_number,
+                      rider_location: sfData.rider_details?.current_location, // { lat, lng } if available
+                      tracking_url: sfData.tracking_url // If they provide a web link
+                  };
+              }
+          } catch (e) { console.error('Tracking Fetch Error:', e); }
+      }
+  }
+
   successResponse(res, {
     order_number: order.order_number,
     current_status: order.status,
@@ -544,7 +569,12 @@ router.get('/:id/track', asyncHandler(async (req, res) => {
       current: i === currentIndex
     })),
     estimated_delivery: order.estimated_delivery_time,
-    rider: order.riders,
+    rider: deliveryTracking ? {
+        name: deliveryTracking.rider_name,
+        phone: deliveryTracking.rider_phone,
+        location: deliveryTracking.rider_location
+    } : order.riders, // Fallback to internal rider if any
+    delivery_tracking: deliveryTracking,
     vendor_location: order.vendor ? {
       lat: order.vendor.latitude,
       lng: order.vendor.longitude
