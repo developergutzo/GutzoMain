@@ -41,7 +41,11 @@ async function testCallback() {
     // We use URLSearchParams to send as application/x-www-form-urlencoded
     const params = new URLSearchParams(mockParams);
 
-    const response = await fetch('http://localhost:3001/api/payments/callback', {
+    // Use env var or default to localhost
+    const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3001';
+    console.log(`📡 Sending callback to: ${API_BASE_URL}/api/payments/callback`);
+
+    const response = await fetch(`${API_BASE_URL}/api/payments/callback`, {
       method: 'POST',
       body: params,
       // headers: { 'Content-Type': 'application/x-www-form-urlencoded' } // fetch adds this automatically for URLSearchParams

@@ -908,7 +908,7 @@ export function InstantOrderPanel({
                               if (paymentStatus.STATUS === 'TXN_SUCCESS' || paymentStatus.resultInfo?.resultStatus === 'S') {
                                  const form = document.createElement('form');
                                  form.method = 'POST';
-                                 form.action = 'http://localhost:3001/api/payments/callback'; // Configured callback URL
+                                 form.action = `${apiService.baseUrl}/api/payments/callback`; // Configured callback URL
                                  
                                  // Flatten object and add fields
                                  Object.keys(paymentStatus).forEach(key => {
@@ -928,7 +928,7 @@ export function InstantOrderPanel({
                                  // Ideally redirect to retain robust flow
                                  const form = document.createElement('form');
                                  form.method = 'POST';
-                                 form.action = 'http://localhost:3001/api/payments/callback';
+                                 form.action = `${apiService.baseUrl}/api/payments/callback`;
                                  Object.keys(paymentStatus).forEach(key => {
                                     const value = paymentStatus[key];
                                     if (typeof value === 'object') return;

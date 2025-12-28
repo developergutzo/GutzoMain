@@ -3,7 +3,7 @@ import { supabase } from "./supabase/client";
 import { Capacitor } from "@capacitor/core";
 
 class NodeApiService {
-    private get baseUrl() {
+    public get baseUrl() {
         // Force production URL on mobile apps
         if (Capacitor.isNativePlatform()) {
             return "https://35-194-40-59.nip.io";

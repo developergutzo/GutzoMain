@@ -425,7 +425,7 @@ export function CheckoutPage() {
                          
                          const form = document.createElement('form');
                          form.method = 'POST';
-                         form.action = 'http://localhost:3001/api/payments/callback'; 
+                         form.action = `${apiService.baseUrl}/api/payments/callback`; 
                          
                          Object.keys(paymentStatus).forEach(key => {
                             const value = paymentStatus[key];
