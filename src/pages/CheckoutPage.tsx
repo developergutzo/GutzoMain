@@ -397,9 +397,13 @@ export function CheckoutPage() {
 
          if (data.success && token && paytmResp) {
            const mid = responseData.mid || paytmResp.body.mid || 'xFDrTr50750120794198';
-           
-           const script = document.createElement('script');
-           script.src = `https://secure.paytmpayments.com/merchantpgpui/checkoutjs/merchants/${mid}.js`;
+                      const PAYTM_ENV = import.meta.env.VITE_PAYTM_ENV || 'staging';
+            const PAYTM_BASE_URL = PAYTM_ENV === 'production' 
+                ? 'https://secure.paytmpayments.com' 
+                : 'https://securestage.paytmpayments.com';
+
+            const script = document.createElement('script');
+            script.src = `${PAYTM_BASE_URL}/merchantpgpui/checkoutjs/merchants/${mid}.js`;
            script.async = true;
            script.crossOrigin = "anonymous";
            script.onload = () => {

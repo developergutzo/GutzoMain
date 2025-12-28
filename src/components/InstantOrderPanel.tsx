@@ -867,8 +867,13 @@ export function InstantOrderPanel({
                 console.log('Initializing Paytm with MID:', mid);
 
                 // Load Paytm JS Checkout and invoke payment
+                const PAYTM_ENV = import.meta.env.VITE_PAYTM_ENV || 'staging';
+                const PAYTM_BASE_URL = PAYTM_ENV === 'production' 
+                    ? 'https://secure.paytmpayments.com' 
+                    : 'https://securestage.paytmpayments.com';
+                
                 const script = document.createElement('script');
-                script.src = `https://secure.paytmpayments.com/merchantpgpui/checkoutjs/merchants/${mid}.js`;
+                script.src = `${PAYTM_BASE_URL}/merchantpgpui/checkoutjs/merchants/${mid}.js`;
                 script.async = true;
                 script.crossOrigin = "anonymous"; // Added as per docs
                 script.onload = () => {
