@@ -236,7 +236,7 @@ export function OrdersPanel({ className = "", onViewOrderDetails, recentOrderDat
 
                       {/* Vendor Name */}
                       <h4 className="font-bold text-gray-900 text-base mb-1 truncate">
-                        {order.vendor_name || order.vendorName || 'Unknown Vendor'}
+                        {order.vendor?.name || order.vendor_name || order.vendorName || 'Unknown Vendor'}
                       </h4>
 
                       {/* Meta Details */}

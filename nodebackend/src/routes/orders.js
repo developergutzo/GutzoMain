@@ -335,7 +335,8 @@ router.get('/', asyncHandler(async (req, res) => {
     .from('orders')
     .select(`
       *,
-      items:order_items(*)
+      items:order_items(*),
+      vendor:vendors(id, name, image)
     `, { count: 'exact' })
     .eq('user_id', req.user.id)
     .order('created_at', { ascending: false })
