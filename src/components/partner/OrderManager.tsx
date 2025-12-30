@@ -38,8 +38,10 @@ export function OrderManager({ vendorId }: { vendorId: string }) {
     try {
       // Don't set loading true on background refreshes to avoid flickering
       if (orders.length === 0) setLoading(true);
-      const data = await nodeApiService.getVendorOrders(vendorId, 'placed,confirmed,paid,preparing,ready');
-      setOrders(data || []);
+      const response = await nodeApiService.getVendorOrders(vendorId, 'placed,confirmed,paid,preparing,ready');
+      console.log('📦 Orders API Response:', response);
+      // Backend returns { success: true, data: { orders: [...] } }
+      setOrders(response?.data?.orders || []);
     } catch (error) {
       console.error('Failed to fetch orders:', error);
     } finally {
@@ -48,50 +50,61 @@ export function OrderManager({ vendorId }: { vendorId: string }) {
   };
 
   useEffect(() => {
+    // Initial fetch
     fetchOrders();
 
-    // Subscribe to Realtime Changes
+    // POLBACK: Poll every 30 seconds as a reliable fallback
+    const pollInterval = setInterval(() => {
+        console.log('🔄 Polling for new orders...');
+        fetchOrders();
+    }, 30000);
+
+    // REALTIME: Subscribe to changes (Optimization)
+    // Channel name must be unique to avoid collisions
+    const channelName = `vendor-orders-${vendorId}`;
+    console.log(`🔌 Connecting Realtime to: ${channelName}`);
+
     const channel = supabase
-      .channel('vendor-orders')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*', // Listen to INSERT and UPDATE
           schema: 'public',
           table: 'orders',
           filter: `vendor_id=eq.${vendorId}`
         },
         async (payload) => {
-          console.log('⚡️ New Order Received:', payload.new);
-          toast.success("New Order Received! 🔔");
+          console.log('⚡️ Realtime Event:', payload);
           
-          // Fetch full details (fresh data with items)
+          if (payload.eventType === 'INSERT') {
+             toast.success("New Order Received! 🔔");
+             // Play notification sound if possible
+             try {
+                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                audio.play();
+             } catch(e) { console.error("Audio play failed", e); }
+          } else if (payload.eventType === 'UPDATE') {
+             // Optional: Toast on update or just silent refresh
+             // toast.info("Order updated");
+          }
+          
+          // Refresh data
           await fetchOrders();
         }
       )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'orders',
-          filter: `vendor_id=eq.${vendorId}`
-        },
-        async (payload) => {
-            console.log('⚡️ Order Updated:', payload.new);
-            // Refresh to get status changes
-            await fetchOrders();
-        }
-      )
       .subscribe((status) => {
-        console.log(`🔌 Realtime Status for vendor ${vendorId}:`, status);
+        console.log(`🔌 Realtime Status: ${status}`);
         if (status === 'SUBSCRIBED') {
-            toast.success("Connected to Live Updates 🟢");
+            // toast.success("Live Updates Active 🟢");
+        } else if (status === 'CHANNEL_ERROR') {
+            console.error('Realtime connection error. Polling will handle updates.');
         }
       });
 
     return () => {
-      console.log('🔌 Disconnecting Realtime...');
+      console.log('🔌 Disconnecting Realtime & Polling...');
+      clearInterval(pollInterval);
       supabase.removeChannel(channel);
     };
   }, [vendorId]);

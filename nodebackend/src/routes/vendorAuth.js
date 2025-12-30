@@ -381,8 +381,7 @@ router.get('/:id/products', asyncHandler(async (req, res) => {
       .from('orders')
       .select(`
         *,
-        items:order_items(*),
-        user:users(name, phone)
+        items:order_items(*)
       `)
       .eq('vendor_id', id)
       .order('created_at', { ascending: false })
@@ -395,8 +394,11 @@ router.get('/:id/products', asyncHandler(async (req, res) => {
     }
 
     const { data: orders, error } = await query;
-
-    if (error) throw new ApiError(500, 'Failed to fetch vendor orders');
+    
+    if (error) {
+        console.error('❌ Vendor Orders Error:', error);
+        throw new ApiError(500, `Failed to fetch vendor orders: ${error.message}`);
+    }
 
     successResponse(res, { orders });
   }));

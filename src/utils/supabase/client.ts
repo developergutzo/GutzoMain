@@ -12,11 +12,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 // For Docker deployments with custom routing, use a base URL that doesn't have the extra path
 // The functions are at /deno instead of /service/functions/v1
-const effectiveUrl = customFunctionUrl
-  ? customFunctionUrl.replace("/api", "") // Remove /api to get base URL
-  : supabaseUrl;
-
-export const supabase = createClient(effectiveUrl, supabaseAnonKey, {
+// Use VITE_SUPABASE_URL for the client connection to ensure Realtime works
+// VITE_SUPABASE_FUNCTION_URL is for the custom backend API only
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
