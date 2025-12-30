@@ -28,7 +28,7 @@ interface Order {
     }
 }
 
-import { supabase } from '../../utils/supabase/client';
+
 
 export function OrderManager({ vendorId }: { vendorId: string }) {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -100,57 +100,9 @@ export function OrderManager({ vendorId }: { vendorId: string }) {
         fetchOrders();
     }, 30000);
 
-    // REALTIME: Subscribe to changes (Optimization)
-    // Channel name must be unique to avoid collisions
-    const channelName = `vendor-orders-${vendorId}`;
-    console.log(`🔌 Connecting Realtime to: ${channelName}`);
-
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // Listen to INSERT and UPDATE
-          schema: 'public',
-          table: 'orders',
-          filter: `vendor_id=eq.${vendorId}`
-        },
-        async (payload) => {
-          const newOrder = payload.new as any;
-          
-          if (payload.eventType === 'INSERT') {
-             // Only play if it enters as confirmed/paid (rare but possible)
-             if (['confirmed', 'paid'].includes(newOrder.status)) {
-                 console.log("🔔 New Order Inserted - Playing Sound");
-                 toast.success("New Order Received! 🔔");
-                 playNotification();
-             }
-          } else if (payload.eventType === 'UPDATE') {
-             // If status became confirmed/paid (e.g. was placed)
-             if (['confirmed', 'paid'].includes(newOrder.status)) {
-                 console.log("🔔 Order Updated - Playing Sound");
-                 toast.success("New Order Received! 🔔");
-                 playNotification();
-             }
-          }
-          
-          // Refresh data
-          await fetchOrders();
-        }
-      )
-      .subscribe((status) => {
-        console.log(`🔌 Realtime Status: ${status}`);
-        if (status === 'SUBSCRIBED') {
-            // toast.success("Live Updates Active 🟢");
-        } else if (status === 'CHANNEL_ERROR') {
-            console.error('Realtime connection error. Polling will handle updates.');
-        }
-      });
-
     return () => {
-      console.log('🔌 Disconnecting Realtime & Polling...');
+      console.log('🔌 Disconnecting Polling...');
       clearInterval(pollInterval);
-      supabase.removeChannel(channel);
     };
   }, [vendorId]);
 
