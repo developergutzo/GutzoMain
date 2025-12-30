@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import StarIcon from "./StarIcon";
+import { MapPin } from "lucide-react";
 
 interface VendorHeaderProps {
   name: string;
@@ -24,6 +25,26 @@ const VendorHeader: React.FC<VendorHeaderProps> = ({ name, rating, reviews, loca
     cuisineType,
     tags && tags.length > 0 ? tags[0] : null
   ].filter(Boolean).join(' · ') || "Fresh Bowls · Wholesome Meals";
+
+  // Helper to shorten address to "Area, City" or "Street, Area"
+  const formatVendorLocation = (address: string) => {
+    if (!address) return "Location";
+    const parts = address.split(',').map(p => p.trim());
+    // If we have enough details (>=2 parts), usually [Area, City] or [Street, Area, City]
+    // We want the Area and City/Locality
+    if (parts.length >= 2) {
+      // Return the 2nd to last and 3rd to last parts if possible, or just the middle ones
+      // Actually, user wants "Sulur", "Chinniampalayam" etc.
+      // Usually these are the 2nd to last item (before City) or the last item (if just Area)
+      // User wants just "Location" (Area) like "Sulur", "Chinniyampalayam"
+      // Assuming format is [..., Area, City]
+      // We take the second to last item.
+      return parts[parts.length - 2]; 
+    }
+    return address;
+  };
+
+  const displayLocation = formatVendorLocation(location);
 
   return (
     <>
@@ -82,58 +103,54 @@ const VendorHeader: React.FC<VendorHeaderProps> = ({ name, rating, reviews, loca
         )}
 
       <div style={{ background: '#fff', borderRadius: 20, boxShadow: '0 2px 12px rgba(0,0,0,0.07)', padding: 16, paddingTop: !isOpen ? 40 : 16, fontFamily: 'Poppins, sans-serif', width: '100%' }}>
-        {/* Ratings & Price Row (plain text, bold, no pill) */}
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
-          <span style={{ fontWeight: 700, fontSize: '1rem', color: '#1A1A1A', marginRight: 8, display: 'flex', alignItems: 'center' }}>
-            <StarIcon size={16} color="#43A047" className="mr-1 font-sans" />
-            <span style={{ color: '#1A1A1A' }}>{rating}</span>
-            <span style={{ color: '#6B6B6B', fontWeight: 500, marginLeft: 4 }}>({reviews} ratings)</span>
-          </span>
+        {/* Header Row: Cuisine (Left) & Rating (Right) */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+           {/* Left: Cuisine */}
+           <div style={{ color: '#1BA672', fontWeight: 600, fontSize: '0.95rem', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginRight: 8 }}>
+              {tagline}
+           </div>
+
+           {/* Right: Rating Badge */}
+           <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              backgroundColor: '#1BA672', 
+              color: 'white',
+              padding: '2px 8px', // Slightly more padding for pill shape
+              borderRadius: '20px', // Fully rounded
+              marginLeft: 8,
+              flexShrink: 0
+           }}>
+              <StarIcon size={14} color="white" className="mr-1 font-sans" />
+              <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{rating}</span>
+           </div>
         </div>
-        {/* Cuisine Row */}
-        <div style={{ color: '#1BA672', fontWeight: 600, fontSize: '0.95rem', marginBottom: 6 }}>
-          {tagline}
-        </div>
-        {/* Outlet Row */}
-        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', marginBottom: 6 }}>
-          {/* Vertical line with dots, perfectly centered */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 56, marginRight: 8 }}>
-            <svg width="16" height="56" style={{ display: 'block' }}>
-              <circle cx="8" cy="12" r="4" fill="#D3D3D3" />
-              <rect x="7" y="16" width="2" height="24" rx="1" fill="#D3D3D3" />
-              <circle cx="8" cy="44" r="4" fill="#D3D3D3" />
-            </svg>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', minHeight: 28 }}>
-              <span style={{ color: '#6B6B6B', fontWeight: 700, fontSize: '0.95rem', marginRight: 6 }}>Outlet</span>
-              <span style={{ color: '#6B6B6B', fontWeight: 500, fontSize: '0.95rem', marginLeft: 2 }}>{location}</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', minHeight: 28 }}>
+        
+        {/* Delivery Time Row */}
+        <div style={{ marginBottom: 6 }}>
+           <span style={{ color: '#1A1A1A', fontWeight: 700, fontSize: '0.9rem' }}>
               {isLoadingEta ? (
-                 <div className="h-5 w-24 bg-gray-100 animate-pulse rounded mr-2 blur-[1px] opacity-70" style={{ marginRight: 6 }}></div>
+                 <div className="h-4 w-16 bg-gray-100 animate-pulse rounded" />
               ) : (
-                <span style={{ color: '#1A1A1A', fontWeight: 700, fontSize: '0.95rem', marginRight: 6 }}>{deliveryTime}</span>
+                <span>{deliveryTime}</span>
               )}
-              <span 
-                onClick={onAddressClick}
-                style={{ 
-                  color: '#6B6B6B', 
-                  fontWeight: 500, 
-                  fontSize: '0.95rem',
-                  cursor: onAddressClick ? 'pointer' : 'default',
-                  display: 'flex',
-                  alignItems: 'center',
-                  maxWidth: '220px', // Limit width to force truncation
-                }}
-              >
-                <span className="shrink-0 mr-1">Delivery to</span>
-                <span className="truncate block" style={{ maxWidth: '140px', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {userAddressLabel || "Location"}
-                </span>
-                {onAddressClick && <span style={{ fontSize: '0.8em', marginLeft: 4, flexShrink: 0 }}>▼</span>}
-              </span>
+           </span>
+        </div>
+        {/* Outlet & Delivery Row */}
+        <div style={{ display: 'flex', alignItems: 'stretch' }}>
+
+
+          {/* Right Content Column */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, paddingBottom: 2, minWidth: 0 }}>
+            
+            {/* Row 1: Outlet */}
+            <div style={{ display: 'flex', alignItems: 'center', minHeight: 20 }}>
+               <MapPin size={14} color="#6B6B6B" style={{ marginRight: 6 }} />
+               <span style={{ color: '#6B6B6B', fontWeight: 500, fontSize: '0.9rem', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1, minWidth: 0 }}>
+                  {displayLocation}
+               </span>
             </div>
+
           </div>
         </div>
         {/* Free Delivery Strip */}

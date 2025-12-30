@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 
-type Route = '/' | '/T&C' | '/refund_policy' | '/privacy_policy' | '/payment-status' | '/contact' | '/about' | '/partner-with-gutzo' | '/partner/login' | '/partner/dashboard' | '/checkout' | '/phonepe-soon' | `/vendor/${string}`;
+type Route = '/' | '/T&C' | '/refund_policy' | '/privacy_policy' | '/payment-status' | '/contact' | '/about' | '/partner-with-gutzo' | '/partner/login' | '/partner/dashboard' | '/checkout' | '/phonepe-soon' | `/vendor/${string}` | `/tracking/${string}`;
 
 interface RouterContextType {
   currentRoute: Route;
@@ -32,6 +32,8 @@ export function RouterProvider({ children }: { children: ReactNode }) {
     // Handle vendor route explicitly as it's dynamic
     if (route.startsWith('/vendor/')) {
        document.title = 'Order Online | Gutzo';
+    } else if (route.startsWith('/tracking/')) {
+        document.title = 'Track Order | Gutzo';
     } else {
        document.title = titles[route] || 'Gutzo';
     }
@@ -42,8 +44,8 @@ export function RouterProvider({ children }: { children: ReactNode }) {
   const path = window.location.pathname as Route;
   const validRoutes: string[] = ['/', '/T&C', '/refund_policy', '/privacy_policy', '/payment-status', '/contact', '/about', '/partner-with-gutzo', '/partner/login', '/partner/dashboard', '/checkout', '/phonepe-soon'];
     
-    // Check if it's a valid static route OR a vendor route
-    if (validRoutes.includes(path) || path.startsWith('/vendor/')) {
+    // Check if it's a valid static route OR a vendor route OR a tracking route
+    if (validRoutes.includes(path) || path.startsWith('/vendor/') || path.startsWith('/tracking/')) {
       // Scroll to top immediately on initial load if not on homepage
       if (path !== '/') {
         window.scrollTo(0, 0);
@@ -92,7 +94,7 @@ export function RouterProvider({ children }: { children: ReactNode }) {
     const path = window.location.pathname as Route;
     const validRoutes: string[] = ['/', '/T&C', '/refund_policy', '/privacy_policy', '/payment-status', '/contact', '/about', '/partner-with-gutzo', '/checkout', '/phonepe-soon'];
       
-      if (validRoutes.includes(path) || path.startsWith('/vendor/')) {
+      if (validRoutes.includes(path) || path.startsWith('/vendor/') || path.startsWith('/tracking/')) {
         window.scrollTo(0, 0);
         setCurrentRoute(path);
         updateDocumentTitle(path);

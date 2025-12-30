@@ -48,6 +48,7 @@ import { PartnerPage } from "./pages/PartnerPage";
 import { PartnerLoginPage } from "./pages/PartnerLoginPage";
 import { PartnerDashboard } from "./pages/PartnerDashboard";
 import { CheckoutPage } from "./pages/CheckoutPage"; // Added CheckoutPage import
+import { OrderTrackingPage } from "./pages/OrderTrackingPage";
 import { Toaster } from "./components/ui/sonner";
 import { toast } from "sonner";
 import { Loader2, MapPin, Plus, X, Zap } from "lucide-react";
@@ -63,6 +64,8 @@ import { BrowserRouter } from 'react-router-dom';
 import VendorDetailsPage from './components/VendorDetailsPage';
 import { LocationBottomSheet } from "./components/LocationBottomSheet";
 import { LoadingScreen } from "./components/common/LoadingScreen";
+import { OrderTrackingProvider } from "./contexts/OrderTrackingContext";
+import { ActiveOrderFloatingBar } from "./components/ActiveOrderFloatingBar";
 
 
 import { useMobileNavigation } from "./hooks/useMobileNavigation";
@@ -401,6 +404,9 @@ function AppContent() {
   if (typeof currentRoute === 'string' && currentRoute.startsWith('/vendor/')) {
     return <VendorDetailsPage onShowCart={handleShowCart} vendors={vendors} loading={loading} />;
   }
+  if (typeof currentRoute === 'string' && currentRoute.startsWith('/tracking/')) {
+    return <OrderTrackingPage />;
+  }
   // Added /checkout to the route list
   if (typeof currentRoute === 'string' && ['/T&C','/refund_policy','/privacy_policy','/payment-status','/phonepe-soon','/contact','/about', '/partner-with-gutzo', '/partner/login', '/partner/dashboard', '/checkout'].includes(currentRoute)) {
     switch(currentRoute) {
@@ -414,6 +420,7 @@ function AppContent() {
       case '/phonepe-soon': return <PhonePeComingSoon />;
       case '/contact': return <ContactPage />;
       case '/about': return <AboutPage />;
+      case '/partner-with-gutzo': return <PartnerPage />;
       case '/partner-with-gutzo': return <PartnerPage />;
       default: break;
     }
@@ -610,12 +617,9 @@ function AppContent() {
         onClose={() => setShowAddressPanel(false)}
         onSelectAddress={handleAddressSelected}
       />
-      {/* VendorCartStrip logic may need update if tied to old panel logic */}
     </div>
   );
 }
-
-
 
 export default function App() {
   return (
@@ -624,7 +628,10 @@ export default function App() {
         <RouterProvider>
           <LocationProvider>
             <CartProvider>
-              <AppContent />
+              <OrderTrackingProvider>
+                <AppContent />
+                <ActiveOrderFloatingBar />
+              </OrderTrackingProvider>
             </CartProvider>
           </LocationProvider>
         </RouterProvider>

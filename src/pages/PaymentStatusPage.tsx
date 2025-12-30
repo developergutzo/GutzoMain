@@ -67,10 +67,10 @@ export default function PaymentStatusPage() {
               await clearCart();
             }
 
-            // Redirect home after delay
+            // Redirect to tracking page abruptly
             setTimeout(() => {
-              window.location.href = '/';
-            }, 2500);
+              window.location.href = `/tracking/${orderId}`;
+            }, 100);
           }
           return;
         }
@@ -133,6 +133,8 @@ export default function PaymentStatusPage() {
             Return to Home
           </button>
         )}
+        
+
       </div>
     </div>
   );

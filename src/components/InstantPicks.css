@@ -149,31 +149,9 @@
       margin-top: 0 !important;
       z-index: 2 !important;
     }
-  .instant-picks-desc {
-    display: -webkit-box !important;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: normal !important;
-    max-width: 100vw !important;
-    min-width: 0 !important;
-    word-break: break-word !important;
-  }
+
 }
-@media (max-width: 600px) {
-  .instant-picks-desc {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: normal;
-  }
-  .instant-picks-details {
-    max-width: 90vw;
-  }
-}
+
 @media (min-width: 601px) {
   .instant-picks-image-btn {
     margin-left: 0 !important;
@@ -339,6 +317,9 @@
   font-size: 1.1rem;
   margin-bottom: 2px;
   color: #1A1A1A;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 /* Desktop: font-weight 600 */
 @media (min-width: 601px) {
@@ -346,7 +327,7 @@
     font-weight: 600;
   }
 }
-}
+
 .instant-picks-desc {
   color: #6B6B6B;
   font-size: 0.98rem;
@@ -514,10 +495,5 @@
     flex: 1;
     min-width: 0;
   }
-  .instant-picks-desc {
-    max-width: 100%;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+
 }

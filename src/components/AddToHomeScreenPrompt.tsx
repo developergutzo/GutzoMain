@@ -1,11 +1,22 @@
 
 import React, { useState, useEffect } from "react";
 
+import { useOrderTracking } from "../contexts/OrderTrackingContext";
+import { useRouter } from "./Router";
+
 const AddToHomeScreenPrompt: React.FC<{ onAddToHomeScreen?: () => void; canInstall?: boolean }> = ({ onAddToHomeScreen, canInstall }) => {
   const [visible, setVisible] = useState(true);
   const [isStandalone, setIsStandalone] = useState(false);
+  
+  // Get tracking state to adjust position
+  const { activeOrder } = useOrderTracking();
+  const { currentRoute } = useRouter();
 
-
+  // Determine if we need to shift up because of the floating bar
+  // Logic matches ActiveOrderFloatingBar visibility
+  const isFloatingBarVisible = activeOrder && 
+                               activeOrder.status !== 'delivered' && 
+                               !currentRoute.startsWith('/tracking/');
 
   useEffect(() => {
     // Reset localStorage flag if app is not installed (browser mode)
@@ -33,8 +44,12 @@ const AddToHomeScreenPrompt: React.FC<{ onAddToHomeScreen?: () => void; canInsta
   return (
     <div>
       <div
-        className="fixed bottom-0 left-0 w-full z-50 bg-white shadow-lg border-t border-gray-200"
-        style={{ maxWidth: "100vw", padding: 0 }}
+        className="fixed left-0 w-full z-50 bg-white shadow-lg border-t border-gray-200 transition-all duration-300 ease-in-out"
+        style={{ 
+            maxWidth: "100vw", 
+            padding: 0,
+            bottom: isFloatingBarVisible ? '120px' : '0' 
+        }}
       >
         <div className="flex flex-row items-center justify-between px-4 py-6">
           {/* Close button - left, vertically centered */}

@@ -28,7 +28,7 @@ const InstantPicksItem: React.FC<{ product: Product; isLast: boolean; noPadding:
   return (
     <React.Fragment>
       <div className={`instant-picks-card${noPadding ? ' no-padding' : ''}`} style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-        <div className="instant-picks-details" style={{ flex: 1, paddingRight: 24 }}>
+        <div className="instant-picks-details" style={{ flex: 1, paddingRight: 24, minWidth: 0 }}>
           <div className="instant-picks-title">{product.name}</div>
           <div className="instant-picks-price">₹{product.price}</div>
           <div className="instant-picks-rating">
