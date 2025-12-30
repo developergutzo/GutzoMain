@@ -1,19 +1,26 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useRouter } from '../components/Router'; // Assuming you use this or react-router directly
+import { useRouter } from '../components/Router';
+import { toast } from 'sonner';
 
-type OrderStatus = 'preparing' | 'ready' | 'picked_up' | 'on_way' | 'delivered';
+type OrderStatus = 'placed' | 'preparing' | 'ready' | 'picked_up' | 'on_way' | 'delivered';
 
 interface TrackingState {
   orderId: string | null;
   status: OrderStatus;
   startTime: number | null;
   isMinimized: boolean;
+  delivery_otp?: string;
+  rider_name?: string;
+  rider_phone?: string;
+  rider_coordinates?: { lat: number, lng: number };
+  vendorName?: string;
+  orderNumber?: string;
 }
 
 interface OrderTrackingContextType {
   activeOrder: TrackingState | null;
-  startTracking: (orderId: string) => void;
+  startTracking: (orderId: string, initialData?: Partial<TrackingState>) => void;
   minimizeOrder: () => void;
   maximizeOrder: () => void;
   closeTracking: () => void;
@@ -50,12 +57,13 @@ export function OrderTrackingProvider({ children }: { children: ReactNode }) {
     }
   }, [activeOrder]);
 
-  const startTracking = useCallback((orderId: string) => {
+  const startTracking = useCallback((orderId: string, initialData?: Partial<TrackingState>) => {
     setActiveOrder({
       orderId,
-      status: 'preparing',
+      status: 'placed', // Default to placed
       startTime: Date.now(),
-      isMinimized: false
+      isMinimized: false,
+      ...initialData
     });
   }, []);
 
@@ -63,7 +71,6 @@ export function OrderTrackingProvider({ children }: { children: ReactNode }) {
     if (activeOrder) {
       const updated = { ...activeOrder, isMinimized: true };
       setActiveOrder(updated);
-      // Force sync save to prevent race condition on nav
       localStorage.setItem('activeOrder', JSON.stringify(updated));
       router.navigate('/'); // Go home
     }
@@ -82,59 +89,101 @@ export function OrderTrackingProvider({ children }: { children: ReactNode }) {
     setActiveOrder(null);
   }, []);
 
-  // Simulation Logic
+  // Real-time Polling for Active Order
   useEffect(() => {
-    if (!activeOrder || activeOrder.status === 'delivered') return;
+    if (!activeOrder?.orderId || activeOrder.status === 'delivered') return;
 
-    // Sequence with delays
-    const timeline = [
-        { state: 'preparing', delay: 4000 },
-        { state: 'ready', delay: 8000 }, 
-        { state: 'picked_up', delay: 12000 }, 
-        { state: 'on_way', delay: 20000 }, 
-        { state: 'delivered', delay: 35000 }
-    ];
-
-    // Find next step based on elapsed time? 
-    // Or just simple timeouts that check if we are still active.
-    // Since we need to persist progress even if component re-renders context (unlikely but safe),
-    // let's use a robust approach relative to startTime.
+    let isMounted = true;
     
-    // Actually, simple timeout chain is fine as long as we don't reset state on navigation. 
-    // But since this useEffect depends on `activeOrder`, if activeOrder changes (e.g. isMinimized), it might re-run?
-    // No, we should use a separate effect for simulation that doesn't depend on isMinimized.
-    
-    // Better: Only start this once when orderId changes.
-  }, [activeOrder?.orderId]); // Only restart if orderId changes
+    const pollOrder = async () => {
+        try {
+            // Get user phone from storage
+            let phone = '';
+            try {
+                const u = localStorage.getItem('gutzo_user');
+                if (u) phone = JSON.parse(u).phone;
+            } catch(e) {}
+            
+            if (!phone) return;
 
-  // Actually, to keep it simple and robust for the demo:
-  // We'll use a `useEffect` that listens to `activeOrder.orderId` and sets up the whole sequence.
-  useEffect(() => {
-    if (!activeOrder?.orderId) return;
+            console.log('Poll Order running...', { phone, orderId: activeOrder.orderId });
 
-    console.log("Starting Tracking Simulation for", activeOrder.orderId);
+            const { nodeApiService } = await import('../utils/nodeApi');
+            const response = await nodeApiService.getOrder(phone, activeOrder.orderId!);
+            
+            console.log('Poll Response:', response);
 
-    const timeline = [
-        { state: 'preparing', delay: 0 },
-        { state: 'ready', delay: 30000 },       // 30s
-        { state: 'picked_up', delay: 60000 },    // 1 min
-        { state: 'on_way', delay: 120000 },      // 2 mins
-        { state: 'delivered', delay: 300000 }    // 5 mins
-    ];
+            if (!isMounted) return;
 
-    let timeouts: NodeJS.Timeout[] = [];
+            // Handle potential response structure differences
+            const order = response.data || response; // Support both wrapped and unwrapped
+            
+            if (order && order.id) {
+                // Map status
+                let mappedStatus: OrderStatus = 'placed'; // Default
+                
+                const deliveryStatus = (order.delivery_status || '').toLowerCase();
+                const internalStatus = (order.status || '').toLowerCase();
+                
+                // Determine effect status
+                let s = internalStatus;
+                
+                // Allow delivery status to override ONLY if it's significant (post-kitchen)
+                if (['picked_up', 'driver_assigned', 'out_for_delivery', 'on_way', 'allotted', 'reached_location', 'delivered', 'completed'].includes(deliveryStatus)) {
+                    s = deliveryStatus;
+                }
 
-    timeline.forEach((item) => {
-        const t = setTimeout(() => {
-            setActiveOrder(prev => {
-                if (!prev || prev.orderId !== activeOrder.orderId) return prev;
-                return { ...prev, status: item.state as OrderStatus };
-            });
-        }, item.delay);
-        timeouts.push(t);
-    });
+                if (s === 'placed' || s === 'pending' || s === 'confirmed' || s === 'paid') mappedStatus = 'placed';
+                else if (s === 'preparing' || s === 'accepted') mappedStatus = 'preparing';
+                else if (s === 'ready' || s === 'searching_rider' || s === 'ready_for_pickup') mappedStatus = 'ready';
+                else if (s === 'picked_up' || s === 'driver_assigned' || s === 'out_for_delivery') mappedStatus = 'picked_up';
+                else if (s === 'on_way' || s === 'allotted' || s === 'reached_location') mappedStatus = 'on_way';
+                else if (s === 'delivered' || s === 'completed') mappedStatus = 'delivered';
+                else {
+                    console.log('⚠️ Unknown status:', s);
+                }
 
-    return () => timeouts.forEach(clearTimeout);
+                // Extract Vendor Name securely
+                // Check order.vendor object OR order.vendor_name flat field
+                const vName = order.vendor?.name || 
+                              order.vendor_name || 
+                              (order.items && order.items[0]?.product_name ? 'Your Kitchen' : 'Pitchammal\'s Kitchen'); // Last resort fallback
+
+                const extendedOrder: TrackingState = {
+                    ...activeOrder,
+                    status: mappedStatus,
+                    delivery_otp: order.delivery_otp,
+                    rider_name: order.rider_name || order.riders?.name, // Support internal riders too
+                    rider_phone: order.rider_phone || order.riders?.phone,
+                    rider_coordinates: order.rider_coordinates,
+                    vendorName: vName,
+                    orderNumber: order.order_number
+                };
+
+                setActiveOrder(prev => {
+                    if (JSON.stringify(prev) !== JSON.stringify(extendedOrder)) {
+                        console.log('🔄 Tracking Update:', extendedOrder);
+                        return extendedOrder;
+                    }
+                    return prev;
+                });
+            }
+        } catch (err: any) {
+            console.error("Tracking Poll Error:", err);
+            // DEBUG: Show toast on error to verify failure reason
+            toast.error(`Polling Error: ${err.message || 'Unknown'}`);
+        }
+    };
+
+    pollOrder(); 
+    const interval = setInterval(() => {
+        pollOrder();
+    }, 5000); // Faster polling (5s)
+
+    return () => {
+        isMounted = false;
+        clearInterval(interval);
+    };
   }, [activeOrder?.orderId]);
 
   return (

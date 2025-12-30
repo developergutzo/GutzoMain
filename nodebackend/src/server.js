@@ -30,6 +30,7 @@ import deliveryRoutes from './routes/delivery.js';
 import vendorLeadsRoutes from './routes/vendorLeads.js';
 import vendorAuthRoutes from './routes/vendorAuth.js'; // [NEW]
 import uploadRoutes from './routes/upload.js'; // [NEW]
+import shadowfaxRoutes from './routes/shadowfax.js'; // [NEW]
 
 // Import middleware
 import { errorHandler, notFound } from './middleware/errorHandler.js';
@@ -145,6 +146,7 @@ app.use('/api/delivery', deliveryRoutes);
 app.use('/api/vendor-leads', vendorLeadsRoutes);
 app.use('/api/vendor-auth', vendorAuthRoutes);
 app.use('/api/upload', uploadRoutes); // [NEW]
+app.use('/api/shadowfax', shadowfaxRoutes); // [NEW]
 
 
 // 404 handler

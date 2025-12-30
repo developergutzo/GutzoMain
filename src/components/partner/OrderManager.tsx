@@ -25,7 +25,9 @@ interface Order {
     user: {
         name: string;
         phone: string;
-    }
+    };
+    delivery_status?: string;
+    pickup_otp?: string;
 }
 
 
@@ -208,6 +210,19 @@ export function OrderManager({ vendorId }: { vendorId: string }) {
                                                     <div className="text-right">
                                                         <div className="font-bold text-lg">₹{order.total_amount}</div>
                                                         <div className="text-xs text-gray-500 uppercase">{order.user?.name || 'Guest'}</div>
+                                                        {order.delivery_status && (
+                                                            <div className="mt-1 text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full inline-block">
+                                                                {order.delivery_status.replace('_', ' ')}
+                                                            </div>
+                                                        )}
+                                                        {(order as any).pickup_otp && (
+                                                            <div className="mt-2 flex flex-col items-end">
+                                                                <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Pickup OTP</span>
+                                                                <div className="font-mono font-bold text-xl text-gutzo-primary bg-green-50 px-3 py-1 rounded-md border border-green-200 shadow-sm">
+                                                                    {(order as any).pickup_otp}
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                  </div>
 
@@ -249,8 +264,20 @@ export function OrderManager({ vendorId }: { vendorId: string }) {
                                                                 onClick={async (e) => {
                                                                     e.stopPropagation();
                                                                     try {
+                                                                        // 1. Update status to 'preparing'
                                                                         await nodeApiService.updateVendorOrderStatus(vendorId, order.id, 'preparing');
                                                                         toast.success("Order marked as preparing");
+                                                                        
+                                                                        // 2. Trigger Shadowfax Delivery Request
+                                                                        toast.info("Requesting Delivery Partner...");
+                                                                        try {
+                                                                            await nodeApiService.createShadowfaxOrder(order.id);
+                                                                            toast.success("Delivery Partner Requested! 🏍️");
+                                                                        } catch(sfError) {
+                                                                            console.error("Shadowfax Error:", sfError);
+                                                                            toast.error("Failed to request delivery partner (Backend check required)");
+                                                                        }
+
                                                                         fetchOrders();
                                                                     } catch(e) { toast.error("Failed to update status"); }
                                                                 }}

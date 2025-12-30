@@ -1,11 +1,11 @@
 import React from 'react';
-import { Maximize2, Clock, CheckCircle, ChefHat, Bike } from 'lucide-react';
+import { Maximize2, Clock, CheckCircle, ChefHat, Bike, X } from 'lucide-react';
 import { useOrderTracking } from '../contexts/OrderTrackingContext';
 import { useRouter } from './Router';
 import { OrderTrackingMap } from './OrderTrackingMap';
 
 export function ActiveOrderFloatingBar() {
-  const { activeOrder, maximizeOrder, storeLocation, userLocation } = useOrderTracking();
+  const { activeOrder, maximizeOrder, closeTracking, storeLocation, userLocation } = useOrderTracking();
   const { currentRoute } = useRouter();
 
   // Poll storage for debug and fallback
@@ -31,37 +31,52 @@ export function ActiveOrderFloatingBar() {
   // Helper to get status UI
   const getStatusConfig = (status: string) => {
     switch (status) {
+        case 'placed':
+        case 'confirmed':
+        case 'paid':
+            return {
+                title: 'Order Placed',
+                subtext: 'Waiting for restaurant confirmation',
+                icon: <Clock size={14} className="text-blue-600" />,
+                bg: 'bg-blue-50',
+                text: 'text-blue-600',
+                label: 'PLACED'
+            };
         case 'preparing':
             return {
-                title: 'Preparing your food',
-                subtext: 'Kitchen is working on it',
+                title: 'Kitchen Accepted',
+                subtext: 'Requesting Delivery Partner...',
                 icon: <ChefHat size={14} className="text-orange-600" />,
                 bg: 'bg-orange-50',
                 text: 'text-orange-600',
                 label: 'PREPARING'
             };
         case 'ready':
+             return {
+                 title: 'Food is Ready',
+                 subtext: 'Waiting for Rider to Pickup',
+                 icon: <Bike size={14} className="text-[#1BA672]" />,
+                 bg: 'bg-green-50',
+                 text: 'text-[#1BA672]',
+                 label: 'READY'
+             };
         case 'picked_up':
             return {
                 title: 'Order Picked Up',
-                subtext: 'Driver is on the way',
+                subtext: (displayOrder?.delivery_otp) ? `Sharing OTP: ${displayOrder.delivery_otp}` : 'Rider is on the way',
                 icon: <Bike size={14} className="text-[#1BA672]" />,
                 bg: 'bg-green-50',
                 text: 'text-[#1BA672]',
                 label: 'PICKED UP'
             };
         case 'on_way':
-             // Simulation for "Late": Randomly or based on time? 
-             // For demo, let's keep it clean Green unless explicitly late.
-             // User asked for "if late means little late".
-             // We'll just stick to standard "ARRIVING" for now as we don't have 'expectedTime' in simulation.
             return {
                 title: 'Order Arriving',
-                subtext: 'Arriving in 12 mins',
+                subtext: 'Rider is nearby',
                 icon: <Clock size={14} className="text-[#1BA672]" />,
                 bg: 'bg-green-50',
                 text: 'text-[#1BA672]',
-                label: 'ARRIVING • 12 MINS'
+                label: 'ARRIVING'
             };
         case 'delivered':
             return {
@@ -83,7 +98,7 @@ export function ActiveOrderFloatingBar() {
             };
         default:
             return {
-                title: 'Spice of Bangalore',
+                title: 'Loading Order...',
                 subtext: 'Order Status',
                 icon: <Clock size={14} className="text-gray-500" />,
                 bg: 'bg-gray-50',
@@ -94,10 +109,13 @@ export function ActiveOrderFloatingBar() {
   };
 
   // Hide on tracking page and partner dashboard
-  if (currentRoute.startsWith('/tracking/') || currentRoute.startsWith('/partner/')) return null;
+  const isTrackingPage = currentRoute.startsWith('/tracking/') || window.location.pathname.includes('/tracking/');
+  const isPartnerPage = currentRoute.startsWith('/partner/') || window.location.pathname.includes('/partner/');
+  
+  if (isTrackingPage || isPartnerPage) return null;
 
   // Render even if delivered (per user request)
-  // if (displayOrder?.status === 'delivered') return null;
+  if (displayOrder?.status === 'delivered') return null;
 
   // Hide if no order
   if (!displayOrder) return null;
@@ -112,13 +130,15 @@ export function ActiveOrderFloatingBar() {
         >
                 {/* Left Content Section */}
                 <div className="flex-1 p-4 flex flex-col justify-center gap-1" onClick={maximizeOrder}>
-                    <div className="flex items-center justify-between">
-                        <h3 className="font-bold text-gray-900 text-base leading-tight font-primary truncate pr-2">
-                             {/* Show Restaurant Name usually, but maybe Title if important? 
-                                 Let's keep Restaurant Name as standard anchor, and use pill for status 
-                             */}
-                             Spice of Bangalore
+                    <div className="flex flex-col">
+                        <h3 className="font-bold text-gray-900 text-sm leading-tight font-primary truncate pr-2">
+                             {displayOrder.vendorName || 'Active Order'}
                         </h3>
+                        {displayOrder.orderNumber && (
+                            <span className="text-[10px] text-gray-500 font-medium">
+                                #{displayOrder.orderNumber}
+                            </span>
+                        )}
                     </div>
                     
                     <div className="flex items-center gap-2 mt-1">
@@ -144,8 +164,20 @@ export function ActiveOrderFloatingBar() {
                 </div>
 
                 {/* Middle Maximize Button Area (Moved to Right) */}
-                <div className="w-14 flex items-center justify-center border-l border-gray-100 bg-white" onClick={maximizeOrder}>
-                    <button className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-[#1BA672] transition-colors">
+                <div className="w-14 flex flex-col items-center justify-center border-l border-gray-100 bg-white">
+                    <button 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            closeTracking();
+                        }}
+                        className="w-8 h-8 rounded-full mb-1 flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                    >
+                        <X size={16} />
+                    </button>
+                    <button 
+                        onClick={maximizeOrder}
+                        className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-[#1BA672] transition-colors"
+                    >
                         <Maximize2 size={16} />
                     </button>
                 </div>

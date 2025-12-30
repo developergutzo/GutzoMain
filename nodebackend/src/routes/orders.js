@@ -363,19 +363,32 @@ router.get('/', asyncHandler(async (req, res) => {
 // GET ORDER BY ID
 // GET /api/orders/:id
 // ============================================
+// ============================================
+// GET ORDER BY ID (OR ORDER NUMBER)
+// GET /api/orders/:id
+// ============================================
 router.get('/:id', asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  const { data: order, error } = await supabaseAdmin
+  let query = supabaseAdmin
     .from('orders')
     .select(`
       *,
       items:order_items(*),
       vendor:vendors(id, name, image, phone, whatsapp_number)
-    `)
-    .eq('id', id)
-    .eq('user_id', req.user.id)
-    .single();
+    `);
+
+  // Check if ID is likely a UUID (basic regex or length check)
+  // UUID is 36 chars. Order Number (GZ...) is usually different.
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+  if (isUUID) {
+      query = query.eq('id', id);
+  } else {
+      query = query.eq('order_number', id);
+  }
+
+  const { data: order, error } = await query.eq('user_id', req.user.id).single();
 
   if (error || !order) throw new ApiError(404, 'Order not found');
 

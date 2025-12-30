@@ -43,7 +43,7 @@ export default function PaymentStatusPage() {
     let startTime = Date.now();
     async function poll() {
       try {
-        const res = await apiService.getPaymentStatus(orderId);
+        const res = await apiService.getPaymentStatus(id);
         const result = (res as any)?.data || res; // handle either shape
         if (result.success) {
         // console.log('Payment status response:', JSON.stringify(result, null, 2));
@@ -69,7 +69,7 @@ export default function PaymentStatusPage() {
 
             // Redirect to tracking page abruptly
             setTimeout(() => {
-              window.location.href = `/tracking/${orderId}`;
+              window.location.href = `/tracking/${id}`;
             }, 100);
           }
           return;

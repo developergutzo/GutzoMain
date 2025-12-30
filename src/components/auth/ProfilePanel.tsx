@@ -11,6 +11,7 @@ import { nodeApiService as apiService } from '../../utils/nodeApi';
 import { AddressApi } from '../../utils/addressApi';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLocation } from '../../contexts/LocationContext';
+import { useOrderTracking } from '../../contexts/OrderTrackingContext';
 
 type ProfilePanelContent = 'profile' | 'orders' | 'address';
 
@@ -62,6 +63,23 @@ export function ProfilePanel({ isOpen, onClose, onLogout, content, userInfo, onV
   
   const { user } = useAuth();
   const { refreshLocation } = useLocation();
+  const { startTracking } = useOrderTracking();
+
+  const handleOrderClick = (order: any) => {
+    // If order is active/tracking eligible, start tracking
+    const activeStatuses = ['preparing', 'ready', 'picked_up', 'on_way'];
+    if (activeStatuses.includes(order.status) || order.delivery_status) {
+         startTracking(order.id, {
+             vendorName: order.vendor?.name || order.items?.[0]?.product_name,
+             orderNumber: order.order_number
+         });
+    }
+    
+    // Also show details
+    if (onViewOrderDetails) {
+      onViewOrderDetails(order);
+    }
+  };
   
   // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   
@@ -559,9 +577,8 @@ export function ProfilePanel({ isOpen, onClose, onLogout, content, userInfo, onV
     return (
       <div className="space-y-4">
 
-
         <OrdersPanel 
-          onViewOrderDetails={onViewOrderDetails} 
+          onViewOrderDetails={handleOrderClick} 
           recentOrderData={recentOrderData}
           realOrders={realOrders}
           isLoading={ordersLoading}

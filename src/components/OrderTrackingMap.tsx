@@ -12,13 +12,14 @@ interface OrderTrackingMapProps {
   storeLocation: Coordinates;
   userLocation: Coordinates;
   driverLocation?: Coordinates; // Optional initial driver location
-  status: 'preparing' | 'ready' | 'picked_up' | 'on_way' | 'delivered';
+  status: 'placed' | 'preparing' | 'ready' | 'picked_up' | 'on_way' | 'delivered';
   fitBoundsPadding?: number;
 }
 
 export function OrderTrackingMap({ 
   storeLocation, 
   userLocation, 
+  driverLocation,
   status,
   fitBoundsPadding = 50
 }: OrderTrackingMapProps) {
@@ -124,46 +125,28 @@ export function OrderTrackingMap({
     }
   }, [isMapLoaded, storeLocation, userLocation]);
 
-  // Mock Driver Movement Animation
+  // Update Driver Marker Position
   useEffect(() => {
-    if (!mapInstanceRef.current || !driverMarkerRef.current) return;
+    if (!mapInstanceRef.current || !driverMarkerRef.current || !driverLocation) return;
 
-    if (status === 'on_way' || status === 'picked_up') {
-        const start = storeLocation;
-        const end = userLocation;
-        let progress = 0;
-        
-        const animate = () => {
-            progress += 0.002; // speed
-            if (progress > 1) progress = 1;
+    const newPos = driverLocation;
+    driverMarkerRef.current.setPosition(newPos);
 
-            const newLat = start.lat + (end.lat - start.lat) * progress;
-            const newLng = start.lng + (end.lng - start.lng) * progress;
-            const newPos = { lat: newLat, lng: newLng };
+    // Optional: Calculate heading from previous position if we tracked it, 
+    // but for now just pointing it? Or maybe leave rotation alone.
+    // Shadowfax might not provide heading.
+    
+    // If we have a previous position, we could animate/slide to new one, 
+    // but direct setPosition is fine for v1.
+  }, [driverLocation]);
 
-            driverMarkerRef.current?.setPosition(newPos);
-            
-            // Update rotation
-            // Simple heading calculation
-             const heading = google.maps.geometry.spherical.computeHeading(
-                new google.maps.LatLng(start),
-                new google.maps.LatLng(end)
-             );
-             
-             const icon = driverMarkerRef.current?.getIcon() as google.maps.Symbol;
-             if (icon) {
-                 icon.rotation = heading;
-                 driverMarkerRef.current?.setIcon(icon);
-             }
-
-            if (progress < 1) {
-                animationFrameRef.current = requestAnimationFrame(animate);
-            }
-        };
-        
-        animate();
-    }
-  }, [status, storeLocation, userLocation]);
+  // Handle status-based visibility or simulation (Optional: Removed pure simulation to rely on real data)
+  useEffect(() => {
+      // If no driver location yet but status says on_way, maybe show at store?
+     if (!driverLocation && driverMarkerRef.current) {
+         driverMarkerRef.current.setPosition(storeLocation);
+     }
+  }, [status, driverLocation, storeLocation]);
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>

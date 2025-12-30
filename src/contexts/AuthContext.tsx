@@ -372,6 +372,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     console.log('🔓 User logging out...');
     
     localStorage.removeItem('gutzo_auth');
+    localStorage.removeItem('activeOrder');
     
     setAuthState({
       isAuthenticated: false,

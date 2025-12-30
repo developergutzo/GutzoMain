@@ -1,43 +1,159 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { Minimize2, Share2 } from 'lucide-react';
+import { Minimize2, Share2, Phone } from 'lucide-react';
 import { OrderTrackingMap } from '../components/OrderTrackingMap';
 import { OrderTrackingTimelineSheet } from '../components/OrderTrackingTimelineSheet';
 import { useOrderTracking } from '../contexts/OrderTrackingContext';
-
 import { useRouter } from '../components/Router';
-
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { toast } from 'sonner';
 
 export function OrderTrackingPage() {
   const { currentRoute, navigate: routerNavigate } = useRouter();
   // Extract orderId from the URL path manually since we aren't using <Route> components
-  const orderId = currentRoute.split('/tracking/')[1];
+  const pathId = currentRoute.split('/tracking/')[1];
   
-  const { activeOrder, startTracking, minimizeOrder } = useOrderTracking();
+  const { activeOrder: contextOrder, startTracking, minimizeOrder } = useOrderTracking();
   const [isMinimizing, setIsMinimizing] = useState(false);
-  
-  // Start tracking if not active or different order
+
+  // LOCAL STATE REWIRING
+  const [localOrder, setLocalOrder] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const orderId = pathId || contextOrder?.orderId;
+  const [userName, setUserName] = useState('there');
+
   useEffect(() => {
-    if (orderId && (!activeOrder || activeOrder.orderId !== orderId)) {
+      try {
+          const u = localStorage.getItem('gutzo_auth') || localStorage.getItem('gutzo_user');
+          if (u) {
+              const parsed = JSON.parse(u);
+              const name = parsed.name || parsed.firstName || '';
+              if (name) setUserName(name.split(' ')[0]); 
+          }
+      } catch(e) {}
+  }, []);
+  const formatPhone = (phone: string) => {
+      if (!phone) return "";
+      const clean = phone.replace(/[^\d]/g, "");
+      if (clean.length >= 10) {
+          return `+91${clean.slice(-10)}`;
+      }
+      return `+91${clean}`;
+  };
+
+  // Poll for order details directly
+  useEffect(() => {
+    if (!orderId) return;
+
+    // Start context tracking just to keep it in sync for background, 
+    // but we use local state for display.
+    if (!contextOrder || contextOrder.orderId !== orderId) {
         startTracking(orderId);
     }
-  }, [orderId, activeOrder, startTracking]);
+
+    const fetchOrder = async () => {
+        try {
+            // Get phone for auth
+            let phone = '';
+            try {
+                const u = localStorage.getItem('gutzo_auth') || localStorage.getItem('gutzo_user');
+                if (u) {
+                    const parsed = JSON.parse(u);
+                    phone = formatPhone(parsed.phone);
+                    
+                    // If name is missing in local storage, fetch it
+                    if (!parsed.name && phone) {
+                         import('../utils/nodeApi').then(({ nodeApiService }) => {
+                             nodeApiService.getUser(phone.replace('+91', '')).then(res => {
+                                 if (res.success && res.data?.user?.name) {
+                                     setUserName(res.data.user.name.split(' ')[0]);
+                                     // Optionally update local storage
+                                     parsed.name = res.data.user.name;
+                                     localStorage.setItem('gutzo_auth', JSON.stringify(parsed));
+                                 }
+                             });
+                         });
+                    }
+                }
+            } catch(e) {}
+            
+            // console.log("Fetching order with phone:", phone);
+
+            const res = await fetch(`/api/orders/${orderId}`, {
+                headers: {
+                    'x-user-phone': phone,
+                    'Content-Type': 'application/json'
+                }
+            });
+            const data = await res.json();
+            
+            if (res.ok) {
+                // console.log("🔥 Direct Fetch Success:", data.status);
+                if (data.user?.name) {
+                    setUserName(data.user.name.split(' ')[0]);
+                }
+                setLocalOrder(data.data || data);
+            } else {
+                console.error("Direct Fetch Error:", data);
+            }
+        } catch (err) {
+            console.error("Fetch Network Error:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    fetchOrder();
+    const interval = setInterval(fetchOrder, 3000); // 3s polling
+    return () => clearInterval(interval);
+  }, [orderId]);
 
   const handleMinimize = () => {
       setIsMinimizing(true);
       setTimeout(() => {
           minimizeOrder();
-      }, 300); // Wait for exit animation
+      }, 300); 
   };
 
-  // Use active status or fallback to preparing while initializing
-  const status = activeOrder?.status || 'preparing';
+  // derived status
+  // If we have localOrder, use its status. Otherwise fallback to context.
+  // DEFAULT to 'preparing' if loading to avoid flash of "placed"
+  const rawStatus = localOrder?.status || contextOrder?.status || 'preparing';
+  const deliveryStatus = localOrder?.delivery_status || contextOrder?.status || '';
+
+  // Determine Display Status
+  let displayStatus = 'preparing';
   
-  // Locations from context or hardcoded if needed (context has them)
+  // LOGIC MATCHING CONTEXT BUT SIMPLER
+  if (['picked_up', 'driver_assigned', 'out_for_delivery', 'on_way', 'allotted', 'reached_location', 'delivered', 'completed'].includes(deliveryStatus)) {
+      displayStatus = deliveryStatus === 'driver_assigned' ? 'picked_up' : deliveryStatus; // Map driver_assigned to picked_up bucket for now
+      if (deliveryStatus === 'on_way') displayStatus = 'on_way';
+      if (deliveryStatus === 'delivered') displayStatus = 'delivered';
+  } else {
+      if (rawStatus === 'placed' || rawStatus === 'confirmed' || rawStatus === 'paid') displayStatus = 'placed';
+      else if (rawStatus === 'preparing' || rawStatus === 'accepted') displayStatus = 'preparing';
+      else if (rawStatus === 'ready' || rawStatus === 'ready_for_pickup') displayStatus = 'ready';
+      else displayStatus = rawStatus;
+  }
+  
+  // Mapped Text
+  const getStatusText = (s: string) => {
+      switch(s) {
+          case 'placed': return 'Waiting for restaurant confirmation';
+          case 'preparing': return 'Kitchen Accepted • Requesting Delivery Partner...';
+          case 'ready': return 'Food is Ready • Waiting for Pickup';
+          case 'picked_up': 
+          case 'driver_assigned': return 'Driver Assigned';
+          case 'on_way': return 'Order on the way';
+          case 'delivered': return 'Order Delivered';
+          default: return s; // Fallback
+      }
+  };
+
+  // Locations
   const storeLocation = { lat: 12.9716, lng: 77.5946 }; 
   const userLocation = { lat: 12.9516, lng: 77.6046 }; 
+  const driverLoc = localOrder?.rider_coordinates || contextOrder?.rider_coordinates;
 
   return (
     <motion.div 
@@ -54,7 +170,7 @@ export function OrderTrackingPage() {
                     <Minimize2 size={24} />
                 </button>
                 <div className="text-white font-semibold text-base opacity-90">
-                    Spice of Bangalore
+                    {localOrder?.vendor?.name || contextOrder?.vendorName || 'Order Tracking'}
                 </div>
                 <button className="text-white p-2">
                     <Share2 size={20} />
@@ -64,11 +180,7 @@ export function OrderTrackingPage() {
             {/* Status Title */}
             <div className="text-center mb-6">
                 <h1 className="text-white text-2xl font-bold mb-4 tracking-wide">
-                    {status === 'preparing' ? 'Preparing your order' : 
-                     status === 'ready' ? 'Food is ready' :
-                     status === 'picked_up' ? 'Driver is assigned' :
-                     status === 'on_way' ? 'Order picked up' :
-                     'Order Delivered'}
+                    {getStatusText(displayStatus)}
                 </h1>
                 
                 {/* Time Pill */}
@@ -77,15 +189,18 @@ export function OrderTrackingPage() {
                     <span className="w-1 h-1 bg-white rounded-full opacity-50"></span>
                     <span className="text-green-100 font-medium">On time</span>
                 </div>
+                
+                {/* Debug Info (Hidden in Prod) */}
+                {/* <div className="text-xs text-white/50 mt-2">Status: {rawStatus} | Delivery: {deliveryStatus}</div> */}
             </div>
+        </div>
 
-            {/* Absolute positioned coupon banner (Mock from image) */}
-            <div className="absolute -bottom-6 left-4 right-4 bg-white rounded-xl shadow-lg p-3 flex items-center gap-3 z-40 transform translate-y-2">
-                 <div className="w-8 h-8 flex-shrink-0 bg-blue-100 rounded-lg flex items-center justify-center text-xl">🎁</div>
-                 <p className="text-xs text-gray-600 leading-tight">
-                    Hey Madhan, sit back while we discover hidden coupons near you 💰
-                 </p>
-            </div>
+        {/* Absolute positioned coupon banner - MOVED OUTSIDE HEADER FOR Z-INDEX FIX */}
+        <div className="absolute top-[180px] left-4 right-4 bg-white rounded-xl shadow-lg p-3 flex items-center gap-3 z-[60]">
+                <div className="w-8 h-8 flex-shrink-0 bg-blue-100 rounded-lg flex items-center justify-center text-xl">🎁</div>
+                <p className="text-xs text-gray-600 leading-tight">
+                Hey {userName}, sit back while we discover hidden coupons near you 💰
+                </p>
         </div>
 
         {/* Map Background - Full Space */}
@@ -93,16 +208,18 @@ export function OrderTrackingPage() {
              <OrderTrackingMap 
                 storeLocation={storeLocation}
                 userLocation={userLocation}
-                status={status}
+                driverLocation={driverLoc}
+                status={displayStatus as any}
             />
         </div>
 
         {/* Bottom Sheet UI */}
         <OrderTrackingTimelineSheet 
-            status={status}
-            driver={status === 'picked_up' || status === 'on_way' || status === 'delivered' ? {
-                name: "Ramesh Kumar",
-                phone: "+919876543210"
+            status={displayStatus as any}
+            vendorName={localOrder?.vendor?.name || contextOrder?.vendorName}
+            driver={displayStatus === 'picked_up' || displayStatus === 'on_way' || displayStatus === 'delivered' ? {
+                name: localOrder?.riders?.name || contextOrder?.rider_name || "Assigned Driver",
+                phone: localOrder?.riders?.phone || contextOrder?.rider_phone || ""
             } : undefined} 
         />
     </motion.div>

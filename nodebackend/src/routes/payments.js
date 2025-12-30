@@ -245,7 +245,7 @@ router.post('/callback', asyncHandler(async (req, res) => {
 
   if (txnStatus === 'TXN_SUCCESS') {
     paymentStatus = 'paid';
-    orderStatus = 'confirmed';
+    orderStatus = 'paid';
   } else if (txnStatus === 'PENDING') {
     paymentStatus = 'pending';
     orderStatus = 'pending';
@@ -369,7 +369,7 @@ router.post('/webhook', asyncHandler(async (req, res) => {
 
   if (txnStatus === 'TXN_SUCCESS') {
     paymentStatus = 'paid';
-    orderStatus = 'confirmed';
+    orderStatus = 'paid';
   } else if (txnStatus === 'PENDING') {
     paymentStatus = 'pending';
     orderStatus = 'pending';
@@ -666,7 +666,7 @@ if (process.env.NODE_ENV === 'development') {
         // Mark order as paid
         const { data: order } = await supabaseAdmin.from('orders').update({
             payment_status: 'paid',
-            status: 'confirmed', // skipping placed logic for speed, or set to placed
+            status: 'paid', // using paid instead of confirmed
             payment_method: 'mock',
             payment_id: 'MOCK_' + Date.now()
         }).eq('order_number', orderId).select().single();

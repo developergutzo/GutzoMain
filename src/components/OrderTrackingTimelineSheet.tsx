@@ -3,15 +3,19 @@ import { Phone, Utensils, ChevronRight, ShoppingBag } from 'lucide-react';
 import { useState } from 'react';
 
 interface OrderTrackingTimelineSheetProps {
-  status: 'preparing' | 'ready' | 'picked_up' | 'on_way' | 'delivered';
+  status: 'placed' | 'preparing' | 'ready' | 'picked_up' | 'on_way' | 'delivered';
   driver?: {
     name: string;
     phone: string;
     image?: string;
   };
+  vendorName?: string;
 }
 
-export function OrderTrackingTimelineSheet({ status, driver }: OrderTrackingTimelineSheetProps) {
+import { useOrderTracking } from '../contexts/OrderTrackingContext';
+
+export function OrderTrackingTimelineSheet({ status, driver, vendorName }: OrderTrackingTimelineSheetProps) {
+  const { activeOrder } = useOrderTracking();
   
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.1)] z-50 pb-6">
@@ -28,7 +32,7 @@ export function OrderTrackingTimelineSheet({ status, driver }: OrderTrackingTime
                         <img src="https://cdn-icons-png.flaticon.com/512/3014/3014520.png" alt="Logo" className="w-full h-full object-contain" />
                     </div>
                     <div>
-                        <h3 className="text-lg font-bold text-gray-900 leading-tight">Spice of Bangalore</h3>
+                        <h3 className="text-lg font-bold text-gray-900 leading-tight">{vendorName || activeOrder?.vendorName || "Active Order"}</h3>
                         <p className="text-xs text-gray-500">Peelamedu, Coimbatore</p>
                     </div>
                 </div>
@@ -43,7 +47,8 @@ export function OrderTrackingTimelineSheet({ status, driver }: OrderTrackingTime
             <div className="border rounded-xl p-4 mb-6 flex items-center justify-between" style={{ backgroundColor: '#e7fdf3', borderColor: '#d1f7e6' }}>
                 <div>
                     <p className="text-sm font-bold" style={{ color: '#0d8e54' }}>
-                        {status === 'preparing' ? "Your order is being prepared" :
+                        {status === 'placed' ? "Waiting for restaurant confirmation" :
+                         status === 'preparing' ? "Your order is being prepared" :
                          status === 'ready' ? "Your order is ready at the restaurant" :
                          status === 'picked_up' ? "Order picked up by valet" :
                          status === 'on_way' ? "Valet is near your location" :
@@ -78,7 +83,7 @@ export function OrderTrackingTimelineSheet({ status, driver }: OrderTrackingTime
             </div>
             
             <div className="mt-8 text-center">
-                 <p className="text-[10px] text-gray-300 font-mono tracking-widest uppercase">ID: #GZ-8291-XJ</p>
+                 <p className="text-[10px] text-gray-300 font-mono tracking-widest uppercase">ID: #{activeOrder?.orderId || 'GZ-8291-XJ'}</p>
             </div>
         </div>
     </div>

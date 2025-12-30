@@ -43,10 +43,17 @@ class NodeApiService {
         // We'll see if we can get it from supabase session or let the caller provide it.
         // For now, let's allow headers to override it.
 
-        const headers = {
+        // Get session token for authentication
+        const { data: { session } } = await supabase.auth.getSession();
+
+        const headers: any = {
             "Content-Type": "application/json",
             ...options.headers,
         };
+
+        if (session?.access_token) {
+            headers["Authorization"] = `Bearer ${session.access_token}`;
+        }
 
         try {
             // console.log(`NodeAPI Request: ${url} [${options.method || "GET"}]`);
@@ -226,6 +233,13 @@ class NodeApiService {
                 body: { status },
             },
         );
+    }
+
+    async createShadowfaxOrder(orderId: string) {
+        return this.request("/shadowfax/create-order", {
+            method: "POST",
+            body: { orderId },
+        });
     }
 
     async uploadImage(file: File, vendorId: string, productId: string) {
