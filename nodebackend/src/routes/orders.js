@@ -375,7 +375,8 @@ router.get('/:id', asyncHandler(async (req, res) => {
     .select(`
       *,
       items:order_items(*),
-      vendor:vendors(id, name, image, phone, whatsapp_number)
+      vendor:vendors(id, name, image, phone, whatsapp_number),
+      delivery:deliveries(*)
     `);
 
   // Check if ID is likely a UUID (basic regex or length check)
@@ -406,7 +407,8 @@ router.get('/number/:orderNumber', asyncHandler(async (req, res) => {
     .from('orders')
     .select(`
       *,
-      items:order_items(*)
+      items:order_items(*),
+      delivery:deliveries(*)
     `)
     .eq('order_number', orderNumber)
     .eq('user_id', req.user.id)
@@ -479,7 +481,8 @@ router.post('/:id/reorder', asyncHandler(async (req, res) => {
     .from('orders')
     .select(`
       *,
-      items:order_items(*)
+      items:order_items(*),
+      delivery:deliveries(*)
     `)
     .eq('id', id)
     .eq('user_id', req.user.id)
@@ -557,8 +560,9 @@ router.get('/:id/track', asyncHandler(async (req, res) => {
     .select(`
       id, order_number, status, 
       estimated_delivery_time, actual_delivery_time,
-      rider_id, riders(name, phone, current_lat, current_lng),
-      vendor:vendors(id, name, latitude, longitude)
+      rider_id, 
+      vendor:vendors(id, name, latitude, longitude),
+      delivery:deliveries(*)
     `)
     .eq('id', id)
     .eq('user_id', req.user.id)
@@ -581,25 +585,29 @@ router.get('/:id/track', asyncHandler(async (req, res) => {
   const currentIndex = statusFlow.findIndex(s => s.status === order.status);
 
   // 🚚 Fetch 3rd Party Tracking if available
+  // Refactored to check 'deliveries' table first
   let deliveryTracking = null;
-  if (order.delivery_partner_details && order.delivery_partner_details.provider === 'shadowfax') {
-      const flashId = order.delivery_partner_details.flash_order_id;
-      if (flashId) {
-          try {
-              const { trackShadowfaxOrder } = await import('../utils/shadowfax.js');
-              const sfData = await trackShadowfaxOrder(flashId);
-              if (sfData) {
-                  deliveryTracking = {
-                      provider: 'shadowfax',
-                      awb: sfData.awb_number,
-                      rider_name: sfData.rider_details?.name,
-                      rider_phone: sfData.rider_details?.contact_number,
-                      rider_location: sfData.rider_details?.current_location, // { lat, lng } if available
-                      tracking_url: sfData.tracking_url // If they provide a web link
-                  };
-              }
-          } catch (e) { console.error('Tracking Fetch Error:', e); }
-      }
+  
+  // order.delivery is an array, take the latest one (assuming sorting or trigger handles order)
+  // Ideally sort by created_at desc in query but Supabase select needs explicit ordering or we sort here
+  const activeDelivery = order.delivery && order.delivery.length > 0 
+        ? order.delivery.sort((a,b) => new Date(b.created_at) - new Date(a.created_at))[0] 
+        : null;
+
+  if (activeDelivery) {
+        deliveryTracking = {
+            provider: activeDelivery.partner_id || 'shadowfax',
+            rider_name: activeDelivery.rider_name,
+            rider_phone: activeDelivery.rider_phone,
+            rider_location: activeDelivery.rider_coordinates, 
+            tracking_url: activeDelivery.tracking_url,
+            pickup_otp: activeDelivery.pickup_otp,
+            delivery_otp: activeDelivery.delivery_otp,
+            status: activeDelivery.status
+        };
+        // Shadowfax On-Demand Check (if we still need to hit their API live)
+        // Only if status is incomplete and we don't trust our DB? 
+        // For now, rely on Webhook updates stored in DB.
   }
 
   successResponse(res, {
@@ -615,7 +623,7 @@ router.get('/:id/track', asyncHandler(async (req, res) => {
         name: deliveryTracking.rider_name,
         phone: deliveryTracking.rider_phone,
         location: deliveryTracking.rider_location
-    } : order.riders, // Fallback to internal rider if any
+    } : null, 
     delivery_tracking: deliveryTracking,
     vendor_location: order.vendor ? {
       lat: order.vendor.latitude,

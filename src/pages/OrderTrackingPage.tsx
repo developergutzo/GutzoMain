@@ -166,7 +166,13 @@ export function OrderTrackingPage() {
   // Locations
   const storeLocation = { lat: 12.9716, lng: 77.5946 }; 
   const userLocation = { lat: 12.9516, lng: 77.6046 }; 
-  const driverLoc = localOrder?.rider_coordinates || contextOrder?.rider_coordinates;
+  
+  // Extract active delivery from localOrder if available
+  const activeDelivery = localOrder?.delivery && localOrder.delivery.length > 0 
+      ? localOrder.delivery[0] 
+      : null;
+
+  const driverLoc = activeDelivery?.rider_coordinates || contextOrder?.rider_coordinates;
 
   if (notFound) {
       return (
@@ -253,10 +259,10 @@ export function OrderTrackingPage() {
         <OrderTrackingTimelineSheet 
             status={displayStatus as any}
             vendorName={localOrder?.vendor?.name || contextOrder?.vendorName}
-            deliveryOtp={localOrder?.delivery_otp || localOrder?.delivery_partner_details?.drop_otp || contextOrder?.delivery_otp}
+            deliveryOtp={activeDelivery?.delivery_otp || localOrder?.delivery_otp || contextOrder?.delivery_otp}
             driver={displayStatus === 'picked_up' || displayStatus === 'on_way' || displayStatus === 'delivered' || displayStatus === 'driver_assigned' ? {
-                name: localOrder?.riders?.name || contextOrder?.rider_name || "Assigned Driver",
-                phone: localOrder?.riders?.phone || contextOrder?.rider_phone || ""
+                name: activeDelivery?.rider_name || contextOrder?.rider_name || "Assigned Driver",
+                phone: activeDelivery?.rider_phone || contextOrder?.rider_phone || ""
             } : undefined} 
         />
     </motion.div>

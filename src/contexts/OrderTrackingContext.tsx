@@ -159,13 +159,18 @@ export function OrderTrackingProvider({ children }: { children: ReactNode }) {
                               order.vendor_name || 
                               (order.items && order.items[0]?.product_name ? 'Your Kitchen' : 'Pitchammal\'s Kitchen'); // Last resort fallback
 
+                // Extract Delivery Info
+                const activeDelivery = order.delivery && order.delivery.length > 0
+                    ? order.delivery.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+                    : null;
+
                 const extendedOrder: TrackingState = {
                     ...activeOrder,
                     status: mappedStatus,
-                    delivery_otp: order.delivery_otp,
-                    rider_name: order.rider_name || order.riders?.name, // Support internal riders too
-                    rider_phone: order.rider_phone || order.riders?.phone,
-                    rider_coordinates: order.rider_coordinates,
+                    delivery_otp: activeDelivery?.delivery_otp || order.delivery_otp,
+                    rider_name: activeDelivery?.rider_name,
+                    rider_phone: activeDelivery?.rider_phone,
+                    rider_coordinates: activeDelivery?.rider_coordinates,
                     vendorName: vName,
                     orderNumber: order.order_number
                 };

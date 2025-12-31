@@ -11,22 +11,23 @@ const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-async function findUser() {
-  // Try to find user by name or just list recent users
-  const { data: users, error } = await supabase
-    .from('users') // Assuming there is a public users table or I need to use auth.users via admin
-    .select('id, name, phone')
-    .ilike('name', '%Madhan%')
-    .limit(5);
+async function updateUser() {
+  console.log('Updating user profile for +919944751745...');
+  
+  const { data, error } = await supabase
+    .from('users')
+    .update({ 
+        name: 'Madhan', 
+        email: 'madhan@gutzo.in' 
+    })
+    .eq('phone', '+919944751745')
+    .select();
 
   if (error) {
-      // Fallback: list all if table exists
-      console.log('Error searching by name, listing all public users...');
-       const { data: allUsers } = await supabase.from('users').select('id, name, phone').limit(5);
-       console.log('Users:', allUsers);
+    console.error('Error updating user:', error);
   } else {
-      console.log('Found Users:', users);
+    console.log('User updated successfully:', data);
   }
 }
 
-findUser();
+updateUser();
