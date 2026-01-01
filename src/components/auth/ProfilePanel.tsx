@@ -143,11 +143,11 @@ export function ProfilePanel({ isOpen, onClose, onLogout, content, userInfo, onV
     if (!userData.phone) return;
     setUserDataLoading(true);
     try {
-      const profileData = await apiService.getUser(userData.phone);
-      if (profileData && profileData.name) {
-        setRealUserData(profileData);
+      const response = await apiService.getUser(userData.phone);
+      if (response && response.success && response.data?.user) {
+        setRealUserData(response.data.user);
       } else {
-        // User not found
+        // User not found or error
       }
     } catch (error) {
       console.error('❌ Error fetching user profile:', error);
@@ -239,7 +239,7 @@ export function ProfilePanel({ isOpen, onClose, onLogout, content, userInfo, onV
     if (!tempName.trim() || !userData.phone) return;
     setIsUpdating(true);
     try {
-      await apiService.createUser({ phone: userData.phone, name: tempName.trim(), verified: true, email: realUserData?.email });
+      await apiService.updateProfile(userData.phone, { name: tempName.trim() });
       setRealUserData((prev: typeof realUserData) => ({ ...prev, name: tempName.trim() }));
       const authData = localStorage.getItem('gutzo_auth');
       if (authData) {
@@ -260,7 +260,7 @@ export function ProfilePanel({ isOpen, onClose, onLogout, content, userInfo, onV
     if (!tempEmail.trim() || !userData.phone) return;
     setIsUpdating(true);
     try {
-      await apiService.createUser({ phone: userData.phone, name: realUserData?.name || userData.name, verified: true, email: tempEmail.trim() });
+      await apiService.updateProfile(userData.phone, { email: tempEmail.trim() });
       setRealUserData((prev: typeof realUserData) => ({ ...prev, email: tempEmail.trim() }));
       const authData = localStorage.getItem('gutzo_auth');
       if (authData) {
