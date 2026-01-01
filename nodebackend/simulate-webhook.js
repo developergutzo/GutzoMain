@@ -6,7 +6,7 @@ dotenv.config();
 
 const PAYTM_MERCHANT_KEY = process.env.PAYTM_MERCHANT_KEY;
 const PAYTM_MID = process.env.PAYTM_MID;
-const BASE_URL = 'http://localhost:3001/api/payments';
+const BASE_URL = 'http://localhost:5000/api/payments';
 
 async function simulateWebhook(type = 'payment', status = 'TXN_SUCCESS', amount = '100.00', customOrderId = null) {
   console.log(`\n🚀 Simulating ${type.toUpperCase()} Webhook with status: ${status}...`);

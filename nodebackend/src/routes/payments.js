@@ -145,6 +145,10 @@ router.post('/initiate', authenticate, asyncHandler(async (req, res) => {
 router.post('/callback', asyncHandler(async (req, res) => {
   const paytmParams = req.body;
   console.log('[Paytm Callback] Received:', paytmParams);
+  console.log('[Paytm Callback] Debug Env:', { 
+    FRONTEND_URL: process.env.FRONTEND_URL, 
+    CALLBACK_URL: process.env.PAYTM_CALLBACK_URL 
+  });
 
   const receivedChecksum = paytmParams.CHECKSUMHASH;
   // delete paytmParams.CHECKSUMHASH; // Do not delete if verifySignature needs it in specific way, usually it handles it. 

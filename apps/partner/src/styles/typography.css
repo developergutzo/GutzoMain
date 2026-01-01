@@ -1,0 +1,84 @@
+/* Gutzo typography system — Poppins only
+   Production-ready typography tokens and utility classes.
+   Single font family: Poppins (weights: 400,500,600,700)
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+:root{
+  /* Font family */
+  --font-family-poppins: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  /* Weights */
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  /* Line-heights (unitless multipliers) */
+  --lh-h1: 1.3;   /* 130% */
+  --lh-h2: 1.35;  /* 135% */
+  --lh-h3: 1.4;   /* 140% */
+  --lh-h4: 1.4;   /* 140% */
+  --lh-body1: 1.5;/* 150% */
+  --lh-body2: 1.5;/* 150% */
+
+  /* Spacing / rhythm hints */
+  --flow-xs: 0.25rem;
+  --flow-sm: 0.5rem;
+  --flow-md: 1rem;
+}
+
+/* Mobile-first sizes (base 16px) */
+.h1, h1 { font-family: var(--font-family-poppins); font-weight: var(--fw-semibold); font-size: 1.75rem; line-height: var(--lh-h1); }
+.h2, h2 { font-family: var(--font-family-poppins); font-weight: var(--fw-semibold); font-size: 1.375rem; line-height: var(--lh-h2); }
+.h3, h3 { font-family: var(--font-family-poppins); font-weight: var(--fw-medium);   font-size: 1.125rem; line-height: var(--lh-h3); }
+.h4, h4 { font-family: var(--font-family-poppins); font-weight: var(--fw-medium);   font-size: 1rem;     line-height: var(--lh-h4); }
+
+.body-1, p, .text-body-1 { font-family: var(--font-family-poppins); font-weight: var(--fw-regular); font-size: 1rem;  line-height: var(--lh-body1); }
+.body-2, .text-body-2 { font-family: var(--font-family-poppins); font-weight: var(--fw-regular); font-size: 0.875rem; line-height: var(--lh-body2); }
+
+.menu-item { font-family: var(--font-family-poppins); font-weight: var(--fw-medium); font-size: 0.9375rem; line-height: 1.4; }
+.price { font-family: var(--font-family-poppins); font-weight: var(--fw-semibold); font-size: 1rem; line-height: 1.4; }
+.price-small { font-family: var(--font-family-poppins); font-weight: var(--fw-medium); font-size: 0.875rem; }
+
+.btn-text { font-family: var(--font-family-poppins); font-weight: var(--fw-semibold); font-size: 0.9375rem; line-height: 1; text-transform: none; }
+.btn-small { font-family: var(--font-family-poppins); font-weight: var(--fw-semibold); font-size: 0.875rem; }
+.caption { font-family: var(--font-family-poppins); font-weight: var(--fw-regular); font-size: 0.75rem; opacity: 0.7; }
+
+/* Responsive desktop adjustments */
+@media (min-width: 768px) {
+  .h1, h1 { font-size: 2rem; } /* 32px */
+  .h2, h2 { font-size: 1.625rem; } /* 26px */
+  .h3, h3 { font-size: 1.25rem; } /* 20px */
+  .h4, h4 { font-size: 1rem; } /* 16px (same) */
+}
+
+/* Accessibility: ensure strong weight contrast for hierarchy */
+h1,h2,h3,h4, .menu-item, .price { letter-spacing: -0.01em; }
+
+/* Tailwind-friendly base overrides using @layer */
+@layer base {
+  html, body { font-family: var(--font-family-poppins); }
+
+  /* Element defaults when not using Tailwind text utilities */
+  h1 { font-weight: var(--fw-semibold); font-size: 1.75rem; line-height: var(--lh-h1); }
+  h2 { font-weight: var(--fw-semibold); font-size: 1.375rem; line-height: var(--lh-h2); }
+  h3 { font-weight: var(--fw-medium);   font-size: 1.125rem; line-height: var(--lh-h3); }
+  h4 { font-weight: var(--fw-medium);   font-size: 1rem;     line-height: var(--lh-h4); }
+  p, .body-1 { font-weight: var(--fw-regular); font-size: 1rem; line-height: var(--lh-body1); }
+  small, .caption { font-size: 0.75rem; opacity: 0.7; }
+  button, .btn-text { font-weight: var(--fw-semibold); font-size: 0.9375rem; line-height: 1; }
+}
+
+/* Dark mode compatibility — the same sizes/weights work; color handled by theme */
+
+/* Utility classes for spacing rhythm */
+.type-flow > * + * { margin-top: var(--flow-md); }
+.type-flow-sm > * + * { margin-top: var(--flow-sm); }
+
+/* Notes for developers:
+ - Use semantic elements (h1..h4, p) where possible.
+ - Use utility classes above when you need explicit control: .menu-item, .price, .btn-text, .caption
+ - This file is the single source of truth for typography and must not introduce other fonts.
+*/

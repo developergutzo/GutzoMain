@@ -12,7 +12,7 @@ npm install
 npm run dev
 ```
 
-API runs on: `http://localhost:3001`
+API runs on: `http://localhost:5000`
 
 ## API Endpoints
 

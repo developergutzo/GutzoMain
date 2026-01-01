@@ -1,6 +1,6 @@
 // Native fetch is available in Node.js 18+
 
-const BASE_URL = 'http://127.0.0.1:3001/api';
+const BASE_URL = 'http://127.0.0.1:5000/api';
 const TEST_PHONE = '+919003802398'; // Found from verify_db.js
 
 const colors = {

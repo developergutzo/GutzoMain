@@ -383,13 +383,14 @@ router.get('/', asyncHandler(async (req, res) => {
 // ============================================
 router.get('/:id', asyncHandler(async (req, res) => {
   const { id } = req.params;
+  console.log(`[DEBUG] GET Order: ${id} | User: ${req.user?.id} | Phone: ${req.user?.phone}`);
 
   let query = supabaseAdmin
     .from('orders')
     .select(`
       *,
       items:order_items(*),
-      vendor:vendors(id, name, image, phone, whatsapp_number),
+      vendor:vendors(id, name, image, phone, whatsapp_number, address),
       delivery:deliveries(*)
     `);
 
