@@ -215,7 +215,6 @@ router.post('/', validate(schemas.createOrder), asyncHandler(async (req, res) =>
       payment_method,
       payment_status: payment_method === 'cod' ? 'pending' : 'pending',
       special_instructions,
-      delivery_otp: deliveryOtp,
       order_source,
       coupon_code
     })
@@ -225,6 +224,21 @@ router.post('/', validate(schemas.createOrder), asyncHandler(async (req, res) =>
   if (orderError) {
       console.error('❌ DB Error inserting order:', orderError);
       throw new ApiError(500, `Failed to create order: ${orderError.message}`);
+  }
+
+  // Create initial delivery record (moved from orders table)
+  const { error: deliveryError } = await supabaseAdmin
+    .from('deliveries')
+    .insert({
+      order_id: order.id,
+      delivery_otp: deliveryOtp,
+      partner_id: 'shadowfax', // Default partner
+      status: 'pending' // Initial status
+    });
+
+  if (deliveryError) {
+     console.error('❌ DB Error inserting initial delivery:', deliveryError);
+     // Optional: Should we rollback? For now, logging error.
   }
 
   // Create order items
