@@ -11,3 +11,6 @@ Any new SQL files created should be placed in this `DBFolder` directory.
 
 # Environment Variable Rules
 Do not add fallbacks/defaults for `process.env` variables (e.g., `process.env.VAR || 'default'`). Let the application fail if the variable is missing.
+
+# Code Quality Rules
+Do not use hardcoded fallbacks for data display (e.g., `data.field || 'Default String'`). UI should handle missing data gracefully (e.g., hide element, show skeleton) or the data must be guaranteed by the API.

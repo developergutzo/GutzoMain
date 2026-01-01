@@ -70,12 +70,12 @@ export const useVendors = () => {
 
           try {
             const pickup = {
-              address: vendor.location || "Vendor Location",
+              address: vendor.location,
               latitude: vendor.latitude,
               longitude: vendor.longitude,
             };
             const drop = {
-              address: locationDisplay || "User Location",
+              address: locationDisplay,
               latitude: userLocation.coordinates.latitude,
               longitude: userLocation.coordinates.longitude,
             };

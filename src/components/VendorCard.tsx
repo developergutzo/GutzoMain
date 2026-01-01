@@ -47,18 +47,18 @@ export function VendorCard({ vendor, onClick }: VendorCardProps) {
         <div className="flex items-center text-[15px] mb-1" style={{ fontFamily: 'Poppins', gap: '8px' }}>
           <span className="flex items-center gap-1">
             <StarIcon size={16} color="#43A047" className="mr-0.5" />
-            <span style={{ color: '#222', fontWeight: 600, fontSize: 16, marginLeft: 2 }}>{vendor.rating || '3.9'}</span>
+            <span style={{ color: '#222', fontWeight: 600, fontSize: 16, marginLeft: 2 }}>{vendor.rating}</span>
           </span>
           <span className="mx-1">•</span>
-          <span style={{ color: '#222' }}>{vendor.deliveryTime || '20-30 mins'}</span>
+          <span style={{ color: '#222' }}>{vendor.deliveryTime}</span>
         </div>
         {/* Daily Food Tags */}
         <div className="text-[15px] text-gray-500 mb-1" style={{ fontFamily: 'Poppins', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>
-          {vendor.tags ? vendor.tags.join(', ') : 'Balanced Diet, South Indian Diet, High Protein, Low Carb'}
+          {vendor.tags ? vendor.tags.join(', ') : ''}
         </div>
         {/* Location */}
         <div className="text-[15px] text-gray-500 mb-2" style={{ fontFamily: 'Poppins', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>
-          {vendor.location || 'Peelamedu'}
+          {vendor.location}
         </div>
       </CardContent>
     </Card>

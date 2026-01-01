@@ -110,7 +110,7 @@ export function OrderNote({ note, onSave, vendorName }: OrderNoteProps) {
                 className="text-xs h-9 px-3 whitespace-nowrap border-gray-200 rounded-xl gap-2 text-gray-600 font-normal hover:border-gray-300 bg-white"
             >
                 <FileText className="w-4 h-4 text-gray-400" /> 
-                Add a note for {vendorName || 'restaurant'}
+                Add a note for {vendorName}
             </Button>
           </>
        );
@@ -156,7 +156,7 @@ export function OrderNote({ note, onSave, vendorName }: OrderNoteProps) {
         className="text-xs h-9 px-3 whitespace-nowrap border-gray-200 rounded-xl gap-2 text-gray-600 font-normal hover:border-gray-300 bg-white hover:bg-gray-50 transition-all"
       >
          <FileText className="w-4 h-4 text-gray-400" /> 
-         Add a note for {vendorName || 'restaurant'}
+         Add a note for {vendorName}
       </Button>
   );
 }

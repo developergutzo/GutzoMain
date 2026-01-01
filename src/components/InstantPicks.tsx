@@ -51,13 +51,13 @@ const InstantPicksItem: React.FC<{ product: Product; isLast: boolean; noPadding:
                   onClick={() => {
                     if (disabled) return;
                     
-                    const vendorId = product.vendor?.id || product.vendor_id || 'v1';
+                    const vendorId = product.vendor?.id || product.vendor_id;
                     
                     addItem(
                       product,
                       {
                         id: vendorId,
-                        name: product.vendor?.name || 'Vendor',
+                        name: product.vendor?.name,
                         description: product.vendor?.description || '',
                         location: product.vendor?.location || '',
                         rating: product.vendor?.rating || 5,

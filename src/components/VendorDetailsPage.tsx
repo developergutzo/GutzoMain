@@ -149,7 +149,7 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors
 
       let userLat = userLocation?.coordinates?.latitude;
       let userLng = userLocation?.coordinates?.longitude;
-      let dropAddress = locationDisplay || "Customer Location";
+      let dropAddress = locationDisplay;
 
       //// If authenticated, try to use default address coordinates for more precision
       // if (isAuthenticated && user?.phone) {
@@ -174,7 +174,7 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors
       if (userLat && userLng) {
         try {
           const pickup = {
-            address: vendor.location || "Vendor Location",
+            address: vendor.location,
             latitude: vendor.latitude,
             longitude: vendor.longitude,
           };
@@ -316,7 +316,7 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors
             location={vendor.location}
             deliveryTime={!isServiceable ? "Not Serviceable" : (dynamicEta || vendor.deliveryTime)}
             isLoadingEta={isLoadingEta}
-            userAddressLabel={locationDisplay || "Location"}
+            userAddressLabel={locationDisplay}
             onAddressClick={() => {
               setProfilePanelContent('address');
               setShowProfilePanel(true);

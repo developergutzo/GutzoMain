@@ -162,15 +162,15 @@ export function CheckoutPage() {
                              // console.log('📍 Using Global Context Location (Transient)');
                              matchedAddress = {
                                 id: 'device_location',
-                                type: locationLabel || locationDisplay || 'Current Location',
-                                full_address: locationDisplay || 'Detected Location',
+                                type: locationLabel || locationDisplay,
+                                full_address: locationDisplay,
                                 street: '',
                                 area: '',
                                 latitude: ctxLat,
                                 longitude: ctxLng,
                                 is_default: false,
-                                label: locationLabel || locationDisplay || 'Current Location',
-                                address_type: locationLabel || locationDisplay || 'Current Location'
+                                label: locationLabel || locationDisplay,
+                                address_type: locationLabel || locationDisplay
                             };
                         }
                     }
@@ -266,12 +266,12 @@ export function CheckoutPage() {
               }
 
               const pickup = { 
-                  address: vendorLoc || vendor.name || 'Vendor Location', 
+                  address: vendorLoc || vendor.name, 
                   latitude: vendorLat, 
                   longitude: vendorLng 
               };
               const drop = { 
-                  address: selectedAddress.full_address || 'Customer Location', 
+                  address: selectedAddress.full_address, 
                   latitude: selectedAddress.latitude, 
                   longitude: selectedAddress.longitude 
               };
@@ -400,7 +400,7 @@ export function CheckoutPage() {
             // Mock Payment Flow
             const mockRes = await (apiService as any).mockSuccessPayment(userPhone, order.order_number);
             if (mockRes.success) {
-                navigate(`/payment-status?orderId=${order.order_number}`);
+                navigate(`/payment-status?orderId=${order.order_number}` as any);
                 toast.success('Mock Payment Successful');
             } else {
                 throw new Error("Mock payment failed");
@@ -414,8 +414,8 @@ export function CheckoutPage() {
              const token = responseData.txnToken || paytmResp?.body?.txnToken;
     
              if (data.success && token && paytmResp) {
-               const mid = responseData.mid || paytmResp.body.mid || 'xFDrTr50750120794198';
-                          const PAYTM_ENV = import.meta.env.VITE_PAYTM_ENV || 'staging';
+               const mid = responseData.mid || paytmResp.body.mid;
+                          const PAYTM_ENV = import.meta.env.VITE_PAYTM_ENV;
                 const PAYTM_BASE_URL = PAYTM_ENV === 'production' 
                     ? 'https://secure.paytmpayments.com' 
                     : 'https://securestage.paytmpayments.com';
@@ -576,7 +576,7 @@ export function CheckoutPage() {
                  </button>
                  <div className="flex-1 flex flex-col justify-center overflow-hidden">
                      <div className="text-[17px] font-extrabold text-gray-600 leading-tight truncate">
-                         {vendor?.name || 'Restaurant'}
+                         {vendor?.name}
                      </div>
                      
                      {/* Address Selection in Header */}
@@ -636,7 +636,7 @@ export function CheckoutPage() {
         <div className="flex-1 w-full space-y-4">
             {/* Desktop Page Title (Inside Column) */}
             <div className="hidden lg:block pb-2">
-                <h1 className="text-3xl font-bold text-gray-900 tracking-tight">{vendor?.name || 'Restaurant'}</h1>
+                <h1 className="text-3xl font-bold text-gray-900 tracking-tight">{vendor?.name}</h1>
                 {vendor?.location && <p className="text-gray-500 text-base mt-1">{vendor.location}</p>}
             </div>
 

@@ -131,7 +131,7 @@ export function OrderTrackingPage() {
   // derived status
   // If we have localOrder, use its status. Otherwise fallback to context.
   // DEFAULT to 'preparing' if loading to avoid flash of "placed"
-  const rawStatus = localOrder?.status || contextOrder?.status || 'preparing';
+  const rawStatus = localOrder?.status || contextOrder?.status;
   const deliveryStatus = localOrder?.delivery_status || contextOrder?.status || '';
 
   // Determine Display Status
@@ -211,7 +211,7 @@ export function OrderTrackingPage() {
                     <Minimize2 size={24} />
                 </button>
                 <div className="text-white font-semibold text-base opacity-90">
-                    {localOrder?.vendor?.name || contextOrder?.vendorName || 'Order Tracking'}
+                    {localOrder?.vendor?.name || contextOrder?.vendorName}
                 </div>
                 <button className="text-white p-2">
                     <Share2 size={20} />
@@ -261,7 +261,7 @@ export function OrderTrackingPage() {
             vendorName={localOrder?.vendor?.name || contextOrder?.vendorName}
             deliveryOtp={activeDelivery?.delivery_otp || localOrder?.delivery_otp || contextOrder?.delivery_otp}
             driver={displayStatus === 'picked_up' || displayStatus === 'on_way' || displayStatus === 'delivered' || displayStatus === 'driver_assigned' ? {
-                name: activeDelivery?.rider_name || contextOrder?.rider_name || "Assigned Driver",
+                name: activeDelivery?.rider_name || contextOrder?.rider_name,
                 phone: activeDelivery?.rider_phone || contextOrder?.rider_phone || ""
             } : undefined} 
         />
