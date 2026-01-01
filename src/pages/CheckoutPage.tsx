@@ -97,6 +97,7 @@ export function CheckoutPage() {
   const [orderNote, setOrderNote] = useState("");
   const [dontAddCutlery, setDontAddCutlery] = useState(false);
   const [expandedBill, setExpandedBill] = useState(false);
+  const [useMockPayment, setUseMockPayment] = useState(false);
 
   // Constants
   const ITEMS_GST_RATE = 0.05;
@@ -395,90 +396,102 @@ export function CheckoutPage() {
          const amount = order.total_amount || grandTotal;
 
          // 2. Initiate Payment
-         const data = await (apiService as any).initiatePaytmPayment(userPhone, orderId, amount, user?.id || userPhone);
-         
-         const responseData = data.data || data; 
-         const paytmResp = responseData.paytmResponse || responseData.initiateTransactionResponse;
-         const token = responseData.txnToken || paytmResp?.body?.txnToken;
-
-         if (data.success && token && paytmResp) {
-           const mid = responseData.mid || paytmResp.body.mid || 'xFDrTr50750120794198';
-                      const PAYTM_ENV = import.meta.env.VITE_PAYTM_ENV || 'staging';
-            const PAYTM_BASE_URL = PAYTM_ENV === 'production' 
-                ? 'https://secure.paytmpayments.com' 
-                : 'https://securestage.paytmpayments.com';
-
-            const script = document.createElement('script');
-            script.src = `${PAYTM_BASE_URL}/merchantpgpui/checkoutjs/merchants/${mid}.js`;
-           script.async = true;
-           script.crossOrigin = "anonymous";
-           script.onload = () => {
-             // @ts-ignore
-             if (window.Paytm && window.Paytm.CheckoutJS) {
-                // @ts-ignore
-                const checkoutJs = window.Paytm.CheckoutJS;
-                checkoutJs.onLoad(() => {
-                   const config = {
-                     merchant: {
-                       mid: mid,
-                       name: "Gutzo",
-                       redirect: false
-                     },
-                     flow: "DEFAULT",
-                     data: {
-                       orderId: order.order_number, 
-                       token: token,
-                       tokenType: "TXN_TOKEN",
-                       amount: String(amount)
-                     },
-                       handler: {
-                       notifyMerchant: function(eventName: string, eventData: any) {
-                         // console.log('Paytm Event:', eventName, eventData);
-                       },
-                       transactionStatus: function(paymentStatus: any) {
-                         // @ts-ignore
-                         window.Paytm.CheckoutJS.close();
-                         
-                         const form = document.createElement('form');
-                         form.method = 'POST';
-                         form.action = `${apiService.baseUrl}/api/payments/callback`; 
-                         
-                         Object.keys(paymentStatus).forEach(key => {
-                            const value = paymentStatus[key];
-                            if (typeof value === 'object') return;
-                            const input = document.createElement('input');
-                            input.type = 'hidden';
-                            input.name = key;
-                            input.value = String(value);
-                            form.appendChild(input);
-                         });
-                         
-                         document.body.appendChild(form);
-                         form.submit();
-                       }
-                     }
-                   };
-                   checkoutJs.init(config).then(() => {
-                       checkoutJs.invoke();
-                   }).catch((err: any) => {
-                       console.error('Paytm Init Error:', err);
-                       setIsProcessing(false);
-                       toast.error('Payment initialization failed');
-                   });
-                });
-             } else {
-                 setIsProcessing(false);
-                 toast.error('Payment gateway failed to load');
-             }
-           };
-           script.onerror = () => {
-              setIsProcessing(false);
-              toast.error('Network error loading payment gateway');
-           };
-           script.appendChild(document.createTextNode(''));
-           document.body.appendChild(script);
+         if (useMockPayment) {
+            // Mock Payment Flow
+            const mockRes = await (apiService as any).mockSuccessPayment(userPhone, order.order_number);
+            if (mockRes.success) {
+                navigate(`/payment-status?orderId=${order.order_number}`);
+                toast.success('Mock Payment Successful');
+            } else {
+                throw new Error("Mock payment failed");
+            }
          } else {
-              throw new Error('Invalid payment initiation response');
+             // Real Payment Flow
+             const data = await (apiService as any).initiatePaytmPayment(userPhone, orderId, amount, user?.id || userPhone);
+             
+             const responseData = data.data || data; 
+             const paytmResp = responseData.paytmResponse || responseData.initiateTransactionResponse;
+             const token = responseData.txnToken || paytmResp?.body?.txnToken;
+    
+             if (data.success && token && paytmResp) {
+               const mid = responseData.mid || paytmResp.body.mid || 'xFDrTr50750120794198';
+                          const PAYTM_ENV = import.meta.env.VITE_PAYTM_ENV || 'staging';
+                const PAYTM_BASE_URL = PAYTM_ENV === 'production' 
+                    ? 'https://secure.paytmpayments.com' 
+                    : 'https://securestage.paytmpayments.com';
+    
+                const script = document.createElement('script');
+                script.src = `${PAYTM_BASE_URL}/merchantpgpui/checkoutjs/merchants/${mid}.js`;
+               script.async = true;
+               script.crossOrigin = "anonymous";
+               script.onload = () => {
+                 // @ts-ignore
+                 if (window.Paytm && window.Paytm.CheckoutJS) {
+                    // @ts-ignore
+                    const checkoutJs = window.Paytm.CheckoutJS;
+                    checkoutJs.onLoad(() => {
+                       const config = {
+                         merchant: {
+                           mid: mid,
+                           name: "Gutzo",
+                           redirect: false
+                         },
+                         flow: "DEFAULT",
+                         data: {
+                           orderId: order.order_number, 
+                           token: token,
+                           tokenType: "TXN_TOKEN",
+                           amount: String(amount)
+                         },
+                           handler: {
+                           notifyMerchant: function(eventName: string, eventData: any) {
+                             // console.log('Paytm Event:', eventName, eventData);
+                           },
+                           transactionStatus: function(paymentStatus: any) {
+                             // @ts-ignore
+                             window.Paytm.CheckoutJS.close();
+                             
+                             const form = document.createElement('form');
+                             form.method = 'POST';
+                             form.action = `${apiService.baseUrl}/api/payments/callback`; 
+                             
+                             Object.keys(paymentStatus).forEach(key => {
+                                const value = paymentStatus[key];
+                                if (typeof value === 'object') return;
+                                const input = document.createElement('input');
+                                input.type = 'hidden';
+                                input.name = key;
+                                input.value = String(value);
+                                form.appendChild(input);
+                             });
+                             
+                             document.body.appendChild(form);
+                             form.submit();
+                           }
+                         }
+                       };
+                       checkoutJs.init(config).then(() => {
+                           checkoutJs.invoke();
+                       }).catch((err: any) => {
+                           console.error('Paytm Init Error:', err);
+                           setIsProcessing(false);
+                           toast.error('Payment initialization failed');
+                       });
+                    });
+                 } else {
+                     setIsProcessing(false);
+                     toast.error('Payment gateway failed to load');
+                 }
+               };
+               script.onerror = () => {
+                  setIsProcessing(false);
+                  toast.error('Network error loading payment gateway');
+               };
+               script.appendChild(document.createTextNode(''));
+               document.body.appendChild(script);
+             } else {
+                  throw new Error('Invalid payment initiation response');
+             }
          }
 
        } catch (error: any) {
@@ -955,6 +968,19 @@ export function CheckoutPage() {
                     </div>
                 ) : (
                     <>
+                         <div className="flex items-center gap-2 mb-3 px-1">
+                            <input 
+                                type="checkbox" 
+                                id="mockPaymentMobile" 
+                                checked={useMockPayment} 
+                                onChange={(e) => setUseMockPayment(e.target.checked)}
+                                className="w-4 h-4 text-orange-600 rounded focus:ring-orange-500"
+                            />
+                            <label htmlFor="mockPaymentMobile" className="text-xs text-gray-600 font-medium cursor-pointer select-none">
+                                Use Mock Payment (Dev Only)
+                            </label>
+                        </div>
+
                         <button 
                           className={`w-full text-white rounded-lg px-4 py-4 flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform relative overflow-hidden group ${
                              isProcessing || (!!user && !isServiceable) ? 'cursor-not-allowed opacity-70' : ''

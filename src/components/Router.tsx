@@ -63,9 +63,10 @@ export function RouterProvider({ children }: { children: ReactNode }) {
         window.scrollTo(0, 0);
         // Update browser history
         window.history.pushState(state || {}, '', route);
-        // Update state directly
-        setCurrentRoute(route);
-        updateDocumentTitle(route);
+        // Update state directly (strip query params for matching)
+        const path = route.split('?')[0] as Route;
+        setCurrentRoute(path);
+        updateDocumentTitle(path);
         // Force scroll to top after state update
         setTimeout(() => {
           window.scrollTo(0, 0);
