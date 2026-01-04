@@ -51,6 +51,23 @@ class NodeApiService {
             ...options.headers,
         };
 
+        // Auto-inject x-user-phone from localStorage if available and not already set
+        if (!headers["x-user-phone"]) {
+            try {
+                const autoAuth = localStorage.getItem("gutzo_auth");
+                if (autoAuth) {
+                    const parsed = JSON.parse(autoAuth);
+                    if (parsed.phone) {
+                        headers["x-user-phone"] = this.formatPhone(
+                            parsed.phone,
+                        );
+                    }
+                }
+            } catch (e) {
+                // Ignore parse errors
+            }
+        }
+
         if (session?.access_token) {
             headers["Authorization"] = `Bearer ${session.access_token}`;
         }

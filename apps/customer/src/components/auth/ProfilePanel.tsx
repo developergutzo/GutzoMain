@@ -122,11 +122,11 @@ export function ProfilePanel({ isOpen, onClose, onLogout, content, userInfo, onV
       console.error('Error parsing auth data:', error);
     }
     
-    return { name: 'User', phone: '', email: '' };
+    return { name: '', phone: '', email: '' }; // No "User" fallback
   };
 
   const userData = getUserData();
-  const displayName = realUserData?.name || userData.name || 'User';
+  const displayName = realUserData?.name || userData.name; // Strict: if undefined, show nothing
   // Robust display: Strip everything, take last 10 digits, add +91
   const rawPhone = (userData.phone || '').replace(/[^\d]/g, '').slice(-10);
   const displayPhone = rawPhone ? `+91 ${rawPhone}` : '';

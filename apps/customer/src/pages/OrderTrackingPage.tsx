@@ -8,6 +8,7 @@ import { useRouter } from '../components/Router';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { Button } from '../components/ui/button';
+import { useAuth } from '../contexts/AuthContext';
 
 export function OrderTrackingPage() {
   const { currentRoute, navigate: routerNavigate } = useRouter();
@@ -15,6 +16,7 @@ export function OrderTrackingPage() {
   const pathId = currentRoute.split('/tracking/')[1];
   
   const { activeOrder: contextOrder, startTracking, minimizeOrder } = useOrderTracking();
+  const { user } = useAuth();
   const [isMinimizing, setIsMinimizing] = useState(false);
 
   // LOCAL STATE REWIRING
@@ -25,15 +27,20 @@ export function OrderTrackingPage() {
   const [userName, setUserName] = useState('there');
 
   useEffect(() => {
-      try {
-          const u = localStorage.getItem('gutzo_auth') || localStorage.getItem('gutzo_user');
-          if (u) {
-              const parsed = JSON.parse(u);
-              const name = parsed.name || parsed.firstName || '';
-              if (name) setUserName(name.split(' ')[0]); 
-          }
-      } catch(e) {}
-  }, []);
+      if (user?.name) {
+          setUserName(user.name.split(' ')[0]);
+      } else {
+          try {
+              const u = localStorage.getItem('gutzo_auth') || localStorage.getItem('gutzo_user');
+              if (u) {
+                  const parsed = JSON.parse(u);
+                  const name = parsed.name || parsed.firstName || '';
+                  if (name) setUserName(name.split(' ')[0]); 
+              }
+          } catch(e) {}
+      }
+  }, [user]);
+
   const formatPhone = (phone: string) => {
       if (!phone) return "";
       const clean = phone.replace(/[^\d]/g, "");
@@ -60,30 +67,22 @@ export function OrderTrackingPage() {
     const fetchOrder = async () => {
         try {
             // Get phone for auth
-            let phone = '';
-            try {
-                const u = localStorage.getItem('gutzo_auth') || localStorage.getItem('gutzo_user');
-                if (u) {
-                    const parsed = JSON.parse(u);
-                    phone = formatPhone(parsed.phone);
-                    
-                    // If name is missing in local storage, fetch it
-                    if (!parsed.name && phone) {
-                         import('../utils/nodeApi').then(({ nodeApiService }) => {
-                             nodeApiService.getUser(phone.replace('+91', '')).then(res => {
-                                 if (res.success && res.data?.user?.name) {
-                                     setUserName(res.data.user.name.split(' ')[0]);
-                                     // Optionally update local storage
-                                     parsed.name = res.data.user.name;
-                                     localStorage.setItem('gutzo_auth', JSON.stringify(parsed));
-                                 }
-                             });
-                         });
-                    }
-                }
-            } catch(e) {}
+            let phone = user?.phone ? formatPhone(user.phone) : '';
             
-            // console.log("Fetching order with phone:", phone);
+            if (!phone) {
+                try {
+                    const u = localStorage.getItem('gutzo_auth') || localStorage.getItem('gutzo_user');
+                    if (u) {
+                        const parsed = JSON.parse(u);
+                        phone = formatPhone(parsed.phone);
+                    }
+                } catch(e) {}
+            }
+            
+            if (!phone) {
+                // console.warn("No phone found for auth, skipping fetch");
+                return;
+            }
 
             const res = await fetch(`/api/orders/${orderId}`, {
                 headers: {
@@ -119,7 +118,7 @@ export function OrderTrackingPage() {
     fetchOrder();
     const interval = setInterval(fetchOrder, 3000); // 3s polling
     return () => clearInterval(interval);
-  }, [orderId]);
+  }, [orderId, user]);
 
   const handleMinimize = () => {
       setIsMinimizing(true);

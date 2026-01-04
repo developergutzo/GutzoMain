@@ -244,9 +244,8 @@ export function CheckoutPage() {
                return;
           }
           if (!selectedAddress) {
-               // If address is still loading, wait. If addresses loaded but none selected (should be rare/handled by default), 
-               // we might want to unblock.
-               // Assuming fetchAddresses will eventually trigger this effect when it sets selectedAddress.
+               // Stop loading if no address is selected so the UI can prompt the user
+               setLoadingFee(false);
                return; 
           }
           
@@ -594,15 +593,15 @@ export function CheckoutPage() {
                                     </>
                                 ) : (
                                     <>
-                                        {dynamicEta || '30-35 mins'} to {
+                                        {dynamicEta} to {
                                             !user 
                                             ? 'Current Location' 
                                             : (() => {
-                                                if (!selectedAddress) return 'Location';
+                                                if (!selectedAddress) return '';
                                                 if (selectedAddress.label === 'Other' || selectedAddress.type === 'Other') {
-                                                    return selectedAddress.custom_label || selectedAddress.label || selectedAddress.type || 'Other';
+                                                    return selectedAddress.custom_label || selectedAddress.label || selectedAddress.type || '';
                                                 }
-                                                return selectedAddress.label || selectedAddress.type || 'Location';
+                                                return selectedAddress.label || selectedAddress.type || '';
                                             })()
                                         }
                                     </>
@@ -651,9 +650,11 @@ export function CheckoutPage() {
                        <div className="flex-1 min-w-0">
                            <div className="flex items-center gap-2 mb-1">
                                <h3 className="font-bold text-lg text-gray-900">Delivery to {selectedAddress?.address_type || 'Home'}</h3>
-                               <span className="px-2 py-0.5 bg-green-50 text-green-700 text-xs font-bold rounded-full uppercase tracking-wide">
-                                   {dynamicEta || '30-35 mins'}
-                               </span>
+                               {dynamicEta && (
+                                   <span className="px-2 py-0.5 bg-green-50 text-green-700 text-xs font-bold rounded-full uppercase tracking-wide">
+                                       {dynamicEta}
+                                   </span>
+                               )}
                            </div>
                            <p className="text-gray-500 text-sm max-w-2xl truncate">
                                {selectedAddress ? selectedAddress.full_address : 'Select a delivery address to proceed'}
@@ -872,15 +873,15 @@ export function CheckoutPage() {
                          <div className="w-full h-12 bg-gray-200 animate-pulse rounded-lg mb-2"></div>
                          <div className="w-32 h-4 bg-gray-200 animate-pulse rounded mx-auto"></div>
                      </div>
-                 ) : (!isServiceable && !!selectedAddress) ? (
+                 ) : (!isServiceable || !selectedAddress) ? (
                     <div className="w-full">
                          <div className="bg-red-50 border border-red-100 rounded-lg p-4 mb-4 flex items-start gap-3">
                              <div className="p-1.5 bg-white rounded-full shadow-sm mt-0.5">
                                  <MapPin className="w-4 h-4 text-red-500" />
                              </div>
                              <div>
-                                 <h4 className="text-sm font-bold text-gray-900">Location Unserviceable</h4>
-                                 <p className="text-xs text-gray-600 mt-1">We don't deliver to this location yet.</p>
+                                 <h4 className="text-sm font-bold text-gray-900">{!selectedAddress ? 'No Address Selected' : 'Location Unserviceable'}</h4>
+                                 <p className="text-xs text-gray-600 mt-1">{!selectedAddress ? 'Please select a delivery address.' : "We don't deliver to this location yet."}</p>
                              </div>
                          </div>
                          <button 
@@ -891,7 +892,7 @@ export function CheckoutPage() {
                            className="w-full text-white rounded-lg px-4 py-4 font-bold shadow-lg active:scale-95 transition-transform"
                            style={{ backgroundColor: '#E74C3C' }}
                          >
-                             Change Delivery Address
+                             {selectedAddress ? 'Change Delivery Address' : 'Select Delivery Address'}
                          </button>
                     </div>
                  ) : (
@@ -946,15 +947,15 @@ export function CheckoutPage() {
                          <div className="w-full h-12 bg-gray-200 animate-pulse rounded-lg mb-2"></div>
                          <div className="w-32 h-4 bg-gray-200 animate-pulse rounded mx-auto"></div>
                     </div>
-                ) : (!isServiceable && !!selectedAddress) ? (
+                ) : (!isServiceable || !selectedAddress) ? (
                     <div className="w-full flex flex-col gap-3">
                          <div className="bg-red-50 border border-red-100 rounded-lg p-3 flex items-start gap-3">
                              <div className="p-1 px-1.5 bg-white rounded-full shadow-sm">
                                  <MapPin className="w-3.5 h-3.5 text-red-500" />
                              </div>
                              <div className="flex-1">
-                                 <h4 className="text-sm font-bold text-gray-900 leading-tight">Location Unserviceable</h4>
-                                 <p className="text-xs text-gray-600 mt-1 leading-normal">Sorry, we don't deliver here yet.</p>
+                                 <h4 className="text-sm font-bold text-gray-900 leading-tight">{!selectedAddress ? 'No Address Selected' : 'Location Unserviceable'}</h4>
+                                 <p className="text-xs text-gray-600 mt-1 leading-normal">{!selectedAddress ? 'Please select a delivery location.' : "Sorry, we don't deliver here yet."}</p>
                              </div>
                          </div>
                          <button 
@@ -964,7 +965,7 @@ export function CheckoutPage() {
                            className="w-full text-white rounded-lg px-4 py-4 flex items-center justify-center font-semibold shadow-md active:scale-95 transition-transform text-[15px] uppercase tracking-wider"
                            style={{ backgroundColor: '#E74C3C' }}
                          >
-                             Change Delivery Location
+                             {selectedAddress ? 'Change Delivery Location' : 'Select Location'}
                          </button>
                     </div>
                 ) : (

@@ -24,13 +24,13 @@ router.post('/serviceability', async (req, res) => {
 
     const formattedPayload = {
       pickup_details: {
-        building_name: pickup_details.building_name || "Vendor Outlet",
+        building_name: pickup_details.building_name,
         latitude: parseFloat(pickup_details.latitude) || 0,
         longitude: parseFloat(pickup_details.longitude) || 0,
         address: pickup_details.address
       },
       drop_details: {
-        building_name: drop_details.building_name || "Customer Location",
+        building_name: drop_details.building_name,
         latitude: parseFloat(drop_details.latitude) || 0,
         longitude: parseFloat(drop_details.longitude) || 0,
         address: drop_details.address

@@ -50,18 +50,18 @@ router.post('/create-order', async (req, res) => {
 
         const payload = {
             "pickup_details": {
-                "name": order.vendor?.name || "Vendor",
-                "contact_number": order.vendor?.phone || "9999999999",
-                "address": order.vendor?.address ? `${order.vendor.address}${order.vendor.city ? ', ' + order.vendor.city : ''}` : "18, Sampige Rd, Malleshwaram, Bengaluru, Karnataka 560003",
+                "name": order.vendor?.name,
+                "contact_number": order.vendor?.phone,
+                "address": order.vendor?.address ? `${order.vendor.address}${order.vendor.city ? ', ' + order.vendor.city : ''}` : order.vendor?.location, 
                 "landmark": "",
                 "latitude": pickupLat,
                 "longitude": pickupLng
             },
             "drop_details": {
-                "name": order.delivery_address?.name || "Customer",
-                "contact_number": order.delivery_phone || "9999999999",
+                "name": order.delivery_address?.name,
+                "contact_number": order.delivery_phone,
                 "is_contact_number_masked": false,
-                "address": order.delivery_address?.address || "Customer Address",
+                "address": order.delivery_address?.address,
                 "landmark": order.delivery_address?.landmark || "",
                 "latitude": dropLat,
                 "longitude": dropLng
