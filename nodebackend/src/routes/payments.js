@@ -237,6 +237,11 @@ router.post('/callback', asyncHandler(async (req, res) => {
                   status: 'searching_rider'
               });
 
+              // CRITICAL: Update ORDERS table so Webhook can find it later
+              await supabaseAdmin.from('orders')
+                  .update({ shadowfax_order_id: shadowfaxId })
+                  .eq('id', updatedOrder.id);
+
               // Notify User (Success)
               await supabaseAdmin.from('notifications').insert({
                   user_id: updatedOrder.user_id,
@@ -246,28 +251,9 @@ router.post('/callback', asyncHandler(async (req, res) => {
                   data: { order_id: orderId, txn_id: txnId }
               });
 
-              // Notify Vendor (Email & Push) - ONLY NOW
-              /* 
-                 TODO: Ideally we should wait for "Rider Allocated" webhook from SF before notifying vendor to cook?
-                 But usually "Accepted" by SF means they are looking. 
-                 User prompt said: "if shadowfax accept the order send request to vendor kitchen".
-                 Assuming 'success' from create API means 'accepted'.
-              */
-              
-              if (updatedOrder.vendor) {
-                   // Calculate Items String for notification
-                   const itemsSummary = "New Order"; // Simplify or fetch items if needed
-                   
-                   // Send Email
-                   import('../utils/emailService.js').then(({ sendVendorOrderNotification }) => {
-                       sendVendorOrderNotification(updatedOrder.vendor.email, updatedOrder);
-                   });
-
-                   // Send Push
-                   import('../utils/pushService.js').then(({ sendVendorPush }) => {
-                       sendVendorPush(updatedOrder.vendor.id, 'New Order Received! 🔔', `Order #${orderId} confirmed. Delivery partner assigned.`);
-                   });
-              }
+              // Notify Vendor (Email & Push) - MOVED TO SHADOWFAX WEBHOOK (Rider Assigned Event)
+              // Only notify user here
+              console.log(`[Shadowfax] Order ${orderId} accepted. Notification delayed until rider allocation.`);
 
           } else {
               console.error(`[Shadowfax] Order ${orderId} rejected/failed. Reason: ${sfResponse?.error}`);
@@ -462,15 +448,14 @@ router.post('/webhook', asyncHandler(async (req, res) => {
                   status: 'searching_rider'
                });
                
+               // CRITICAL: Update ORDERS table so Webhook can find it later
+               await supabaseAdmin.from('orders')
+                  .update({ shadowfax_order_id: shadowfaxId })
+                  .eq('id', updatedOrder.id);
+               
                // NOW Notify Vendor
-               if (updatedOrder.vendor) {
-                    import('../utils/emailService.js').then(({ sendVendorOrderNotification }) => {
-                        sendVendorOrderNotification(updatedOrder.vendor.email, updatedOrder);
-                    });
-                    import('../utils/pushService.js').then(({ sendVendorPush }) => {
-                        sendVendorPush(updatedOrder.vendor.id, 'New Order Received! 🔔', `Order #${orderId} confirmed. Delivery partner assigned.`);
-                    });
-               }
+               // Notify Vendor - MOVED TO WEBHOOK
+               console.log(`[Shadowfax WebhookHandler] Order ${orderId} accepted. Notification delayed until rider allocation.`);
           } else {
               console.error(`[Shadowfax WebhookHandler] Order ${orderId} rejected. Auto-Refunding...`);
               

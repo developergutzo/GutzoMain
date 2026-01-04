@@ -127,31 +127,108 @@ export function OrderTrackingPage() {
       }, 300); 
   };
 
+    // Live Tracking State
+    const [liveTracking, setLiveTracking] = useState<any>(null);
+
+    // Poll for LIVE Shadowfax Status
+    useEffect(() => {
+        if (!orderId) return;
+        const fetchLiveTracking = async () => {
+            try {
+                const res = await fetch(`/api/delivery/track/${orderId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.success && data.data) {
+                        setLiveTracking(data.data);
+                    }
+                }
+            } catch (e) {}
+        };
+        fetchLiveTracking();
+        const interval = setInterval(fetchLiveTracking, 5000); // 5s fast polling initially
+        return () => clearInterval(interval);
+    }, [orderId]);
+
+   // Locations (Moved up)
+   const storeLocation = { lat: 12.9716, lng: 77.5946 }; 
+   const userLocation = { lat: 12.9516, lng: 77.6046 }; 
+
+   // 1. Extract DB Delivery
+   const activeDelivery = localOrder?.delivery && localOrder.delivery.length > 0 ? localOrder.delivery[0] : null;
+
+   // Helper: Define Status Priority to prevent downgrading (e.g. Allotted -> Searching)
+   const getStatusPriority = (s: string | undefined | null) => {
+       if (!s) return 0;
+       const status = s.toLowerCase();
+       /*
+         Priority Hierarchy:
+         0: unknown
+         1: created, placed
+         2: searching_rider, preparing
+         3: allotted, driver_assigned, rider_assigned
+         4: arrived, reached_location
+         5: picked_up, on_way
+         6: delivered, completed
+       */
+       if (['created', 'placed'].includes(status)) return 1;
+       if (['searching_rider', 'preparing', 'accepted'].includes(status)) return 2;
+       if (['allotted', 'driver_assigned', 'rider_assigned'].includes(status)) return 3;
+       if (['arrived', 'reached_location'].includes(status)) return 4;
+       if (['picked_up', 'out_for_delivery', 'on_way'].includes(status)) return 5;
+       if (['delivered', 'completed'].includes(status)) return 6;
+       return 0;
+   };
+
+   // 2. Merge with Live Tracking (Resilient Logic)
+   const dbStatus = activeDelivery?.status;
+   const liveStatus = liveTracking?.status;
+   
+   // Only use Live Status if it doesn't downgrade meaningfully (or if it's a cancellation/reset which we handle separately)
+   // For the purpose of this simulation fix + reliability: Trust the 'Advanced' status.
+   const useLiveStatus = getStatusPriority(liveStatus) >= getStatusPriority(dbStatus);
+
+   const mergedDelivery = {
+        ...activeDelivery,
+        rider_name: (useLiveStatus ? liveTracking?.rider_details?.name : activeDelivery?.rider_name) || activeDelivery?.rider_name,
+        rider_phone: (useLiveStatus ? liveTracking?.rider_details?.contact_number : activeDelivery?.rider_phone) || activeDelivery?.rider_phone,
+        rider_location: liveTracking?.rider_details?.current_location, // Always prefer live location
+        status: useLiveStatus ? liveStatus : dbStatus
+    };
+
+    const isFindingRider = !mergedDelivery.rider_name;
+    const driverLoc = mergedDelivery.rider_coordinates || contextOrder?.rider_coordinates;
+
   // derived status
-  // If we have localOrder, use its status. Otherwise fallback to context.
-  // DEFAULT to 'preparing' if loading to avoid flash of "placed"
   const rawStatus = localOrder?.status || contextOrder?.status;
-  const deliveryStatus = localOrder?.delivery_status || contextOrder?.status || '';
+  // Use MERGED delivery status (Live or DB)
+  const deliveryStatus = mergedDelivery.status ? mergedDelivery.status.toLowerCase() : (localOrder?.delivery_status || '');
 
   // Determine Display Status
-  let displayStatus = 'preparing';
+  let displayStatus = 'placed'; // Default
   
-  // LOGIC MATCHING CONTEXT BUT SIMPLER
-  if (['picked_up', 'driver_assigned', 'out_for_delivery', 'on_way', 'allotted', 'reached_location', 'delivered', 'completed'].includes(deliveryStatus)) {
-      displayStatus = deliveryStatus === 'driver_assigned' ? 'picked_up' : deliveryStatus; // Map driver_assigned to picked_up bucket for now
+  if (deliveryStatus === 'searching_rider' || deliveryStatus === 'created') {
+      displayStatus = 'searching_rider';
+  } else if (['picked_up', 'driver_assigned', 'rider_assigned', 'allotted', 'out_for_delivery', 'on_way', 'reached_location', 'delivered', 'completed'].includes(deliveryStatus)) {
+      displayStatus = (deliveryStatus === 'driver_assigned' || deliveryStatus === 'rider_assigned' || deliveryStatus === 'allotted') ? 'driver_assigned' : deliveryStatus;
       if (deliveryStatus === 'on_way') displayStatus = 'on_way';
       if (deliveryStatus === 'delivered') displayStatus = 'delivered';
   } else {
-      if (rawStatus === 'placed' || rawStatus === 'confirmed' || rawStatus === 'paid') displayStatus = 'placed';
+      // Fallback to Order Status if no clear delivery status
+      if (rawStatus === 'placed' || rawStatus === 'confirmed' || rawStatus === 'paid') {
+           // Double check if we have a delivery record even if status isn't clear
+           if (activeDelivery) displayStatus = 'searching_rider'; 
+           else displayStatus = 'placed';
+      }
       else if (rawStatus === 'preparing' || rawStatus === 'accepted') displayStatus = 'preparing';
       else if (rawStatus === 'ready' || rawStatus === 'ready_for_pickup') displayStatus = 'ready';
-      else displayStatus = rawStatus;
+      else displayStatus = rawStatus || 'preparing';
   }
   
   // Mapped Text
   const getStatusText = (s: string) => {
       switch(s) {
           case 'placed': return 'Waiting for restaurant confirmation';
+          case 'searching_rider': return 'Finding Delivery Partner...';
           case 'preparing': return 'Kitchen Accepted • Requesting Delivery Partner...';
           case 'ready': return 'Food is Ready • Waiting for Pickup';
           case 'picked_up': 
@@ -162,45 +239,14 @@ export function OrderTrackingPage() {
       }
   };
 
-  // Locations
-  const storeLocation = { lat: 12.9716, lng: 77.5946 }; 
-  const userLocation = { lat: 12.9516, lng: 77.6046 }; 
-  
-  // Extract active delivery from localOrder if available
-  const activeDelivery = localOrder?.delivery && localOrder.delivery.length > 0 
-      ? localOrder.delivery[0] 
-      : null;
 
-  const driverLoc = activeDelivery?.rider_coordinates || contextOrder?.rider_coordinates;
-
-  if (notFound) {
-      return (
-        <div className="flex flex-col items-center justify-center h-screen bg-gray-50 p-6 text-center">
-            <div className="bg-white p-8 rounded-2xl shadow-sm mb-6 max-w-sm w-full">
-                <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <AlertCircle className="w-8 h-8 text-red-500" />
-                </div>
-                <h2 className="text-xl font-bold text-gray-900 mb-2">Order Details Not Found</h2>
-                <p className="text-gray-500 mb-6 text-sm">
-                    We couldn't find the order #{orderId?.slice(0,8)}. It may have been cancelled or belongs to a different account.
-                </p>
-                <Button 
-                    onClick={() => window.location.href = '/home'} 
-                    className="w-full bg-gutzo-primary hover:bg-gutzo-primary-hover text-white"
-                >
-                    Go to Home
-                </Button>
-            </div>
-        </div>
-      );
-  }
 
   return (
     <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: isMinimizing ? 0 : 1, scale: isMinimizing ? 0.9 : 1, y: isMinimizing ? '100%' : '0%' }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
-        className="relative w-full h-screen bg-gray-50 flex flex-col overflow-hidden"
+        className="fixed inset-0 w-full h-full bg-gray-50 flex flex-col z-[100] overflow-hidden"
     >
         {/* Top Green Header Section */}
         <div className="px-4 pt-4 pb-6 rounded-b-3xl z-30 shadow-md relative" style={{ backgroundColor: '#1BA672' }}>
@@ -229,34 +275,69 @@ export function OrderTrackingPage() {
                     <span className="w-1 h-1 bg-white rounded-full opacity-50"></span>
                     <span className="text-green-100 font-medium">On time</span>
                 </div>
-                
-                {/* Debug Info (Hidden in Prod) */}
-                {/* <div className="text-xs text-white/50 mt-2">Status: {rawStatus} | Delivery: {deliveryStatus}</div> */}
             </div>
         </div>
 
-        {/* Absolute positioned coupon banner - MOVED OUTSIDE HEADER FOR Z-INDEX FIX - TEMPORARILY DISABLED
-        <div className="absolute top-[180px] left-4 right-4 bg-white rounded-xl shadow-lg p-3 flex items-center gap-3 z-[60]">
-                <div className="w-8 h-8 flex-shrink-0 bg-blue-100 rounded-lg flex items-center justify-center text-xl">🎁</div>
-                <p className="text-xs text-gray-600 leading-tight">
-                Hey {userName}, sit back while we discover hidden coupons near you 💰
-                </p>
-        </div>
-        */}
-
-        {/* Map Background - Full Space */}
+        {/* Tracking Details Overlay */}
         <div className="flex-1 w-full h-full relative bg-gray-100 z-10 pt-10">
              <OrderTrackingMap 
                 storeLocation={storeLocation}
                 userLocation={userLocation}
-                driverLocation={driverLoc}
+                driverLocation={mergedDelivery?.rider_location || driverLoc}
                 status={displayStatus as any}
             />
+
+            {/* Shadowfax Order Details Card - Updated Visibility */}
+            <div className="absolute top-4 left-4 right-4 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl border border-gray-200 p-4 z-40">
+                <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                        Live Delivery Updates
+                    </h3>
+                    {mergedDelivery?.partner_order_id && (
+                        <span className="text-[10px] text-gray-400 font-mono">ID: {mergedDelivery.partner_order_id}</span>
+                    )}
+                </div>
+                
+                <div className="space-y-3">
+                    {/* Delivery Partner Info */}
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center">
+                            <span className="text-xl">🛵</span>
+                        </div>
+                        <div>
+                            <p className="text-xs text-gray-500">Delivery Partner</p>
+                            <p className="text-sm font-semibold text-gray-900">Shadowfax</p>
+                        </div>
+                    </div>
+
+                    {/* Rider Info (Live from Tracking API) */}
+                    {!isFindingRider ? (
+                        <div className="bg-gray-50 rounded-lg p-3 flex justify-between items-center">
+                            <div>
+                                <p className="text-xs text-gray-500">Rider</p>
+                                <p className="text-sm font-medium">{mergedDelivery.rider_name}</p>
+                                {mergedDelivery.rider_phone && <p className="text-xs text-gray-400">{mergedDelivery.rider_phone}</p>}
+                            </div>
+                            {mergedDelivery.delivery_otp && (
+                                <div className="text-center">
+                                    <p className="text-[10px] text-gray-500 uppercase tracking-widest">Share OTP</p>
+                                    <p className="text-lg font-bold text-gutzo-primary">{mergedDelivery.delivery_otp}</p>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="bg-amber-50 rounded-lg p-3 text-center">
+                            <p className="text-xs text-amber-700 italic">Finding nearest delivery partner...</p>
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
 
         {/* Bottom Sheet UI */}
         <OrderTrackingTimelineSheet 
-            status={displayStatus as any}
+            status={displayStatus === 'searching_rider' ? 'preparing' : (displayStatus as any)}
             vendorName={localOrder?.vendor?.name || contextOrder?.vendorName}
             deliveryOtp={activeDelivery?.delivery_otp || localOrder?.delivery_otp || contextOrder?.delivery_otp}
             driver={displayStatus === 'picked_up' || displayStatus === 'on_way' || displayStatus === 'delivered' || displayStatus === 'driver_assigned' ? {
