@@ -116,7 +116,7 @@ export function OrderTrackingPage() {
     };
 
     fetchOrder();
-    const interval = setInterval(fetchOrder, 3000); // 3s polling
+    const interval = setInterval(fetchOrder, 5000); // 5s polling
     return () => clearInterval(interval);
   }, [orderId, user]);
 
@@ -145,7 +145,7 @@ export function OrderTrackingPage() {
             } catch (e) {}
         };
         fetchLiveTracking();
-        const interval = setInterval(fetchLiveTracking, 5000); // 5s fast polling initially
+        const interval = setInterval(fetchLiveTracking, 10000); // 10s polling
         return () => clearInterval(interval);
     }, [orderId]);
 
@@ -206,30 +206,28 @@ export function OrderTrackingPage() {
   // Determine Display Status
   let displayStatus = 'placed'; // Default
   
-  if (deliveryStatus === 'searching_rider' || deliveryStatus === 'created') {
+  if (rawStatus === 'searching_rider' || deliveryStatus === 'searching_rider' || deliveryStatus === 'created') {
       displayStatus = 'searching_rider';
   } else if (['picked_up', 'driver_assigned', 'rider_assigned', 'allotted', 'out_for_delivery', 'on_way', 'reached_location', 'delivered', 'completed'].includes(deliveryStatus)) {
       displayStatus = (deliveryStatus === 'driver_assigned' || deliveryStatus === 'rider_assigned' || deliveryStatus === 'allotted') ? 'driver_assigned' : deliveryStatus;
       if (deliveryStatus === 'on_way') displayStatus = 'on_way';
       if (deliveryStatus === 'delivered') displayStatus = 'delivered';
   } else {
-      // Fallback to Order Status if no clear delivery status
-      if (rawStatus === 'placed' || rawStatus === 'confirmed' || rawStatus === 'paid') {
-           // Double check if we have a delivery record even if status isn't clear
-           if (activeDelivery) displayStatus = 'searching_rider'; 
-           else displayStatus = 'placed';
-      }
-      else if (rawStatus === 'preparing' || rawStatus === 'accepted') displayStatus = 'preparing';
-      else if (rawStatus === 'ready' || rawStatus === 'ready_for_pickup') displayStatus = 'ready';
-      else displayStatus = rawStatus || 'preparing';
+       // Standard Order Status Fallback
+       if (rawStatus === 'placed' || rawStatus === 'confirmed' || rawStatus === 'paid') {
+            displayStatus = 'placed'; // Waiting for Confirmation
+       }
+       else if (rawStatus === 'preparing' || rawStatus === 'accepted') displayStatus = 'preparing';
+       else if (rawStatus === 'ready' || rawStatus === 'ready_for_pickup') displayStatus = 'ready';
+       else displayStatus = rawStatus || 'preparing';
   }
   
   // Mapped Text
   const getStatusText = (s: string) => {
       switch(s) {
-          case 'placed': return 'Waiting for restaurant confirmation';
           case 'searching_rider': return 'Finding Delivery Partner...';
-          case 'preparing': return 'Kitchen Accepted • Requesting Delivery Partner...';
+          case 'placed': return 'Waiting for restaurant confirmation';
+          case 'preparing': return 'Kitchen Accepted • Preparing Food';
           case 'ready': return 'Food is Ready • Waiting for Pickup';
           case 'picked_up': 
           case 'driver_assigned': return 'Driver Assigned';
@@ -337,7 +335,7 @@ export function OrderTrackingPage() {
 
         {/* Bottom Sheet UI */}
         <OrderTrackingTimelineSheet 
-            status={displayStatus === 'searching_rider' ? 'preparing' : (displayStatus as any)}
+            status={displayStatus === 'searching_rider' ? 'searching_rider' : (displayStatus as any)}
             vendorName={localOrder?.vendor?.name || contextOrder?.vendorName}
             deliveryOtp={activeDelivery?.delivery_otp || localOrder?.delivery_otp || contextOrder?.delivery_otp}
             driver={displayStatus === 'picked_up' || displayStatus === 'on_way' || displayStatus === 'delivered' || displayStatus === 'driver_assigned' ? {

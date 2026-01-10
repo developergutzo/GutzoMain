@@ -3,7 +3,7 @@ import { Phone, Utensils, ChevronRight, ShoppingBag } from 'lucide-react';
 import { useState } from 'react';
 
 interface OrderTrackingTimelineSheetProps {
-  status: 'placed' | 'preparing' | 'ready' | 'picked_up' | 'on_way' | 'delivered' | 'driver_assigned';
+  status: 'placed' | 'preparing' | 'ready' | 'picked_up' | 'on_way' | 'delivered' | 'driver_assigned' | 'searching_rider';
   driver?: {
     name: string;
     phone: string;
@@ -49,6 +49,7 @@ export function OrderTrackingTimelineSheet({ status, driver, vendorName, deliver
                 <div>
                     <p className="text-sm font-bold" style={{ color: '#0d8e54' }}>
                         {status === 'placed' ? "Waiting for restaurant confirmation" :
+                         status === 'searching_rider' ? "Finding nearby delivery partner" :
                          status === 'preparing' ? "Your order is being prepared" :
                          status === 'ready' ? "Your order is ready at the restaurant" :
                          status === 'picked_up' ? "Order picked up by valet" :
@@ -56,7 +57,7 @@ export function OrderTrackingTimelineSheet({ status, driver, vendorName, deliver
                          "Your order has been delivered"}
                     </p>
                 </div>
-                {status === 'preparing' && (
+                {(status === 'preparing' || status === 'searching_rider') && (
                   <div className="w-10 h-1 relative">
                        <div className="absolute inset-0 rounded-full overflow-hidden" style={{ backgroundColor: '#b2e8d3' }}>
                           <div className="absolute left-0 top-0 bottom-0 w-1/2 rounded-full animate-pulse" style={{ backgroundColor: '#2ecca0' }}></div>

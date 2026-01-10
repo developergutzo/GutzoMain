@@ -1,0 +1,53 @@
+# Global Rules
+
+You must always consider the context from the following SQL files when answering
+questions or performing tasks involving database schema, data flow, or backend
+logic:
+
+- `nodebackend/SupabaseSelfhostSqlFiles/backup.sql`
+
+If any other `.sql` files are added to the project, please consider them as well
+particularly when making changes to the database or understanding the data
+model.
+
+# File Creation Rules
+
+Any new SQL files created should be placed in this `DBFolder` directory.
+
+# Environment Variable Rules
+
+Do not add fallbacks/defaults for `process.env` variables (e.g.,
+`process.env.VAR || 'default'`). Let the application fail if the variable is
+missing.
+
+# Code Quality Rules
+
+Do not use hardcoded fallbacks for data display (e.g.,
+`data.field || 'Default String'`). UI should handle missing data gracefully
+(e.g., hide element, show skeleton) or the data must be guaranteed by the API.
+
+# Documentation References
+
+Consider these rules and documentation for all future requests:
+
+## Shadowfax Integration
+
+- Documents: https://flash-integration.shadowfax.in/docs/
+- Marketplace API: https://sfxhlmarketplaceapi.docs.apiary.io/#
+
+## Paytm Payment Gateway
+
+- JS Checkout: https://www.paytmpayments.com/docs/js-checkout?ref=jsCheckoutDoc
+- General Docs: https://www.paytmpayments.com/docs
+
+# STRICT CODING RULES
+
+## 1. No Lazy Fallbacks
+
+- **NEVER** use default fallback strings or numbers for critical data.
+- **FORBIDDEN**: `|| "9999999999"`, `|| "Bengaluru"`, `|| "User"`,
+  `|| "Customer"`, `|| "Vendor Outlet"`, `|| 0`.
+- **REQUIRED**: If data is missing (undefined/null), the application MUST fail
+  explicitly or handle the null case gracefully (e.g., show an error, disable
+  the button). DO NOT mask the issue with fake data.
+- This applies to: Phone numbers, Addresses, Names, Locations, ETAs, Prices.

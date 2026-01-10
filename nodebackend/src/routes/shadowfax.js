@@ -38,6 +38,32 @@ router.post('/create-order', async (req, res) => {
             return res.status(404).json({ error: 'Order not found' });
         }
 
+        // 1.5 Fetch Delivery Details for OTPs
+        const { data: delivery, error: deliveryError } = await supabaseAdmin
+            .from('deliveries')
+            .select('*')
+            .eq('order_id', orderId)
+            .single();
+
+        let deliveryOtp = delivery?.delivery_otp;
+        let pickupOtp = delivery?.pickup_otp;
+
+        // Generate if missing
+        if (!deliveryOtp) deliveryOtp = Math.floor(1000 + Math.random() * 9000).toString();
+        if (!pickupOtp) pickupOtp = Math.floor(1000 + Math.random() * 9000).toString();
+
+        // Update DB if we generated new ones
+        if (delivery && (!delivery.delivery_otp || !delivery.pickup_otp)) {
+             await supabaseAdmin
+                .from('deliveries')
+                .update({ 
+                    delivery_otp: deliveryOtp,
+                    pickup_otp: pickupOtp,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', delivery.id);
+        }
+
         // 2. Construct Shadowfax Payload
         // Note: Ensure your environment logic handles parsing coordinates correctly if stored as text or json
         // For now, assuming delivery_address contains valid fields.
@@ -80,11 +106,11 @@ router.post('/create-order', async (req, res) => {
             "validations": {
                 "pickup": {
                     "is_otp_required": true,
-                    "otp": "1234"
+                    "otp": pickupOtp
                 },
                 "drop": {
                     "is_otp_required": true,
-                    "otp": "1234"
+                    "otp": deliveryOtp
                 },
                 "rts": {
                     "is_otp_required": true,
@@ -299,19 +325,47 @@ router.post('/webhook', async (req, res) => {
         }
 
         // NOTIFY VENDOR ON RIDER ALLOCATION
-        if (status === 'ALLOTTED' && updatedOrder && updatedOrder.vendor) {
-             console.log(`[Shadowfax Webhook] Rider Allocated for ${updatedOrder.order_number}. Notifying Vendor...`);
+        if (status === 'ALLOTTED' && updatedOrder) {
+             console.log(`[Shadowfax Webhook] Rider Allocated for ${updatedOrder.order_number}. Releasing to Vendor...`);
              
-             // Send Email
-             import('../utils/emailService.js').then(({ sendVendorOrderNotification }) => {
-                 sendVendorOrderNotification(updatedOrder.vendor.email, updatedOrder);
-             });
+             // 1. UPDATE ORDER STATUS TO 'PLACED' (Visible to Vendor)
+             const { error: releaseError } = await supabaseAdmin
+                .from('orders')
+                .update({ 
+                    status: 'placed',
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', updatedOrder.id);
 
-             // Send Push
-             import('../utils/pushService.js').then(({ sendVendorPush }) => {
-                 const msg = `Rider Assigned! ${updatePayload.rider_name || 'Partner'} is on the way.`;
-                 sendVendorPush(updatedOrder.vendor.id, 'Order Update 🔔', msg);
-             });
+             if (releaseError) {
+                 console.error("❌ Failed to set order status to PLACED:", releaseError);
+             } else {
+                 console.log("✅ Order released to Vendor (Status: PLACED)");
+             }
+
+             // 2. Notify Vendor (Push & Email)
+             if (updatedOrder.vendor) {
+                 // Send Email
+                 import('../utils/emailService.js').then(({ sendVendorOrderNotification }) => {
+                     // We fetch the latest order state to ensure consistency if needed, but updatedOrder has vendor info
+                     // The vendor notification function usually expects the full order object with items.
+                     // Let's refetch deeply to be safe or assuming updatedOrder has what we need if we fetched it above.
+                     // The query above was: .select('*, vendor:vendors(*)') which lacks items.
+                     // Let's rely on sendVendorOrderNotification handling fetching if it needs items, or safe inspect.
+                     
+                     // Re-fetch full order with items for the email
+                     supabaseAdmin.from('orders').select('*, items:order_items(*), vendor:vendors(*)').eq('id', updatedOrder.id).single()
+                     .then(({ data: fullOrder }) => {
+                         if (fullOrder) sendVendorOrderNotification(fullOrder.vendor.email, fullOrder);
+                     });
+                 });
+
+                 // Send Push
+                 import('../utils/pushService.js').then(({ sendVendorPush }) => {
+                     const msg = `New Order #${updatedOrder.order_number}! Delivery Partner Assigned.`;
+                     sendVendorPush(updatedOrder.vendor.id, 'New Order Received 🔔', msg);
+                 });
+             }
         }
 
         res.json({ received: true });

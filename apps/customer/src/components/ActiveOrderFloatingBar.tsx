@@ -42,6 +42,15 @@ export function ActiveOrderFloatingBar() {
                 text: 'text-blue-600',
                 label: 'PLACED'
             };
+        case 'searching_rider':
+            return {
+                title: 'Finding Delivery Partner',
+                subtext: 'Looking for nearby riders...',
+                icon: <Bike size={14} className="text-amber-600" />,
+                bg: 'bg-amber-50',
+                text: 'text-amber-600',
+                label: 'SEARCHING'
+            };
         case 'preparing':
             return {
                 title: 'Kitchen Accepted',

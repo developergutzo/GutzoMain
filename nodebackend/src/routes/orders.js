@@ -589,7 +589,8 @@ router.get('/:id/track', asyncHandler(async (req, res) => {
      Update Status Flow based on Vendor/Delivery Status 
   */
   const statusFlow = [
-    { status: 'placed', label: 'Order Placed', icon: '📝' },
+    { status: 'searching_rider', label: 'Finding Delivery Partner', icon: '🛵' },
+    { status: 'placed', label: 'Waiting for Confirmation', icon: '📝' },
     { status: 'confirmed', label: 'Confirmed', icon: '✅' },
     { status: 'preparing', label: 'Preparing', icon: '👨‍🍳' },
     { status: 'ready', label: 'Ready for Pickup', icon: '📦' },

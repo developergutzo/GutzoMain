@@ -2,8 +2,9 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import { useNavigate } from 'react-router-dom';
 import { useRouter } from '../components/Router';
 import { toast } from 'sonner';
+import { useAuth } from './AuthContext'; // Fix: Proper Import
 
-type OrderStatus = 'placed' | 'preparing' | 'ready' | 'picked_up' | 'on_way' | 'delivered' | 'rejected' | 'cancelled';
+type OrderStatus = 'placed' | 'preparing' | 'ready' | 'picked_up' | 'on_way' | 'delivered' | 'rejected' | 'cancelled' | 'searching_rider';
 
 interface TrackingState {
   orderId: string | null;
@@ -50,6 +51,7 @@ export function OrderTrackingProvider({ children }: { children: ReactNode }) {
     }
   });
   const router = useRouter(); 
+  const { user } = useAuth(); // Fix: proper hook usage
 
   // Hardcoded locations for demo
   const storeLocation = { lat: 12.9716, lng: 77.5946 }; 
@@ -65,6 +67,41 @@ export function OrderTrackingProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('activeOrder');
     }
   }, [activeOrder]);
+
+  // AUTO-RESTORE: If user is logged in but no activeOrder in context, find the latest live order
+  useEffect(() => {
+      if (!user?.phone) return;
+      if (activeOrder) return; // Already tracking something
+
+      const restoreActiveOrder = async () => {
+          try {
+             // We need to import dynamically to avoid circular deps if any
+             const { nodeApiService } = await import('../utils/nodeApi');
+             const res = await nodeApiService.getOrders(user.phone);
+             if (res.success && res.data && res.data.length > 0) {
+                 // Sort by date desc
+                 const sorted = res.data.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+                 const latest = sorted[0];
+
+                 // Check if it is "Live"
+                 const status = (latest.status || '').toLowerCase();
+                 const deliveryStatus = (latest.delivery_status || '').toLowerCase();
+                 
+                 const isLive = !['delivered', 'completed', 'cancelled', 'rejected'].includes(status) && 
+                                !['delivered', 'completed'].includes(deliveryStatus);
+
+                 if (isLive) {
+                     console.log('🔄 Auto-Restoring Active Order:', latest.order_number);
+                     startTracking(latest.id || latest.order_id);
+                 }
+             }
+          } catch(e) {
+              console.error("Auto-restore failed:", e);
+          }
+      };
+      
+      restoreActiveOrder();
+  }, [user?.phone]); // FIXED: Run only on mount/login, NOT when activeOrder changes (prevents zombie loop)
 
   const startTracking = useCallback((orderId: string, initialData?: Partial<TrackingState>) => {
     setActiveOrder({
@@ -106,12 +143,8 @@ export function OrderTrackingProvider({ children }: { children: ReactNode }) {
     
     const pollOrder = async () => {
         try {
-            // Get user phone from storage
-            let phone = '';
-            try {
-                const u = localStorage.getItem('gutzo_user');
-                if (u) phone = JSON.parse(u).phone;
-            } catch(e) {}
+            // Use user phone from context/closure
+            const phone = user?.phone;
             
             if (!phone) return;
 
@@ -143,8 +176,9 @@ export function OrderTrackingProvider({ children }: { children: ReactNode }) {
                 }
 
                 if (s === 'placed' || s === 'pending' || s === 'confirmed' || s === 'paid') mappedStatus = 'placed';
+                else if (s === 'searching_rider') mappedStatus = 'searching_rider';
                 else if (s === 'preparing' || s === 'accepted') mappedStatus = 'preparing';
-                else if (s === 'ready' || s === 'searching_rider' || s === 'ready_for_pickup') mappedStatus = 'ready';
+                else if (s === 'ready' || s === 'ready_for_pickup') mappedStatus = 'ready';
                 else if (s === 'picked_up' || s === 'driver_assigned' || s === 'out_for_delivery') mappedStatus = 'picked_up';
                 else if (s === 'on_way' || s === 'allotted' || s === 'reached_location') mappedStatus = 'on_way';
                 else if (s === 'delivered' || s === 'completed') mappedStatus = 'delivered';
@@ -191,8 +225,13 @@ export function OrderTrackingProvider({ children }: { children: ReactNode }) {
             }
         } catch (err: any) {
             console.error("Tracking Poll Error:", err);
-            // DEBUG: Show toast on error to verify failure reason
-            toast.error(`Polling Error: ${err.message || 'Unknown'}`);
+            // If order is not found (404) or generalized error, clear tracking to prevent zombie bar
+            if (err.message && (err.message.includes('404') || err.message.includes('not found') || err.message.includes('No order'))) {
+               console.log('Order not found on server, clearing tracking.');
+               setActiveOrder(null);
+               localStorage.removeItem('activeOrder');
+               return;
+            }
         }
     };
 
