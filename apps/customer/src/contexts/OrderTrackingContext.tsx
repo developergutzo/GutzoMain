@@ -148,7 +148,11 @@ export function OrderTrackingProvider({ children }: { children: ReactNode }) {
 
   // Real-time Polling for Active Order
   useEffect(() => {
-    if (!activeOrder?.orderId || activeOrder.status === 'delivered') return;
+    // Don't poll if no order, or if order is in terminal state
+    if (!activeOrder?.orderId || 
+        (activeOrder.status && ['delivered', 'cancelled', 'rejected'].includes(activeOrder.status.toLowerCase()))) {
+      return;
+    }
 
     let isMounted = true;
     
@@ -178,26 +182,29 @@ export function OrderTrackingProvider({ children }: { children: ReactNode }) {
                 const deliveryStatus = (order.delivery_status || '').toLowerCase();
                 const internalStatus = (order.status || '').toLowerCase();
                 
-                // Determine effect status
-                let s = internalStatus;
-                
-                // Allow delivery status to override ONLY if it's significant (post-kitchen)
-                if (['picked_up', 'driver_assigned', 'out_for_delivery', 'on_way', 'allotted', 'reached_location', 'delivered', 'completed'].includes(deliveryStatus)) {
-                    s = deliveryStatus;
-                }
+                // FORCE: Cancellation Priority
+                if (internalStatus === 'cancelled' || internalStatus === 'rejected' || deliveryStatus === 'cancelled') {
+                    mappedStatus = 'cancelled';
+                } else {
+                    // Determine effect status
+                    let s = internalStatus;
+                    
+                    // Allow delivery status to override ONLY if it's significant (post-kitchen)
+                    if (['picked_up', 'driver_assigned', 'out_for_delivery', 'on_way', 'allotted', 'reached_location', 'delivered', 'completed'].includes(deliveryStatus)) {
+                        s = deliveryStatus;
+                    }
 
-                if (s === 'created') mappedStatus = 'created';
-                else if (s === 'placed' || s === 'pending' || s === 'confirmed' || s === 'paid') mappedStatus = 'placed';
-                else if (s === 'searching_rider') mappedStatus = 'searching_rider';
-                else if (s === 'preparing' || s === 'accepted') mappedStatus = 'preparing';
-                else if (s === 'ready' || s === 'ready_for_pickup') mappedStatus = 'ready';
-                else if (s === 'picked_up' || s === 'driver_assigned' || s === 'out_for_delivery') mappedStatus = 'picked_up';
-                else if (s === 'on_way' || s === 'allotted' || s === 'reached_location' || s === 'arrived_at_drop') mappedStatus = 'on_way';
-                else if (s === 'delivered' || s === 'completed') mappedStatus = 'delivered';
-                else if (s === 'rejected') mappedStatus = 'rejected';
-                else if (s === 'cancelled') mappedStatus = 'cancelled';
-                else {
-                    console.log('⚠️ Unknown status:', s);
+                    if (s === 'created') mappedStatus = 'created';
+                    else if (s === 'placed' || s === 'pending' || s === 'confirmed' || s === 'paid') mappedStatus = 'placed';
+                    else if (s === 'searching_rider') mappedStatus = 'searching_rider';
+                    else if (s === 'preparing' || s === 'accepted') mappedStatus = 'preparing';
+                    else if (s === 'ready' || s === 'ready_for_pickup') mappedStatus = 'ready';
+                    else if (s === 'picked_up' || s === 'driver_assigned' || s === 'out_for_delivery') mappedStatus = 'picked_up';
+                    else if (s === 'on_way' || s === 'allotted' || s === 'reached_location' || s === 'arrived_at_drop') mappedStatus = 'on_way';
+                    else if (s === 'delivered' || s === 'completed') mappedStatus = 'delivered';
+                    else {
+                        console.log('⚠️ Unknown status:', s);
+                    }
                 }
 
                 // Extract Vendor Name securely

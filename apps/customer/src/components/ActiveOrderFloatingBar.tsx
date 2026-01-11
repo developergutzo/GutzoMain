@@ -135,8 +135,8 @@ export function ActiveOrderFloatingBar() {
   
   if (isTrackingPage || isPartnerPage) return null;
 
-  // Render even if delivered (per user request)
-  if (displayOrder?.status === 'delivered') return null;
+  // Render even if delivered (per user request) -> actually hide it
+  if (displayOrder?.status && ['delivered', 'cancelled', 'rejected'].includes(displayOrder.status.toLowerCase())) return null;
 
   // Hide if no order
   if (!displayOrder) return null;

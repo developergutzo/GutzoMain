@@ -224,7 +224,7 @@ export function OrdersPanel({ className = "", onViewOrderDetails, recentOrderDat
                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium uppercase tracking-wide whitespace-nowrap ${
                           order.status === 'delivered' || order.status === 'confirmed'
                             ? 'bg-green-100 text-green-700'
-                            : order.status === 'cancelled'
+                            : order.status === 'cancelled' || order.status === 'rejected'
                             ? 'bg-red-100 text-red-700'
                             : order.status === 'preparing' || order.status === 'arrived_at_drop' || order.status === 'on_way'
                             ? 'bg-blue-50 text-blue-600'
@@ -323,7 +323,8 @@ export function OrdersPanel({ className = "", onViewOrderDetails, recentOrderDat
                     <Button
                       variant="default" 
                       size="sm"
-                      className="flex-1 h-10 bg-gutzo-primary hover:bg-gutzo-primary-hover text-white font-medium shadow-sm"
+                      className="flex-1 h-10 bg-gutzo-primary hover:bg-gutzo-primary-hover text-white font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={order.status === 'cancelled' || order.status === 'rejected'}
                       onClick={(e) => {
                           e.stopPropagation();
                           if (onViewOrderDetails) {
