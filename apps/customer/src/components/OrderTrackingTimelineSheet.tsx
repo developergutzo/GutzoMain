@@ -3,7 +3,7 @@ import { Phone, Utensils, ChevronRight, ShoppingBag } from 'lucide-react';
 import { useState } from 'react';
 
 interface OrderTrackingTimelineSheetProps {
-  status: 'created' | 'placed' | 'preparing' | 'ready' | 'picked_up' | 'on_way' | 'delivered' | 'driver_assigned' | 'searching_rider' | 'arrived_at_drop';
+  status: 'created' | 'placed' | 'preparing' | 'ready' | 'picked_up' | 'on_way' | 'delivered' | 'driver_assigned' | 'searching_rider' | 'arrived_at_drop' | 'cancelled' | 'rejected' | string;
   driver?: {
     name: string;
     phone: string;
@@ -18,6 +18,8 @@ import { useOrderTracking } from '../contexts/OrderTrackingContext';
 export function OrderTrackingTimelineSheet({ status, driver, vendorName, deliveryOtp }: OrderTrackingTimelineSheetProps) {
   const { activeOrder } = useOrderTracking();
   
+  const isCancelled = status === 'cancelled' || status === 'rejected';
+
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.1)] z-50 pb-6">
         {/* Drag Handle Area */}
@@ -44,10 +46,14 @@ export function OrderTrackingTimelineSheet({ status, driver, vendorName, deliver
                 </div>
             </div>
 
-            {/* Green Status Banner */}
-            <div className="border rounded-xl p-4 mb-4 flex items-center justify-between" style={{ backgroundColor: '#e7fdf3', borderColor: '#d1f7e6' }}>
+            {/* Status Banner - Dynamic Color */}
+            <div className="border rounded-xl p-4 mb-4 flex items-center justify-between" 
+                 style={{ 
+                     backgroundColor: isCancelled ? '#fee2e2' : '#e7fdf3', 
+                     borderColor: isCancelled ? '#fecaca' : '#d1f7e6' 
+                 }}>
                 <div>
-                    <p className="text-sm font-bold" style={{ color: '#0d8e54' }}>
+                    <p className="text-sm font-bold" style={{ color: isCancelled ? '#dc2626' : '#0d8e54' }}>
                         {status === 'created' ? "Waiting for payment" :
                         status === 'placed' ? "Waiting for restaurant confirmation" :
                          status === 'searching_rider' ? "Finding nearby delivery partner" :
@@ -58,6 +64,8 @@ export function OrderTrackingTimelineSheet({ status, driver, vendorName, deliver
                          status === 'on_way' ? "Valet is near your location" :
                          status === 'arrived_at_drop' ? "Valet has arrived at your doorstep" :
                          status === 'delivered' ? "Your order has been delivered" :
+                         status === 'cancelled' ? "Order Cancelled" :
+                         status === 'rejected' ? "Order Rejected by Restaurant" :
                          "Order Status: " + status}
                     </p>
                 </div>

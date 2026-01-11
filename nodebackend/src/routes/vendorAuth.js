@@ -491,6 +491,11 @@ router.get('/:id/products', asyncHandler(async (req, res) => {
             const cancelResp = await cancelShadowfaxOrder(order.order_number, "Rejected by Vendor");
             if (cancelResp.success) {
                console.log("✅ Shadowfax Order Cancelled due to Vendor Rejection");
+               // Update local delivery status to cancelled so UI updates
+               await supabaseAdmin
+                 .from('deliveries')
+                 .update({ status: 'cancelled' })
+                 .eq('order_id', orderId);
             }
         } catch (err) {
             console.error("❌ Failed to cancel Shadowfax order:", err);

@@ -176,6 +176,7 @@ export function OrderTrackingPage() {
        if (['arrived', 'reached_location', 'on_way'].includes(status)) return 4;
        if (['picked_up', 'out_for_delivery', 'arrived_at_drop'].includes(status)) return 5;
        if (['delivered', 'completed'].includes(status)) return 6;
+       if (['cancelled', 'rejected'].includes(status)) return 7; // Highest priority to override
        return 0;
    };
 
@@ -183,16 +184,18 @@ export function OrderTrackingPage() {
    const dbStatus = activeDelivery?.status;
    const liveStatus = liveTracking?.status;
    
+   // Special Check: If DB status is cancelled, force it (Logic override)
+   const isCancelled = dbStatus === 'cancelled' || localOrder?.status === 'rejected' || localOrder?.status === 'cancelled';
+
    // Only use Live Status if it doesn't downgrade meaningfully (or if it's a cancellation/reset which we handle separately)
-   // For the purpose of this simulation fix + reliability: Trust the 'Advanced' status.
-   const useLiveStatus = getStatusPriority(liveStatus) >= getStatusPriority(dbStatus);
+   const useLiveStatus = !isCancelled && getStatusPriority(liveStatus) >= getStatusPriority(dbStatus);
 
    const mergedDelivery = {
         ...activeDelivery,
         rider_name: (useLiveStatus ? liveTracking?.rider_details?.name : activeDelivery?.rider_name) || activeDelivery?.rider_name,
         rider_phone: (useLiveStatus ? liveTracking?.rider_details?.contact_number : activeDelivery?.rider_phone) || activeDelivery?.rider_phone,
         rider_location: liveTracking?.rider_details?.current_location, // Always prefer live location
-        status: useLiveStatus ? liveStatus : dbStatus
+        status: isCancelled ? 'cancelled' : (useLiveStatus ? liveStatus : dbStatus)
     };
 
     const isFindingRider = !mergedDelivery.rider_name;
@@ -206,7 +209,9 @@ export function OrderTrackingPage() {
   // Determine Display Status
   let displayStatus = 'placed'; // Default
   
-  if (rawStatus === 'searching_rider' || deliveryStatus === 'searching_rider' || deliveryStatus === 'created') {
+  if (isCancelled || rawStatus === 'rejected' || rawStatus === 'cancelled' || deliveryStatus === 'cancelled') {
+        displayStatus = 'cancelled';
+  } else if (rawStatus === 'searching_rider' || deliveryStatus === 'searching_rider' || deliveryStatus === 'created') {
       displayStatus = 'searching_rider';
   } else if (['picked_up', 'driver_assigned', 'rider_assigned', 'allotted', 'out_for_delivery', 'on_way', 'reached_location', 'delivered', 'completed'].includes(deliveryStatus)) {
       displayStatus = (deliveryStatus === 'driver_assigned' || deliveryStatus === 'rider_assigned' || deliveryStatus === 'allotted') ? 'driver_assigned' : deliveryStatus;
@@ -235,6 +240,8 @@ export function OrderTrackingPage() {
           case 'reached_location': return 'Order on the way';
           case 'arrived_at_drop': return 'Valet at Doorstep';
           case 'delivered': return 'Order Delivered';
+          case 'cancelled':  return 'Order Cancelled';
+          case 'rejected': return 'Order Rejected';
           default: return s; // Fallback
       }
   };
@@ -251,8 +258,8 @@ export function OrderTrackingPage() {
         transition={{ duration: 0.3, ease: "easeInOut" }}
         className="fixed inset-0 w-full h-full bg-gray-50 flex flex-col z-[100] overflow-hidden"
     >
-        {/* Top Green Header Section */}
-        <div className="px-4 pt-4 pb-6 rounded-b-3xl z-30 shadow-md relative" style={{ backgroundColor: '#1BA672' }}>
+        {/* Top Green Header Section - Dynamic Color */}
+        <div className="px-4 pt-4 pb-6 rounded-b-3xl z-30 shadow-md relative" style={{ backgroundColor: displayStatus === 'cancelled' ? '#ef4444' : '#1BA672' }}>
             {/* Top Bar */}
             <div className="flex justify-between items-center mb-6">
                 <button onClick={handleMinimize} className="text-white p-2 hover:bg-white/10 rounded-full transition-colors relative z-50">
@@ -272,12 +279,14 @@ export function OrderTrackingPage() {
                     {getStatusText(displayStatus)}
                 </h1>
                 
-                {/* Time Pill */}
-                <div className="inline-flex items-center rounded-lg px-4 py-2 gap-2" style={{ backgroundColor: '#14885E' }}>
-                    <span className="text-white font-semibold text-lg">{eta}</span>
-                    <span className="w-1 h-1 bg-white rounded-full opacity-50"></span>
-                    <span className="text-green-100 font-medium">On time</span>
-                </div>
+                {/* Time Pill - Hidden if Cancelled */}
+                {displayStatus !== 'cancelled' && (
+                    <div className="inline-flex items-center rounded-lg px-4 py-2 gap-2" style={{ backgroundColor: '#14885E' }}>
+                        <span className="text-white font-semibold text-lg">{eta}</span>
+                        <span className="w-1 h-1 bg-white rounded-full opacity-50"></span>
+                        <span className="text-green-100 font-medium">On time</span>
+                    </div>
+                )}
             </div>
         </div>
 
@@ -291,52 +300,54 @@ export function OrderTrackingPage() {
                 onDurationUpdate={(time) => setEta(time)}
             />
 
-            {/* Shadowfax Order Details Card - Updated Visibility */}
-            <div className="absolute top-4 left-4 right-4 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl border border-gray-200 p-4 z-40">
-                <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-                        Live Delivery Updates
-                    </h3>
-                    {mergedDelivery?.partner_order_id && (
-                        <span className="text-[10px] text-gray-400 font-mono">ID: {mergedDelivery.partner_order_id}</span>
-                    )}
-                </div>
-                
-                <div className="space-y-3">
-                    {/* Delivery Partner Info */}
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center">
-                            <span className="text-xl">🛵</span>
-                        </div>
-                        <div>
-                            <p className="text-xs text-gray-500">Delivery Partner</p>
-                            <p className="text-sm font-semibold text-gray-900">Shadowfax</p>
-                        </div>
+            {/* Shadowfax Order Details Card - Hidden if Cancelled */}
+            {displayStatus !== 'cancelled' && (
+                <div className="absolute top-4 left-4 right-4 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl border border-gray-200 p-4 z-40">
+                    <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                            Live Delivery Updates
+                        </h3>
+                        {mergedDelivery?.partner_order_id && (
+                            <span className="text-[10px] text-gray-400 font-mono">ID: {mergedDelivery.partner_order_id}</span>
+                        )}
                     </div>
-
-                    {/* Rider Info (Live from Tracking API) */}
-                    {!isFindingRider ? (
-                        <div className="bg-gray-50 rounded-lg p-3 flex justify-between items-center">
-                            <div>
-                                <p className="text-xs text-gray-500">Rider</p>
-                                <p className="text-sm font-medium">{mergedDelivery.rider_name}</p>
-                                {mergedDelivery.rider_phone && <p className="text-xs text-gray-400">{mergedDelivery.rider_phone}</p>}
+                    
+                    <div className="space-y-3">
+                        {/* Delivery Partner Info */}
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center">
+                                <span className="text-xl">🛵</span>
                             </div>
-                            {mergedDelivery.delivery_otp && (
-                                <div className="text-center">
-                                    <p className="text-[10px] text-gray-500 uppercase tracking-widest">Share OTP</p>
-                                    <p className="text-lg font-bold text-gutzo-primary">{mergedDelivery.delivery_otp}</p>
+                            <div>
+                                <p className="text-xs text-gray-500">Delivery Partner</p>
+                                <p className="text-sm font-semibold text-gray-900">Shadowfax</p>
+                            </div>
+                        </div>
+
+                        {/* Rider Info (Live from Tracking API) */}
+                        {!isFindingRider ? (
+                            <div className="bg-gray-50 rounded-lg p-3 flex justify-between items-center">
+                                <div>
+                                    <p className="text-xs text-gray-500">Rider</p>
+                                    <p className="text-sm font-medium">{mergedDelivery.rider_name}</p>
+                                    {mergedDelivery.rider_phone && <p className="text-xs text-gray-400">{mergedDelivery.rider_phone}</p>}
                                 </div>
-                            )}
-                        </div>
-                    ) : (
-                        <div className="bg-amber-50 rounded-lg p-3 text-center">
-                            <p className="text-xs text-amber-700 italic">Finding nearest delivery partner...</p>
-                        </div>
-                    )}
+                                {mergedDelivery.delivery_otp && (
+                                    <div className="text-center">
+                                        <p className="text-[10px] text-gray-500 uppercase tracking-widest">Share OTP</p>
+                                        <p className="text-lg font-bold text-gutzo-primary">{mergedDelivery.delivery_otp}</p>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="bg-amber-50 rounded-lg p-3 text-center">
+                                <p className="text-xs text-amber-700 italic">Finding nearest delivery partner...</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
 
         {/* Bottom Sheet UI */}
