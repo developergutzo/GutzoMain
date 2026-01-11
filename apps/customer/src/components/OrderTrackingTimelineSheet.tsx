@@ -36,7 +36,6 @@ export function OrderTrackingTimelineSheet({ status, driver, vendorName, deliver
                     </div>
                     <div>
                         <h3 className="text-lg font-bold text-gray-900 leading-tight">{vendorName || activeOrder?.vendorName || "Active Order"}</h3>
-                        <p className="text-xs text-gray-500">{activeOrder?.vendorLocation}</p>
                     </div>
                 </div>
                 <div>
@@ -80,38 +79,32 @@ export function OrderTrackingTimelineSheet({ status, driver, vendorName, deliver
 
             {/* Delivery Partner & Rider Info - Show when driver is assigned */}
             {driver?.name && (
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-4 mb-4">
-                    <div className="flex items-center gap-2 mb-3">
-                        <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-                        <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wide">Live Delivery Updates</h4>
-                    </div>
-                    
-                    <div className="space-y-3">
-                        {/* Delivery Partner */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-lg p-2.5 mb-3">
+                    <div className="flex items-center justify-between">
+                        {/* Left side: Delivery Partner & Rider */}
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
-                                <span className="text-xl">🛵</span>
+                            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm">
+                                <span className="text-base">🛵</span>
                             </div>
                             <div>
-                                <p className="text-[10px] text-gray-500 uppercase tracking-wide">Delivery Partner</p>
-                                <p className="text-sm font-semibold text-gray-900">Shadowfax</p>
+                                <p className="text-[9px] text-gray-500 uppercase tracking-wide">Shadowfax • {driver.name}</p>
+                                {driver.phone && <p className="text-[10px] text-gray-600 mt-0.5">{driver.phone}</p>}
                             </div>
                         </div>
-
-                        {/* Rider Info */}
-                        <div className="bg-white rounded-lg p-3 flex justify-between items-center shadow-sm">
-                            <div>
-                                <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-0.5">Rider</p>
-                                <p className="text-sm font-semibold text-gray-900">{driver.name}</p>
-                                {driver.phone && <p className="text-xs text-gray-500 mt-0.5">{driver.phone}</p>}
-                            </div>
-                            {deliveryOtp && (
-                                <div className="text-center">
-                                    <p className="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Share OTP</p>
-                                    <p className="text-xl font-bold text-gutzo-primary">{deliveryOtp}</p>
+                        
+                        {/* Right side: OTP */}
+                        {deliveryOtp && (
+                            <div className="text-right">
+                                <p className="text-[7px] text-gray-500 uppercase tracking-widest mb-1">OTP</p>
+                                <div className="flex gap-1">
+                                    {deliveryOtp.toString().split('').map((digit, index) => (
+                                        <div key={index} className="w-6 h-7 bg-white border border-gray-300 rounded flex items-center justify-center">
+                                            <span className="text-sm font-bold text-gutzo-primary">{digit}</span>
+                                        </div>
+                                    ))}
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
@@ -130,7 +123,7 @@ export function OrderTrackingTimelineSheet({ status, driver, vendorName, deliver
             )}
 
             {/* Action List */}
-            <div className="space-y-6">
+            <div className="space-y-4">
                 <div className="flex items-center gap-4 text-gray-700">
                     <Utensils size={20} className="text-gray-400" />
                     <div className="flex-1 text-sm font-medium">We've asked the restaurant to not send cutlery</div>
@@ -138,17 +131,16 @@ export function OrderTrackingTimelineSheet({ status, driver, vendorName, deliver
 
                 <div className="w-full h-px bg-gray-100 my-2"></div>
 
-                <div className="flex items-center justify-between group cursor-pointer">
-                    <div className="flex items-center gap-4 text-gray-900">
-                        <ShoppingBag size={20} className="text-gray-400" />
-                        <div className="text-base font-semibold">Order details</div>
+                {/* Order ID Card */}
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <ShoppingBag size={20} className="text-gray-400" />
+                            <p className="text-xs text-gray-500">Order ID <span className="font-bold font-mono tracking-wide ml-2">#{activeOrder?.orderId || 'GZ-8291-XJ'}</span></p>
+                        </div>
+                        <ChevronRight size={20} className="text-gray-400" />
                     </div>
-                    <ChevronRight size={20} className="text-gray-400" />
                 </div>
-            </div>
-            
-            <div className="mt-8 text-center">
-                 <p className="text-[10px] text-gray-300 font-mono tracking-widest uppercase">ID: #{activeOrder?.orderId || 'GZ-8291-XJ'}</p>
             </div>
         </div>
     </div>

@@ -259,32 +259,32 @@ export function OrderTrackingPage() {
         className="fixed inset-0 w-full h-full bg-gray-50 flex flex-col z-[100] overflow-hidden"
     >
         {/* Top Green Header Section - Dynamic Color */}
-        <div className="px-4 pt-4 pb-6 rounded-b-3xl z-30 shadow-md relative" style={{ backgroundColor: displayStatus === 'cancelled' ? '#ef4444' : '#1BA672' }}>
+        <div className="px-4 pt-3 pb-4 rounded-b-2xl z-30 shadow-md relative" style={{ backgroundColor: displayStatus === 'cancelled' ? '#ef4444' : '#1BA672' }}>
             {/* Top Bar */}
-            <div className="flex justify-between items-center mb-6">
-                <button onClick={handleMinimize} className="text-white p-2 hover:bg-white/10 rounded-full transition-colors relative z-50">
-                    <Minimize2 size={24} />
+            <div className="flex justify-between items-center mb-3">
+                <button onClick={handleMinimize} className="text-white p-1.5 hover:bg-white/10 rounded-full transition-colors relative z-50">
+                    <Minimize2 size={20} />
                 </button>
-                <div className="text-white font-semibold text-base opacity-90">
+                <div className="text-white font-semibold text-sm opacity-90">
                     {localOrder?.vendor?.name || contextOrder?.vendorName}
                 </div>
-                <button className="text-white p-2">
-                    <Share2 size={20} />
+                <button className="text-white p-1.5">
+                    <Share2 size={18} />
                 </button>
             </div>
 
             {/* Status Title */}
-            <div className="text-center mb-6">
-                <h1 className="text-white text-2xl font-bold mb-4 tracking-wide">
+            <div className="text-center mb-3">
+                <h1 className="text-white text-xl font-bold mb-3 tracking-wide">
                     {getStatusText(displayStatus)}
                 </h1>
                 
                 {/* Time Pill - Hidden if Cancelled */}
                 {displayStatus !== 'cancelled' && (
-                    <div className="inline-flex items-center rounded-lg px-4 py-2 gap-2" style={{ backgroundColor: '#14885E' }}>
-                        <span className="text-white font-semibold text-lg">{eta}</span>
+                    <div className="inline-flex items-center rounded-lg px-3 py-1.5 gap-2" style={{ backgroundColor: '#14885E' }}>
+                        <span className="text-white font-semibold text-base">{eta}</span>
                         <span className="w-1 h-1 bg-white rounded-full opacity-50"></span>
-                        <span className="text-green-100 font-medium">On time</span>
+                        <span className="text-green-100 font-medium text-sm">On time</span>
                     </div>
                 )}
             </div>
