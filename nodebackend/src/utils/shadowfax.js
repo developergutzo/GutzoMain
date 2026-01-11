@@ -152,6 +152,8 @@ export const trackShadowfaxOrder = async (flashOrderId) => {
             return null;
         }
         
+        console.log(`🚴 Shadowfax Tracking Response for ${flashOrderId}:`, JSON.stringify(data, null, 2));
+        
         // Return relevant tracking info
         // Response Structure based on Docs:
         // { 
@@ -162,7 +164,7 @@ export const trackShadowfaxOrder = async (flashOrderId) => {
         //   rider_longitude: 77.89,
         //   tracking_url: "https://shadowfax.in/track/..."
         // }
-        return {
+        const trackingData = {
             status: data.status,
             awb_number: data.awb_number || flashOrderId, // Fallback
             rider_details: {
@@ -175,6 +177,10 @@ export const trackShadowfaxOrder = async (flashOrderId) => {
             },
             tracking_url: data.tracking_url
         };
+        
+        console.log(`📍 Rider Location: lat=${data.rider_latitude}, lng=${data.rider_longitude}, status=${data.status}`);
+        
+        return trackingData;
     } catch (e) {
         console.error("Shadowfax Tracking Error:", e);
         return null;

@@ -135,6 +135,7 @@ export function OrderTrackingMap({
     if (!mapInstanceRef.current || !driverMarkerRef.current || !driverLocation) return;
 
     const newPos = driverLocation;
+    console.log('🗺️ Updating driver marker to:', newPos);
     driverMarkerRef.current.setPosition(newPos);
 
     // Optional: Calculate heading from previous position if we tracked it, 
@@ -163,10 +164,13 @@ export function OrderTrackingMap({
       const isPickUpPhase = ['driver_assigned', 'allotted'].includes(status);
       const isDeliveryPhase = ['picked_up', 'on_way', 'arrived_at_drop', 'out_for_delivery'].includes(status);
 
+      console.log(`🗺️ Map Routing - Status: ${status}, isSearching: ${isSearching}, isPickUpPhase: ${isPickUpPhase}, isDeliveryPhase: ${isDeliveryPhase}`);
+
       // A. Marker Visibility
       if (driverMarkerRef.current) {
           // Hide rider marker if we are still searching
           driverMarkerRef.current.setVisible(!isSearching);
+          console.log(`👁️ Driver marker visible: ${!isSearching}`);
       }
 
       // B. Routing Logic
@@ -178,33 +182,41 @@ export function OrderTrackingMap({
           // No rider to track yet.
           origin = storeLocation;
           destination = userLocation;
+          console.log('📍 Phase 1 (Searching): Route from Store → User');
       } else if (isPickUpPhase) {
           // Phase 2: Rider Assigned -> Rider is coming to Store
           origin = driverLocation || storeLocation; // Fallback to store if loc missing (e.g. just assigned)
           destination = storeLocation;
+          console.log('📍 Phase 2 (Pickup): Route from Driver → Store', { driverLocation, storeLocation });
       } else if (isDeliveryPhase) {
           // Phase 3: Order Picked Up -> Rider is coming to User
           origin = driverLocation || storeLocation; 
           destination = userLocation;
+          console.log('📍 Phase 3 (Delivery): Route from Driver → User', { driverLocation, userLocation });
       } else {
            // Completed / Default
            origin = storeLocation;
            destination = userLocation;
+           console.log('📍 Default: Route from Store → User');
       }
 
       if (origin && destination) {
+          console.log(`🛫 Calculating route from (${origin.lat}, ${origin.lng}) → (${destination.lat}, ${destination.lng})`);
           directionsServiceRef.current.route({
               origin,
               destination,
               travelMode: google.maps.TravelMode.DRIVING
-          }, (result, status) => {
+          }, (result: any, status: any) => {
               if (status === 'OK' && result) {
                   directionsRendererRef.current?.setDirections(result);
                   // Extract Duration
                   const leg = result.routes[0]?.legs[0];
                   if (leg && leg.duration && onDurationUpdate) {
+                      console.log(`⏱️ Route duration: ${leg.duration.text}`);
                       onDurationUpdate(leg.duration.text);
                   }
+              } else {
+                  console.error('❌ Directions request failed:', status);
               }
           });
       }

@@ -139,10 +139,14 @@ export function OrderTrackingPage() {
                 if (res.ok) {
                     const data = await res.json();
                     if (data.success && data.data) {
+                        console.log('🔴 Live Tracking Data:', data.data);
+                        console.log('📍 Driver Location:', data.data.rider_details?.current_location);
                         setLiveTracking(data.data);
                     }
                 }
-            } catch (e) {}
+            } catch (e) {
+                console.error('Live tracking fetch error:', e);
+            }
         };
         fetchLiveTracking();
         const interval = setInterval(fetchLiveTracking, 10000); // 10s polling
@@ -250,6 +254,12 @@ export function OrderTrackingPage() {
 
   // ETA State
   const [eta, setEta] = useState<string>('Updating...');
+
+  // Debug: Log status and driver location
+  useEffect(() => {
+    console.log('🎯 Map Props - Status:', displayStatus, 'Driver Location:', mergedDelivery?.rider_location || driverLoc);
+    console.log('📊 Merged Delivery:', mergedDelivery);
+  }, [displayStatus, mergedDelivery, driverLoc]);
 
   return (
     <motion.div 

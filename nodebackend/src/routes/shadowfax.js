@@ -45,6 +45,16 @@ router.post('/create-order', async (req, res) => {
             .eq('order_id', orderId)
             .single();
 
+        // Check if Shadowfax order already exists
+        if (delivery?.external_order_id) {
+            console.log(`✅ Shadowfax order already exists for ${orderId}: ${delivery.external_order_id}`);
+            return res.json({ 
+                success: true, 
+                shadowfax_order_id: delivery.external_order_id,
+                message: 'Delivery partner already assigned'
+            });
+        }
+
         let deliveryOtp = delivery?.delivery_otp;
         let pickupOtp = delivery?.pickup_otp;
 
@@ -352,5 +362,6 @@ router.post('/webhook', async (req, res) => {
         res.status(500).send('Webhook Error');
     }
 });
+
 
 export default router;

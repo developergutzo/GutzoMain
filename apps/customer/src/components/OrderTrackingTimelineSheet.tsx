@@ -59,7 +59,7 @@ export function OrderTrackingTimelineSheet({ status, driver, vendorName, deliver
                          status === 'preparing' ? "Your order is being prepared" :
                          status === 'ready' ? "Your order is ready at the restaurant" :
                          status === 'picked_up' ? "Order picked up by valet" :
-                         status === 'driver_assigned' ? "Rider assigned • On the way to restaurant" :
+                         status === 'driver_assigned' ? "Food is being prepared" :
                          status === 'on_way' ? "Valet is near your location" :
                          status === 'arrived_at_drop' ? "Valet has arrived at your doorstep" :
                          status === 'delivered' ? "Your order has been delivered" :
@@ -68,7 +68,7 @@ export function OrderTrackingTimelineSheet({ status, driver, vendorName, deliver
                          "Order Status: " + status}
                     </p>
                 </div>
-                {(status === 'preparing' || status === 'searching_rider') && (
+                {(status === 'preparing' || status === 'searching_rider' || status === 'driver_assigned') && (
                   <div className="w-10 h-1 relative">
                        <div className="absolute inset-0 rounded-full overflow-hidden" style={{ backgroundColor: '#b2e8d3' }}>
                           <div className="absolute left-0 top-0 bottom-0 w-1/2 rounded-full animate-pulse" style={{ backgroundColor: '#2ecca0' }}></div>
