@@ -491,7 +491,7 @@ router.get('/:id/products', asyncHandler(async (req, res) => {
             const cancelResp = await cancelShadowfaxOrder(order.order_number, "Rejected by Vendor");
             if (cancelResp.success) {
                console.log("✅ Shadowfax Order Cancelled due to Vendor Rejection");
-               // Update local delivery status to cancelled so UI updates
+                // Update local delivery status to cancelled so UI updates
                await supabaseAdmin
                  .from('deliveries')
                  .update({ status: 'cancelled' })
@@ -499,6 +499,13 @@ router.get('/:id/products', asyncHandler(async (req, res) => {
             }
         } catch (err) {
             console.error("❌ Failed to cancel Shadowfax order:", err);
+        }
+
+        // 💰 REFUND LOGIC (Placeholder)
+        // Currently, refunds are handled MANUALLY via the Paytm Dashboard.
+        // Future: specific logic to auto-call Paytm Refund API can be added here.
+        if (order.payment_status === 'paid') {
+             console.log(`ℹ️ Order ${order.order_number} Rejected. Please refund manually on Paytm Dashboard.`);
         }
 
         await supabaseAdmin.from('notifications').insert({
