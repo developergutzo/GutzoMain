@@ -424,7 +424,7 @@ function AppContent() {
     return <LocationGate onLocationApproved={handleLocationApproved} />;
   }
   return (
-    <div className="min-h-screen bg-gray-50 relative overflow-x-hidden">
+    <div className="min-h-screen bg-gray-50 relative overflow-x-hidden flex flex-col">
       <div className="sm:hidden">
         <AddToHomeScreenPrompt
           onAddToHomeScreen={handleAddToHomeScreen}
@@ -474,7 +474,7 @@ function AppContent() {
         </>
       )}
       <main
-          className="w-full py-6 md:py-8"
+          className="w-full py-6 md:py-8 flex-1"
         ref={listingsRef}
       >
           <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
