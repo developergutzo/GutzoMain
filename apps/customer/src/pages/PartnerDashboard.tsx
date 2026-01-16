@@ -121,7 +121,7 @@ export function PartnerDashboard() {
       <aside className="w-full lg:w-64 flex-shrink-0 bg-white border-b lg:border-b-0 lg:border-r flex flex-col z-20 lg:h-full">
          <div className="h-16 md:h-20 flex items-center px-4 md:px-6 border-b gap-3 flex-shrink-0">
              <ImageWithFallback
-                src="https://35-194-40-59.nip.io/service/storage/v1/object/public/Gutzo/GUTZO.svg"
+                src="https://api.gutzo.in/service/storage/v1/object/public/Gutzo/GUTZO.svg"
                 alt="Gutzo"
                 className="object-contain block"
                 style={{ width: '100px', height: 'auto' }}

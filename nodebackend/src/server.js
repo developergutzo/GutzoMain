@@ -50,7 +50,7 @@ app.use(cors({
       'http://192.168.1.36:3001',
       'https://gutzo.in',
       'https://www.gutzo.in',
-      'https://35-194-40-59.nip.io',
+      'https://api.gutzo.in',
       'http://localhost',       // Android Capacitor default
       'https://localhost',      // Android Capacitor (HTTPS scheme)
       'capacitor://localhost'   // iOS Capacitor default

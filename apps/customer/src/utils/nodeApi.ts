@@ -6,7 +6,7 @@ class NodeApiService {
     public get baseUrl() {
         // Force production URL on mobile apps
         if (Capacitor.isNativePlatform()) {
-            return "https://35-194-40-59.nip.io";
+            return "https://api.gutzo.in";
         }
         // Use environment variable if set (for production), otherwise relative (for dev proxy)
         return import.meta.env.VITE_SUPABASE_FUNCTION_URL || "";

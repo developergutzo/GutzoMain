@@ -17,7 +17,7 @@ export function Footer() {
               className="p-0 bg-transparent border-0 inline-flex items-center cursor-pointer hover:opacity-90 active:scale-95 transition-transform interactive mb-3 sm:mb-4"
             >
               <ImageWithFallback
-                src="https://35-194-40-59.nip.io/service/storage/v1/object/public/Gutzo/GUTZO.svg"
+                src="https://api.gutzo.in/service/storage/v1/object/public/Gutzo/GUTZO.svg"
                 //src="http://192.168.1.39:54321/storage/v1/object/public/Gutzo/GUTZO.svg"
                 //src="https://jrpiqxajjpyxiitweoqc.supabase.co/storage/v1/object/public/Gutzo%20Logo/GUTZO.svg"
                 alt="Gutzo - Food You'll Eat Again"

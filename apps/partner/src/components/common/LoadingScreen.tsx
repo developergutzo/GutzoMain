@@ -45,7 +45,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
           <div className="absolute inset-0 bg-gutzo-brand/20 rounded-full blur-xl animate-pulse scale-150"></div>
           
           <img
-            src="https://35-194-40-59.nip.io/service/storage/v1/object/public/Gutzo/GUTZO.svg"
+            src="https://api.gutzo.in/service/storage/v1/object/public/Gutzo/GUTZO.svg"
             alt="Gutzo"
             className="w-32 h-auto relative z-10 animate-bounce-slight"
             style={{ 

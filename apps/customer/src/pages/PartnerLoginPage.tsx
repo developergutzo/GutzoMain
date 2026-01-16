@@ -202,7 +202,7 @@ export function PartnerLoginPage() {
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-8">
            <ImageWithFallback
-              src="https://35-194-40-59.nip.io/service/storage/v1/object/public/Gutzo/GUTZO.svg"
+              src="https://api.gutzo.in/service/storage/v1/object/public/Gutzo/GUTZO.svg"
               alt="Gutzo"
               className="h-12 w-auto"
             />

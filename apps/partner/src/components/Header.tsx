@@ -106,7 +106,7 @@ export function Header({ onShowLogin, onLogout, onShowProfile, onShowCart, onSho
               className="p-0 bg-transparent border-0 inline-flex items-center cursor-pointer hover:opacity-90 active:scale-95 transition-transform"
             >
               <img
-                src="https://35-194-40-59.nip.io/service/storage/v1/object/public/Gutzo/GUTZO.svg"
+                src="https://api.gutzo.in/service/storage/v1/object/public/Gutzo/GUTZO.svg"
                 alt="Gutzo"
                 className="desktop-logo-height object-contain block"
                 style={{ width: '140px', height: 'auto' }}
