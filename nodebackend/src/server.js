@@ -3,9 +3,16 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import dotenv from 'dotenv';
 
-dotenv.config();
+// Get the directory path for ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Load .env from project root (one level up from src/)
+dotenv.config({ path: join(__dirname, '..', '.env') });
 
 // Import routes
 import authRoutes from './routes/auth.js';
