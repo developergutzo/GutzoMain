@@ -127,6 +127,19 @@ export function OrderTrackingPage() {
       }, 300); 
   };
 
+  const handleGoHome = () => {
+      // Clear tracking state if cancelled to prevent floating bar from appearing
+      if (displayStatus === 'cancelled') {
+           minimizeOrder(); // Or closeTracking? minimizeOrder will take us home.
+           // Actually, if it's cancelled, we probably want to properly close it so the floating bar doesn't show "Cancelled" forever.
+           // But user said "Go to Home", floating bar might show "Cancelled" for a bit then disappear.
+           // Let's stick to router navigate for now, and rely on Context "Live Logic" to hide/show bar correctly.
+           routerNavigate('/');
+      } else {
+           routerNavigate('/');
+      }
+  };
+
     // Live Tracking State
     const [liveTracking, setLiveTracking] = useState<any>(null);
 
@@ -302,9 +315,14 @@ export function OrderTrackingPage() {
         <div className="px-4 pt-3 pb-4 rounded-b-2xl z-30 shadow-md relative" style={{ backgroundColor: displayStatus === 'cancelled' ? '#ef4444' : '#1BA672' }}>
             {/* Top Bar */}
             <div className="flex justify-between items-center mb-3">
-                <button onClick={handleMinimize} className="text-white p-1.5 hover:bg-white/10 rounded-full transition-colors relative z-50">
-                    <Minimize2 size={20} />
-                </button>
+                {displayStatus === 'cancelled' ? (
+                    <div className="w-8 h-8" /> // Empty placeholder
+                ) : (
+                    <button onClick={handleMinimize} className="text-white p-1.5 hover:bg-white/10 rounded-full transition-colors relative z-50">
+                        <Minimize2 size={20} />
+                    </button>
+                )}
+                
                 <div className="text-white font-semibold text-sm opacity-90">
                     {localOrder?.vendor?.name || contextOrder?.vendorName}
                 </div>
@@ -351,6 +369,7 @@ export function OrderTrackingPage() {
                 phone: mergedDelivery?.rider_phone || activeDelivery?.rider_phone || contextOrder?.rider_phone || ""
             } : undefined} 
             orderId={localOrder?.order_number || contextOrder?.orderNumber}
+            onGoHome={handleGoHome}
         />
     </motion.div>
   );

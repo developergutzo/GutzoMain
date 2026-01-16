@@ -12,15 +12,16 @@ interface OrderTrackingTimelineSheetProps {
   vendorName?: string;
   deliveryOtp?: string;
   orderId?: string;
+  onGoHome?: () => void;
 }
 
 import { useOrderTracking } from '../contexts/OrderTrackingContext';
 
-export function OrderTrackingTimelineSheet({ status, driver, vendorName, deliveryOtp, orderId }: OrderTrackingTimelineSheetProps) {
+export function OrderTrackingTimelineSheet({ status, driver, vendorName, deliveryOtp, orderId, onGoHome }: OrderTrackingTimelineSheetProps) {
   const { activeOrder } = useOrderTracking();
   
   const isCancelled = status === 'cancelled' || status === 'rejected';
-
+  
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.1)] z-50 pb-6">
         {/* Drag Handle Area */}
@@ -77,6 +78,25 @@ export function OrderTrackingTimelineSheet({ status, driver, vendorName, deliver
                   </div>
                 )}
             </div>
+
+            {/* Cancelled: Go to Home Button */}
+            {isCancelled && (
+                <div className="mb-6">
+                    <button 
+                        onClick={onGoHome}
+                        className="w-full flex items-center justify-center gap-2 font-bold transition-all active:scale-[0.98]"
+                        style={{
+                            backgroundColor: '#1BA672',
+                            color: 'white',
+                            padding: '14px',
+                            borderRadius: '12px',
+                            boxShadow: '0 4px 12px rgba(27,166,114,0.4)'
+                        }}
+                    >
+                        <span>Go to Home</span>
+                    </button>
+                </div>
+            )}
 
             {/* Delivery Partner & Rider Info - Show when driver is assigned */}
             {driver?.name && (
