@@ -153,9 +153,39 @@ export function OrderTrackingPage() {
         return () => clearInterval(interval);
     }, [orderId]);
 
-   // Locations (Moved up)
-   const storeLocation = { lat: 12.9716, lng: 77.5946 }; 
-   const userLocation = { lat: 12.9516, lng: 77.6046 }; 
+   // Locations (Dynamic with strict No-Fallback)
+   const getVendorLocation = () => {
+       if (localOrder?.vendor?.latitude && localOrder?.vendor?.longitude) {
+           return {
+               lat: Number(localOrder.vendor.latitude),
+               lng: Number(localOrder.vendor.longitude)
+           };
+       }
+       return null;
+   };
+
+   const getUserLocation = () => {
+       try {
+           if (localOrder?.delivery_address) {
+               const addr = typeof localOrder.delivery_address === 'string' 
+                   ? JSON.parse(localOrder.delivery_address) 
+                   : localOrder.delivery_address;
+               
+               if (addr?.latitude && addr?.longitude) {
+                   return {
+                       lat: Number(addr.latitude),
+                       lng: Number(addr.longitude)
+                   };
+               }
+           }
+       } catch (e) {
+           console.error("Error parsing delivery address:", e);
+       }
+       return null;
+   };
+
+   const storeLocation = getVendorLocation();
+   const userLocation = getUserLocation(); 
 
    // 1. Extract DB Delivery
    const activeDelivery = localOrder?.delivery && localOrder.delivery.length > 0 ? localOrder.delivery[0] : null;

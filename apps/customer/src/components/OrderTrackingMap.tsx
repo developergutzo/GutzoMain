@@ -10,9 +10,9 @@ interface Coordinates {
 }
 
 interface OrderTrackingMapProps {
-  storeLocation: Coordinates;
-  userLocation: Coordinates;
-  driverLocation?: Coordinates;
+  storeLocation: Coordinates | null;
+  userLocation: Coordinates | null;
+  driverLocation?: Coordinates | null;
   status: 'placed' | 'preparing' | 'ready' | 'picked_up' | 'on_way' | 'delivered' | 'arrived_at_drop' | 'reached_location' | 'driver_assigned' | 'searching_rider';
   fitBoundsPadding?: number; // Not used as much with DirectionsRenderer
   onDurationUpdate?: (duration: string) => void;
@@ -34,8 +34,10 @@ export function OrderTrackingMap({
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   
   // Internal driver location state for animation
-  const [driverPos, setDriverPos] = useState<Coordinates>(storeLocation);
+  const [driverPos, setDriverPos] = useState<Coordinates | null>(storeLocation);
   const animationFrameRef = useRef<number>();
+
+  // Guard: If critical locations are missing, we still run hooks but render fallback at the end.
 
   useEffect(() => {
     // Load Google Maps Script if not already loaded
@@ -56,10 +58,10 @@ export function OrderTrackingMap({
   }, []);
 
   useEffect(() => {
-    if (isMapLoaded && mapRef.current && !mapInstanceRef.current) {
+    if (isMapLoaded && mapRef.current && !mapInstanceRef.current && storeLocation && userLocation) {
       // Initialize Map
       const map = new google.maps.Map(mapRef.current, {
-        center: storeLocation,
+        center: storeLocation!, // Assert non-null because of early return
         zoom: 13,
         disableDefaultUI: true,
         styles: [
@@ -157,8 +159,9 @@ export function OrderTrackingMap({
   // 3. Routing Logic (Directions API)
   // 3. Routing & Marker Logic
   useEffect(() => {
-      if (!isMapLoaded || !directionsServiceRef.current || !directionsRendererRef.current) return;
-
+      // Guard: Critical locations required for routing
+      if (!isMapLoaded || !directionsServiceRef.current || !directionsRendererRef.current || !storeLocation || !userLocation) return;
+      
       const isSearching = status === 'searching_rider' || status === 'placed' || status === 'preparing' || status === 'ready';
       // Phase 2: ONLY when moving TO the store. Once reached, we show the next leg.
       const isPickUpPhase = ['driver_assigned', 'allotted'].includes(status);
@@ -222,6 +225,15 @@ export function OrderTrackingMap({
       }
 
   }, [isMapLoaded, status, driverLocation, storeLocation, userLocation, onDurationUpdate]);
+
+  // Render Loading/Error state if locations are missing
+  if (!storeLocation || !userLocation) {
+      return (
+          <div className="flex items-center justify-center w-full h-full bg-gray-100 text-gray-400">
+              <span className="text-sm">Location details unavailable</span>
+          </div>
+      );
+  }
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>

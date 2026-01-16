@@ -152,21 +152,9 @@ export const trackShadowfaxOrder = async (flashOrderId) => {
             return null;
         }
         
-        console.log(`🚴 Shadowfax Tracking Response for ${flashOrderId}:`, JSON.stringify(data, null, 2));
-        
-        // Return relevant tracking info
-        // Response Structure based on Docs:
-        // { 
-        //   status: "ALLOTTED", 
-        //   rider_name: "...", 
-        //   rider_contact_number: "...",
-        //   rider_latitude: 12.34, 
-        //   rider_longitude: 77.89,
-        //   tracking_url: "https://shadowfax.in/track/..."
-        // }
         const trackingData = {
             status: data.status,
-            awb_number: data.awb_number || flashOrderId, // Fallback
+            awb_number: data.awb_number || flashOrderId,
             rider_details: {
                 name: data.rider_name,
                 contact_number: data.rider_contact_number,
@@ -177,8 +165,13 @@ export const trackShadowfaxOrder = async (flashOrderId) => {
             },
             tracking_url: data.tracking_url
         };
-        
-        console.log(`📍 Rider Location: lat=${data.rider_latitude}, lng=${data.rider_longitude}, status=${data.status}`);
+
+        // Conditional Logging per user request
+        const activeStatuses = ['ALLOTTED', 'PICKED_UP', 'DELIVERED', 'REACHED_LOCATION', 'ARRIVED_AT_DROP'];
+        if (data.status && activeStatuses.includes(data.status.toUpperCase())) {
+             console.log(`🚴 Shadowfax Live Tracking for ${flashOrderId} [${data.status}]:`, JSON.stringify(data, null, 2));
+             console.log(`📍 Rider Location: lat=${data.rider_latitude}, lng=${data.rider_longitude}`);
+        }
         
         return trackingData;
     } catch (e) {

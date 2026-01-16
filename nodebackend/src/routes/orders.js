@@ -390,7 +390,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
     .select(`
       *,
       items:order_items(*),
-      vendor:vendors(id, name, image, phone, whatsapp_number, address),
+      vendor:vendors(id, name, image, phone, whatsapp_number, address, latitude, longitude),
       delivery:deliveries(*)
     `);
 
@@ -412,16 +412,8 @@ router.get('/:id', asyncHandler(async (req, res) => {
   if (order.delivery) {
       if (!Array.isArray(order.delivery)) {
           order.delivery = [order.delivery];
-          console.log(`[FIX] Normalized order.delivery from Object to Array`);
       }
-      
-      if (order.delivery.length > 0) {
-          console.log(`[DEBUG] Order found with Delivery:`, JSON.stringify(order.delivery[0], null, 2));
-      } else {
-          console.warn(`[DEBUG] Order ${id} found but 'delivery' array is empty!`);
-      }
-  } else {
-      console.warn(`[DEBUG] Order ${id} found but NO 'delivery' relation data attached!`);
+      // Logs removed to reduce noise per user request
   }
 
   successResponse(res, order);
