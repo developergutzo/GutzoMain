@@ -18,6 +18,11 @@ interface TrackingState {
   vendorName?: string;
   vendorLocation?: string;
   orderNumber?: string;
+  trackingData?: {
+    sfx_order_id?: number;
+    tracking_url?: string;
+    [key: string]: any;
+  };
 }
 
 interface OrderTrackingContextType {

@@ -230,6 +230,11 @@ export function OrderManager({ vendorId }: { vendorId: string }) {
                                                                 <div className="text-xs text-xs font-semibold text-gray-500">
                                                                     via {(order.delivery_partner_details?.provider) || 'Shadowfax'}
                                                                 </div>
+                                                                {(order.delivery && (Array.isArray(order.delivery) ? order.delivery[0]?.external_order_id : order.delivery?.external_order_id)) && (
+                                                                    <div className="text-[10px] text-blue-600 font-mono mb-1">
+                                                                        SFX #{(Array.isArray(order.delivery) ? order.delivery[0]?.external_order_id : order.delivery?.external_order_id)}
+                                                                    </div>
+                                                                )}
                                                                 {(order.delivery_partner_details?.pickup_otp || (order.delivery && (Array.isArray(order.delivery) ? order.delivery[0]?.pickup_otp : order.delivery?.pickup_otp))) && (
                                                                     <div className="flex flex-col items-end">
                                                                         <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Pickup OTP</span>

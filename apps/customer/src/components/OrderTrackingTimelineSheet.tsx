@@ -157,7 +157,12 @@ export function OrderTrackingTimelineSheet({ status, driver, vendorName, deliver
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <ShoppingBag size={20} className="text-gray-400" />
-                            <p className="text-xs text-gray-500">Order ID <span className="font-bold font-mono tracking-wide ml-2">#{orderId || activeOrder?.orderNumber || activeOrder?.orderId}</span></p>
+                            <div className="space-y-0.5">
+                                <p className="text-xs text-gray-500">Order ID <span className="font-bold font-mono tracking-wide ml-2">#{orderId || activeOrder?.orderNumber || activeOrder?.orderId}</span></p>
+                                {activeOrder?.trackingData?.sfx_order_id && (
+                                    <p className="text-[10px] text-blue-600 font-mono">Shadowfax: {activeOrder.trackingData.sfx_order_id}</p>
+                                )}
+                            </div>
                         </div>
                         <ChevronRight size={20} className="text-gray-400" />
                     </div>
