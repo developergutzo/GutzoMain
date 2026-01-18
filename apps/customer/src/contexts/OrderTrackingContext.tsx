@@ -238,45 +238,22 @@ export function OrderTrackingProvider({ children }: { children: ReactNode }) {
                     ? [...order.delivery].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
                     : null;
 
-                // 2. Fetch Live Tracking (if active)
-                let liveTracking: any = null;
+
+                // 2. Use DB Delivery Status Only (No Live Shadowfax Tracking)
+                // OPTIMIZATION: Context doesn't need live Shadowfax data for floating bar
+                // Only OrderTrackingPage polls Shadowfax when map is visible
                 const dbStatus = activeDelivery?.status;
-                
-                // Only track if not obviously finished/cancelled in DB (optimization)
-                // But we still fetch if it's "placing" to catch "cancelled" updates from shadowfax
-                if (!['delivered', 'completed', 'cancelled', 'rejected'].includes((order.status || '').toLowerCase())) {
-                     try {
-                        // Use Order Number for tracking if available (matches OrderTrackingPage behavior)
-                        const trackingIdentifier = order.order_number || order.id;
-                        const trackRes = await nodeApiService.trackOrder(phone, trackingIdentifier);
-                        
-                        if (trackRes.success && trackRes.data) {
-                             liveTracking = trackRes.data;
-                        }
-                     } catch (e: any) {
-                         // 404 means dead
-                         if (e.message && (e.message.includes('404') || e.message.includes('not found'))) {
-                             liveTracking = { status: 'cancelled' }; 
-                         }
-                     }
-                }
+                const isCancelled = dbStatus === 'cancelled' || order.status === 'rejected' || order.status === 'cancelled';
 
-                // 3. Merging Logic (The Core Fix)
-                const liveStatus = liveTracking?.status;
-                const isCancelled = dbStatus === 'cancelled' || order.status === 'rejected' || order.status === 'cancelled' || liveStatus === 'cancelled' || liveStatus === 'rejected';
-
-                // Only use Live Status if it doesn't downgrade meaningfully
-                const useLiveStatus = !isCancelled && getStatusPriority(liveStatus) >= getStatusPriority(dbStatus);
-
+                // Use DB delivery data directly (no merging with live tracking)
                 const mergedDelivery = {
                      ...activeDelivery,
-                     rider_name: (useLiveStatus ? liveTracking?.rider_details?.name : activeDelivery?.rider_name) || activeDelivery?.rider_name,
-                     rider_phone: (useLiveStatus ? liveTracking?.rider_details?.contact_number : activeDelivery?.rider_phone) || activeDelivery?.rider_phone,
-                     rider_coordinates: liveTracking?.rider_details?.current_location || activeDelivery?.rider_coordinates, // Prefer live
-                     status: isCancelled ? 'cancelled' : (useLiveStatus ? liveStatus : dbStatus)
+                     status: isCancelled ? 'cancelled' : dbStatus
                 };
 
-                // 4. Derive Display Status (Same logic as Page)
+
+
+                // 3. Derive Display Status (DB-only, no live tracking)
                 let displayStatus: OrderStatus = 'placed';
                 
                 const rawStatus = (order.status || '').toLowerCase();

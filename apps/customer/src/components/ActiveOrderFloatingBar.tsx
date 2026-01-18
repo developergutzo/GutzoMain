@@ -2,10 +2,9 @@ import React from 'react';
 import { Maximize2, Clock, CheckCircle, ChefHat, Bike, X } from 'lucide-react';
 import { useOrderTracking } from '../contexts/OrderTrackingContext';
 import { useRouter } from './Router';
-import { OrderTrackingMap } from './OrderTrackingMap';
 
 export function ActiveOrderFloatingBar() {
-  const { activeOrder, maximizeOrder, closeTracking, storeLocation, userLocation, clearActiveOrder } = useOrderTracking();
+  const { activeOrder, maximizeOrder, closeTracking, clearActiveOrder } = useOrderTracking();
   const { currentRoute } = useRouter();
 
   // Poll storage for debug and fallback
@@ -189,19 +188,7 @@ export function ActiveOrderFloatingBar() {
                     </div>
                 </div>
 
-                {/* Right Map Section (Moved to Middle) */}
-                <div className="w-[100px] h-full relative border-l border-gray-100 bg-gray-200 flex-shrink-0">
-                    <OrderTrackingMap 
-                        storeLocation={storeLocation}
-                        userLocation={userLocation}
-                        status={order.status}
-                        fitBoundsPadding={20} 
-                    />
-                    {/* Overlay */}
-                    <div className="absolute inset-0 z-10 cursor-pointer" onClick={maximizeOrder} />
-                </div>
-
-                {/* Middle Maximize Button Area (Moved to Right) */}
+                {/* Right Action Buttons */}
                 <div className="w-14 flex flex-col items-center justify-center border-l border-gray-100 bg-white">
                     <button 
                         onClick={(e) => {
