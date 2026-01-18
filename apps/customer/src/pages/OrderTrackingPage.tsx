@@ -9,6 +9,7 @@ import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../contexts/AuthContext';
+import { nodeApiService } from '../utils/nodeApi';
 
 export function OrderTrackingPage() {
   const { currentRoute, navigate: routerNavigate } = useRouter();
@@ -80,11 +81,11 @@ export function OrderTrackingPage() {
             }
             
             if (!phone) {
-                // console.warn("No phone found for auth, skipping fetch");
                 return;
             }
 
-            const res = await fetch(`/api/orders/${orderId}`, {
+            const url = `${nodeApiService.baseUrl}/api/orders/${orderId}`;
+            const res = await fetch(url, {
                 headers: {
                     'x-user-phone': phone,
                     'Content-Type': 'application/json'
@@ -100,7 +101,6 @@ export function OrderTrackingPage() {
             const data = await res.json();
             
             if (res.ok) {
-                // console.log("🔥 Direct Fetch Success:", data.status);
                 if (data.user?.name) {
                     setUserName(data.user.name.split(' ')[0]);
                 }
@@ -108,8 +108,11 @@ export function OrderTrackingPage() {
             } else {
                 console.error("Direct Fetch Error:", data);
             }
-        } catch (err) {
-            console.error("Fetch Network Error:", err);
+        } catch (err: any) {
+            console.error("Fetch Order Error:", err);
+            if (err?.message?.includes('404') || err?.status === 404) {
+                setNotFound(true);
+            }
         } finally {
             setLoading(false);
         }
@@ -148,7 +151,8 @@ export function OrderTrackingPage() {
         if (!orderId) return;
         const fetchLiveTracking = async () => {
             try {
-                const res = await fetch(`/api/delivery/track/${orderId}`);
+                const url = `${nodeApiService.baseUrl}/api/delivery/track/${orderId}`;
+                const res = await fetch(url);
                 if (res.ok) {
                     const data = await res.json();
                     if (data.success && data.data) {
