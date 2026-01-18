@@ -34,9 +34,10 @@ interface WeeklyMealPlansSectionProps {
     validVendorIds?: string[]; // IDs of vendors currently service-able/visible
     isOpen?: boolean;
     title?: string;
+    hideVendorName?: boolean; // Hide vendor name when on vendor page
 }
 
-export default function WeeklyMealPlansSection({ noPadding = false, onMealPlanClick, disabled, validVendorIds, isOpen = true, title = "Everyday Meals" }: WeeklyMealPlansSectionProps) {
+export default function WeeklyMealPlansSection({ noPadding = false, onMealPlanClick, disabled, validVendorIds, isOpen = true, title = "Everyday Meals", hideVendorName = false }: WeeklyMealPlansSectionProps) {
 	const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
 	const [loading, setLoading] = useState(true);
 
@@ -184,7 +185,7 @@ export default function WeeklyMealPlansSection({ noPadding = false, onMealPlanCl
 								>
 									{plan.title}
 								</h3>
-								<p className="text-[11px] text-gray-500 mb-0.5">by {plan.vendor}</p>
+								{!hideVendorName && <p className="text-[11px] text-gray-500 mb-0.5">by {plan.vendor}</p>}
 								<p className="text-[12px] text-gray-600 mb-1" style={{ fontSize: '12px' }}>{plan.schedule}</p>
 								<p className="text-[13px] font-semibold text-gray-900 mb-2">{plan.price}</p>
 								<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', marginTop: 4, marginBottom: 10, cursor: disabled ? 'not-allowed' : 'pointer' }}>

@@ -335,6 +335,7 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors
             validVendorIds={[vendor.id]}
             isOpen={vendor.isOpen}
             title="Daily Meals"
+            hideVendorName={true}
           />
           {/* Show next steps UI when a meal plan is selected */}
           {selectedMealPlan && (
