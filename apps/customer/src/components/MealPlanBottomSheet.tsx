@@ -649,282 +649,325 @@ const MealPlanBottomSheet: React.FC<MealPlanBottomSheetProps> = ({ plan, onClose
                   {/* Routine Details (Summary or Full) */}
                   {!isRoutineDetailsExpanded ? (
                      <>
-                        <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center justify-between shadow-sm cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => setIsRoutineDetailsExpanded(!isRoutineDetailsExpanded)}>
+                        <div 
+                           className="bg-white rounded-xl border border-gray-100 p-4 flex items-center justify-between shadow-sm cursor-pointer hover:bg-gray-50 transition-colors" 
+                           onClick={() => {
+                              const newExpandedState = !isRoutineDetailsExpanded;
+                              setIsRoutineDetailsExpanded(newExpandedState);
+                              if (newExpandedState) {
+                                  setIsDatePickerExpanded(true); // Auto-expand first section
+                                  setIsDeliveryExpanded(false);
+                                  setIsMealsExpanded(false);
+                              }
+                           }}
+                        >
                            <div className="flex-1">
                               {(() => {
                                  const startStr = isTomorrow(startDate) ? 'Starts tomorrow' : `Starts ${format(startDate, 'EEE, d MMM')}`;
-                                 const days = isTrial ? "3 days" : "Mon-Sat"; 
-
                                  
+                                 let daysStr = "";
+                                 if (isTrial) {
+                                     const days: string[] = [];
+                                     let count = 0;
+                                     let d = startDate;
+                                     while(count < 3) {
+                                         if (getDay(d) !== 0) { // Skip Sunday
+                                             days.push(format(d, 'EEE')); // Abbreviated day name e.g., Tue
+                                             count++;
+                                         }
+                                         d = addDays(d, 1);
+                                     }
+                                     daysStr = days.join(', ');
+                                 } else {
+                                     // For routine, use the "Mon-Sat" logic or existing summary
+                                     const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                                     if (weekDays.length === 6 && !weekDays.includes(0)) {
+                                         daysStr = "Mon-Sat";
+                                     } else if (weekDays.length === 0) {
+                                         daysStr = "Select days";
+                                     } else {
+                                         daysStr = weekDays.map(d => DAY_NAMES[d]).join(', ');
+                                     }
+                                 }
+
+                                 const mealsStr = (() => {
+                                     const MEAL_ORDER = ['Breakfast', 'Lunch', 'Snacks', 'Dinner'];
+                                     const sortedMeals = [...selectedMeals].sort((a, b) => MEAL_ORDER.indexOf(a) - MEAL_ORDER.indexOf(b));
+                                     if (sortedMeals.length === 4) return "All meals";
+                                     if (sortedMeals.length === 0) return "Select meals";
+                                     return sortedMeals.join(', ');
+                                 })();
+
                                  return (
-                                    <div className="flex flex-col items-start gap-0.5">
-                                       <p className="text-sm font-semibold text-gray-900 leading-tight">
+                                    <div className="flex flex-col items-start gap-1.5">
+                                       {/* Line 1: Start Date */}
+                                       <p className="text-sm font-bold text-gray-900 leading-tight">
                                           {startStr}
                                        </p>
-                                       <p className="text-xs text-gray-500 font-medium leading-normal">
-                                          {days} • <span className="text-gray-700">{(() => {
-                                             const MEAL_ORDER = ['Breakfast', 'Lunch', 'Snacks', 'Dinner'];
-                                             const sortedMeals = [...selectedMeals].sort((a, b) => MEAL_ORDER.indexOf(a) - MEAL_ORDER.indexOf(b));
-                                             if (sortedMeals.length === 4) return "All meals";
-                                             if (sortedMeals.length === 0) return "Select meals";
-                                             return sortedMeals.join(', ');
-                                          })()}</span>
-                                       </p>
+                                       
+                                       {/* Line 2: Days */}
+                                       <div className="flex items-center gap-1.5">
+                                           <Calendar size={13} className="text-gray-400 shrink-0" />
+                                           <p className="text-xs text-gray-700 font-medium leading-tight">
+                                               {daysStr}
+                                           </p>
+                                       </div>
+
+                                       {/* Line 3: Meals */}
+                                       <div className="flex items-center gap-1.5">
+                                           <Utensils size={13} className="text-gray-400 shrink-0" />
+                                           <p className="text-xs text-gray-500 leading-tight">
+                                               {mealsStr}
+                                           </p>
+                                       </div>
                                     </div>
                                  );
                               })()}
                            </div>
-                           <span className="text-sm font-medium text-green-600 hover:text-green-700 hover:underline pl-3">
-                               Change
-                           </span>
+                           <div className={`p-1 rounded-full hover:bg-gray-100 transition-all duration-300 ${isRoutineDetailsExpanded ? 'rotate-180' : ''}`}>
+                               <ChevronDown size={20} className="text-gray-400" />
+                           </div>
                         </div>
                      </>
                   ) : (
-                     <div className="animate-in fade-in zoom-in-95 duration-300 space-y-4">
-                        {/* Start Date - Primary Priority */}
-                  <div className="bg-white rounded-xl overflow-hidden border border-gray-100 transition-all duration-300">
-                        <div 
-                           onClick={() => { setIsDatePickerExpanded(!isDatePickerExpanded); setIsDeliveryExpanded(false); setIsMealsExpanded(false); }}
-                           className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
-                        >
-                       <div className="flex items-center gap-3">
-                          <Calendar className="text-gray-400" size={24} />
-                          <div>
-                             <p className="text-xs text-gray-500 font-medium">Starts from</p>
-                             <p className="text-sm font-bold text-gray-900">
-                                {isTomorrow(startDate) ? `Tomorrow (${format(startDate, 'EEEE')})` : format(startDate, 'EEE, d MMM')}
-                             </p>
-                          </div>
-                       </div>
-                       <ChevronDown size={20} className={`text-gray-400 transition-transform duration-200 ${isDatePickerExpanded ? 'rotate-180' : ''}`} />
-                    </div>
-
-                    {/* Inline Date Picker */}
-                    {isDatePickerExpanded && (
-                       <div className="px-4 pb-4 animate-in slide-in-from-top-2 duration-200">
-                          <p className="text-xs text-gray-400 mb-3">We'll start delivering from this day.</p>
-                          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                             {availableDates.map((date) => {
-                                const isSelected = isSameDay(date, startDate);
-                                const isClosed = getDay(date) === 0; // Sunday
-                                const dayName = format(date, 'EEE');
-                                const dateNum = format(date, 'd');
-                                const label = dayName; // Always show Day Name (Fri, Sat, etc) - No "Tomorrow" inside chip
-
-                                // STYLING LOGIC - Calendar Page Design
-                                let containerStyle = {};
-                                let headerStyle = { backgroundColor: '#F9FAFB', color: '#6B7280', lineHeight: '1.4' }; // gray-50 gray-500
-                                let bodyTextStyle = { color: '#111827' }; // gray-900
-                                let containerClassName = "bg-white border-gray-200 hover:border-gray-300";
-
-                                if (isSelected) {
-                                   containerClassName = "bg-white border-[#1BA672] shadow-sm overflow-hidden";
-                                   headerStyle = { backgroundColor: '#1BA672', color: 'white', lineHeight: '1.4' };
-                                   bodyTextStyle = { color: '#1BA672' };
-                                } else if (isClosed) {
-                                   containerClassName = "bg-gray-50 border-gray-200 opacity-60 cursor-default";
-                                   headerStyle = { backgroundColor: '#F3F4F6', color: '#9CA3AF', lineHeight: '1.4' }; // gray-100 gray-400
-                                   bodyTextStyle = { color: '#9CA3AF' };
-                                } else {
-                                   containerClassName = "bg-white border-gray-200 hover:border-gray-300 overflow-hidden";
-                                }
-
-                                return (
-                                   <button
-                                      key={date.toISOString()}
-                                      disabled={isClosed}
-                                      onClick={() => !isClosed && setStartDate(date)}
-                                      style={{ width: '60px', height: '62px', minWidth: '60px' }} 
-                                      className={`
-                                         flex flex-col items-stretch justify-start rounded-xl border transition-all shrink-0 p-0 overflow-hidden
-                                         ${containerClassName}
-                                      `}
-                                   >
-                                      {/* Header: Day Name */}
-                                      <div 
-                                         style={headerStyle}
-                                         className="h-[28px] flex items-center justify-center text-[11px] font-medium uppercase tracking-wide w-full border-b leading-[1.4]"
-                                      >
-                                         {label}
-                                      </div>
-                                      
-                                      {/* Body: Date Number */}
-                                      <div className={`flex-1 flex items-center justify-center w-full bg-white ${isClosed ? '!bg-transparent' : ''}`}>
-                                          <span className="text-lg font-medium" style={bodyTextStyle}>{dateNum}</span>
-                                      </div>
-                                   </button>
-                                );
-                             })}
-                          </div>
-                       </div>
-                    )}
-                  </div>
-     {/* Dynamic Delivery Details */}
-
-                     
-                     <div className="mt-4 space-y-1">
-                        {(() => {
-                           // Define configuration based on Plan Duration
-                           let activeDays: number[] = [];
-                           let interactionHandler: ((d: number) => void) | undefined = undefined;
-
-                           // Logic per plan
-                           if (isTrial) {
-                              // Calculate next 3 valid days (excluding Sunday)
-                              const days: number[] = [];
-                              let count = 0;
-                              let d = startDate;
-                              while(count < 3) {
-                                  if (getDay(d) !== 0) {
-                                      days.push(getDay(d));
-                                      count++;
-                                  }
-                                  d = addDays(d, 1);
-                              }
-                              activeDays = days;
-                           } else { // Routine
-                              activeDays = weekDays;
-                              interactionHandler = (d) => toggleWeekDay(d);
-                           }
+                     <div className="animate-in fade-in zoom-in-95 duration-300">
+                        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
                            
-                           // Summary Text Generator
-                           const getDaySummary = () => {
-                              const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-                              let text = "";
-                              if (activeDays.length === 6 && !activeDays.includes(0)) text = "Mon - Sat";
-                              else if (activeDays.length === 0) text = "Select days";
-                              else text = activeDays.map(d => DAY_NAMES[d]).join(', ');
-                              
-                              
-                              return {
-                                 days: text,
-                                 frequency: !isTrial ? "Repeats weekly" : ""
-                              };
-                           };
-
-                           return (
-                              <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-                                 <div 
-                                    onClick={() => { setIsDeliveryExpanded(!isDeliveryExpanded); setIsDatePickerExpanded(false); setIsMealsExpanded(false); }}
-                                    className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
-                                 >
-                                    <div className="flex items-center gap-3">
-                                       <Repeat className="text-gray-400" size={20} strokeWidth={2} />
-                                       <div>
-                                        <div className="flex items-center gap-2 mb-0.5">
-                                           <p className="text-xs text-gray-500 font-medium">Delivery schedule</p>
-                                        </div>
-                                        <div className="flex flex-col">
-                                           <p className="text-[14px] font-semibold text-gray-900 leading-tight">
-                                              {getDaySummary().days}
-                                           </p>
-                                        </div>
-                                       </div>
+                           {/* 1. Start Date Section */}
+                           <div className="border-b border-gray-100 transition-all duration-300">
+                              <div 
+                                 onClick={() => { setIsDatePickerExpanded(!isDatePickerExpanded); setIsDeliveryExpanded(false); setIsMealsExpanded(false); }}
+                                 className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
+                              >
+                                 <div className="flex items-center gap-3">
+                                    <Calendar className="text-gray-400" size={24} />
+                                    <div>
+                                       <p className="text-xs text-gray-500 font-medium">Starts from</p>
+                                       <p className="text-sm font-bold text-gray-900">
+                                          {isTomorrow(startDate) ? `Tomorrow (${format(startDate, 'EEEE')})` : format(startDate, 'EEE, d MMM')}
+                                       </p>
                                     </div>
-                                    <ChevronDown size={20} className={`text-gray-400 transition-transform ${isDeliveryExpanded ? 'rotate-180' : ''}`} />
                                  </div>
+                                 <ChevronDown size={20} className={`text-gray-400 transition-transform duration-200 ${isDatePickerExpanded ? 'rotate-180' : ''}`} />
+                              </div>
 
-                                 {/* Expandable Content */}
-                                 {isDeliveryExpanded && (
-                                     <div className="px-4 pb-4 animate-in slide-in-from-top-2">
-                                        {!isTrial && (
-                                           <p className="text-xs text-gray-400 mb-3">Repeats every week. Change anytime.</p>
-                                        )}
-                                        <div className="grid grid-cols-7 gap-1 w-full place-items-center mt-2">
-                                          {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((dayLabel, idx) => {
-                                             const dayNum = idx === 6 ? 0 : idx + 1;
-                                             const isSunday = dayNum === 0; 
-                                             const isActive = activeDays.includes(dayNum);
-                                             const isLocked = isTrial; // Lock in trial mode
+                              {/* Inline Date Picker */}
+                              {isDatePickerExpanded && (
+                                 <div className="px-4 pb-4 animate-in slide-in-from-top-2 duration-200">
+                                    <p className="text-xs text-gray-400 mb-3">We'll start delivering from this day.</p>
+                                    <div className="flex gap-3 overflow-x-auto py-2 px-1 -mx-1 scrollbar-hide">
+                                       {availableDates.map((date) => {
+                                          const isSelected = isSameDay(date, startDate);
+                                          const isClosed = getDay(date) === 0; // Sunday
+                                          const dayName = format(date, 'EEE');
+                                          const dateNum = format(date, 'd');
+                                          const label = dayName;
 
-                                             let className = "w-9 h-9 md:w-11 md:h-11 rounded-full text-[12px] md:text-sm font-medium border transition-all flex items-center justify-center shrink-0 p-0 leading-none";
-                                             let forcedStyle: React.CSSProperties = {};
-                                             
-                                             if (isActive) {
-                                                forcedStyle = { backgroundColor: '#F2FBF6', color: '#1BA672', borderColor: '#CDEBDD' };
-                                             } else if (isSunday) {
-                                                className += " bg-gray-50 text-gray-300 border-gray-100 line-through decoration-gray-300 decoration-1"; 
-                                             } else {
-                                                if (isLocked) className += " bg-white border-gray-200 text-gray-300";
-                                                else {
-                                                   className += " bg-white border-gray-200 hover:border-gray-300";
-                                                   forcedStyle = { color: '#000000' };
-                                                }
-                                             }
-                                             
-                                             return (
-                                                <button
-                                                   key={dayLabel}
-                                                   disabled={isSunday || isLocked}
-                                                   onClick={(e) => { e.stopPropagation(); interactionHandler && interactionHandler(dayNum); }}
-                                                   className={className}
-                                                   style={forcedStyle}
-                                                >
-                                                   {dayLabel}
-                                                </button>
-                                             );
-                                          })}
-                                       </div>
+                                          // STYLING LOGIC - Modern Pill Design
+                                          let containerClassName = "flex flex-col items-center justify-center rounded-xl border transition-all shrink-0";
+                                          let labelClassName = "text-[11px] font-medium uppercase tracking-wide leading-none mb-1";
+                                          let dateClassName = "text-lg font-bold leading-none";
+                                          let forcedStyle: React.CSSProperties = { width: '60px', height: '64px', minWidth: '60px' };
+
+                                          if (isSelected) {
+                                             containerClassName += " shadow-md transform scale-105";
+                                             forcedStyle = { ...forcedStyle, backgroundColor: '#F0FDF4', borderColor: '#22C55E', color: '#15803D' };
+                                          } else if (isClosed) {
+                                             containerClassName += " bg-gray-50 border-gray-200 text-gray-300 cursor-default opacity-60";
+                                          } else {
+                                             containerClassName += " bg-white border-gray-200 text-gray-900 hover:border-gray-300 hover:bg-gray-50";
+                                             labelClassName += " text-gray-500"; 
+                                          }
+
+                                          return (
+                                             <button
+                                                key={date.toISOString()}
+                                                disabled={isClosed}
+                                                onClick={() => !isClosed && setStartDate(date)}
+                                                style={forcedStyle}
+                                                className={containerClassName}
+                                             >
+                                                <span className={labelClassName}>{label}</span>
+                                                <span className={dateClassName}>{dateNum}</span>
+                                             </button>
+                                          );
+                                       })}
                                     </div>
-                                 )}
-                              </div>
-                           );
-                        })()}
-                         
-                        {/* Meals Accordion */}
-                        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden mt-4">
-                           <div 
-                              onClick={() => { setIsMealsExpanded(!isMealsExpanded); setIsDatePickerExpanded(false); setIsDeliveryExpanded(false); }}
-                              className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
-                           >
-                              <div className="flex items-center gap-3">
-                                 <Utensils className="text-gray-400" size={20} strokeWidth={2} />
-                                 <div>
-                                  <div className="flex items-center gap-2 mb-0.5">
-                                     <p className="text-xs text-gray-500 font-medium">Meals</p>
-                                  </div>
-                                  <p className="text-[14px] font-semibold text-gray-900">
-                                     {selectedMeals.join(' · ')}
-                                  </p>
                                  </div>
-                              </div>
-                              <ChevronDown size={20} className={`text-gray-400 transition-transform ${isMealsExpanded ? 'rotate-180' : ''}`} />
+                              )}
                            </div>
 
-                           {isMealsExpanded && (
-                              <div className="px-4 pb-4 animate-in slide-in-from-top-2">
-                                 <div className="grid grid-cols-2 gap-3 mt-1">
-                                    {[
-                                       { id: 'Breakfast', icon: <Sun size={18} /> },
-                                       { id: 'Lunch', icon: <Utensils size={18} /> },
-                                       { id: 'Snacks', icon: <Coffee size={18} /> },
-                                       { id: 'Dinner', icon: <Moon size={18} /> }
-                                    ].map((meal) => (
-                                       <button
-                                          key={meal.id}
-                                          onClick={(e) => { e.stopPropagation(); toggleMeal(meal.id); }}
-                                          className={`
-                                             flex items-center gap-3 p-3 rounded-xl border transition-all text-left cursor-pointer
-                                             ${selectedMeals.includes(meal.id)
-                                                ? 'bg-green-50 border-green-200 text-gray-900'
-                                                : 'bg-white border-gray-100 text-gray-500 hover:border-green-200 hover:bg-green-50/30'}
-                                          `}
+                           {/* 2. Delivery Schedule Section */}
+                           <div className="border-b border-gray-100">
+                              {(() => {
+                                 // Define configuration based on Plan Duration
+                                 let activeDays: number[] = [];
+                                 let interactionHandler: ((d: number) => void) | undefined = undefined;
+
+                                 // Logic per plan
+                                 if (isTrial) {
+                                    // Calculate next 3 valid days (excluding Sunday)
+                                    const days: number[] = [];
+                                    let count = 0;
+                                    let d = startDate;
+                                    while(count < 3) {
+                                        if (getDay(d) !== 0) {
+                                            days.push(getDay(d));
+                                            count++;
+                                        }
+                                        d = addDays(d, 1);
+                                    }
+                                    activeDays = days;
+                                 } else { // Routine
+                                    activeDays = weekDays;
+                                    interactionHandler = (d) => toggleWeekDay(d);
+                                 }
+                                 
+                                 // Summary Text Generator
+                                 const getDaySummary = () => {
+                                    const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                                    let text = "";
+                                    if (activeDays.length === 6 && !activeDays.includes(0)) text = "Mon - Sat";
+                                    else if (activeDays.length === 0) text = "Select days";
+                                    else text = activeDays.map(d => DAY_NAMES[d]).join(', ');
+                                    
+                                    return {
+                                       days: text,
+                                       frequency: !isTrial ? "Repeats weekly" : ""
+                                    };
+                                 };
+
+                                 return (
+                                    <>
+                                       <div 
+                                          onClick={() => { setIsDeliveryExpanded(!isDeliveryExpanded); setIsDatePickerExpanded(false); setIsMealsExpanded(false); }}
+                                          className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
                                        >
-                                          <div className={`${selectedMeals.includes(meal.id) ? 'text-gray-800' : 'text-gray-400'}`}>
-                                             {meal.icon}
+                                          <div className="flex items-center gap-3">
+                                             <Repeat className="text-gray-400" size={20} strokeWidth={2} />
+                                             <div>
+                                              <div className="flex items-center gap-2 mb-0.5">
+                                                 <p className="text-xs text-gray-500 font-medium">Delivery schedule</p>
+                                              </div>
+                                              <div className="flex flex-col">
+                                                 <p className="text-[14px] font-semibold text-gray-900 leading-tight">
+                                                    {getDaySummary().days}
+                                                 </p>
+                                              </div>
+                                             </div>
                                           </div>
-                                          <span className="text-sm font-semibold flex-1">{meal.id}</span>
-                                          {selectedMeals.includes(meal.id) && (
-                                             <div className="w-2 h-2 rounded-full bg-gutzo-primary" />
-                                          )}
-                                       </button>
-                                    ))}
-                                 </div>
-                              </div>
-                           )}
+                                          <ChevronDown size={20} className={`text-gray-400 transition-transform ${isDeliveryExpanded ? 'rotate-180' : ''}`} />
+                                       </div>
+
+                                       {/* Expandable Content */}
+                                       {isDeliveryExpanded && (
+                                           <div className="px-4 pb-4 animate-in slide-in-from-top-2">
+                                              {!isTrial && (
+                                                 <p className="text-xs text-gray-400 mb-3">Repeats every week. Change anytime.</p>
+                                              )}
+                                              <div className="grid grid-cols-7 gap-1 w-full place-items-center mt-2">
+                                                {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((dayLabel, idx) => {
+                                                   const dayNum = idx === 6 ? 0 : idx + 1;
+                                                   const isSunday = dayNum === 0; 
+                                                   const isActive = activeDays.includes(dayNum);
+                                                   const isLocked = isTrial; // Lock in trial mode
+
+                                                   let className = "w-9 h-9 md:w-11 md:h-11 rounded-xl text-[12px] md:text-sm font-medium border transition-all flex items-center justify-center shrink-0 p-0 leading-none";
+                                                   let forcedStyle: React.CSSProperties = {};
+                                                   
+                                                   if (isActive) {
+                                                      forcedStyle = { backgroundColor: '#F0FDF4', color: '#15803D', borderColor: '#22C55E' };
+                                                   } else if (isSunday) {
+                                                      className += " bg-gray-50 text-gray-300 border-gray-100 line-through decoration-gray-300 decoration-1"; 
+                                                   } else {
+                                                      if (isLocked) className += " bg-white border-gray-200 text-gray-300";
+                                                      else {
+                                                         className += " bg-white border-gray-200 hover:border-gray-300";
+                                                         forcedStyle = { color: '#000000' };
+                                                      }
+                                                   }
+                                                   
+                                                   return (
+                                                      <button
+                                                         key={dayLabel}
+                                                         disabled={isSunday || isLocked}
+                                                         onClick={(e) => { e.stopPropagation(); interactionHandler && interactionHandler(dayNum); }}
+                                                         className={className}
+                                                         style={forcedStyle}
+                                                      >
+                                                         {dayLabel}
+                                                      </button>
+                                                   );
+                                                })}
+                                              </div>
+                                           </div>
+                                       )}
+                                    </>
+                                 );
+                              })()}
+                           </div>
+                           
+                           {/* 3. Meals Section */}
+                           <div>
+                               <div 
+                                  onClick={() => { setIsMealsExpanded(!isMealsExpanded); setIsDatePickerExpanded(false); setIsDeliveryExpanded(false); }}
+                                  className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
+                               >
+                                  <div className="flex items-center gap-3">
+                                     <Utensils className="text-gray-400" size={20} strokeWidth={2} />
+                                     <div>
+                                      <div className="flex items-center gap-2 mb-0.5">
+                                         <p className="text-xs text-gray-500 font-medium">Meals</p>
+                                      </div>
+                                      <p className="text-[14px] font-semibold text-gray-900">
+                                         {selectedMeals.join(' · ')}
+                                      </p>
+                                     </div>
+                                  </div>
+                                  <ChevronDown size={20} className={`text-gray-400 transition-transform ${isMealsExpanded ? 'rotate-180' : ''}`} />
+                               </div>
+
+                               {isMealsExpanded && (
+                                  <div className="px-4 pb-4 animate-in slide-in-from-top-2">
+                                     <div className="grid grid-cols-2 gap-3 mt-1">
+                                        {[
+                                           { id: 'Breakfast', icon: <Sun size={18} /> },
+                                           { id: 'Lunch', icon: <Utensils size={18} /> },
+                                           { id: 'Snacks', icon: <Coffee size={18} /> },
+                                           { id: 'Dinner', icon: <Moon size={18} /> }
+                                        ].map((meal) => {
+                                       const isSelected = selectedMeals.includes(meal.id);
+                                       let forcedStyle: React.CSSProperties = {};
+                                       let className = "flex items-center gap-3 p-3 rounded-xl border transition-all text-left cursor-pointer";
+
+                                       if (isSelected) {
+                                          className += " shadow-md";
+                                          forcedStyle = { backgroundColor: '#F0FDF4', borderColor: '#22C55E', color: '#15803D' };
+                                       } else {
+                                          className += " bg-white border-gray-100 text-gray-500 hover:border-green-200 hover:bg-green-50/30";
+                                       }
+
+                                       return (
+                                          <button
+                                             key={meal.id}
+                                             onClick={(e) => { e.stopPropagation(); toggleMeal(meal.id); }}
+                                             className={className}
+                                             style={forcedStyle}
+                                          >
+                                             <div className={`${isSelected ? 'text-green-700' : 'text-gray-400'}`} style={isSelected ? { color: '#15803D' } : {}}>
+                                                {meal.icon}
+                                             </div>
+                                             <span className="text-sm font-semibold flex-1">{meal.id}</span>
+                                          </button>
+                                       );
+                                    })}
+                                     </div>
+                                  </div>
+                               )}
+                           </div>
+
+                        </div>
                      </div>
-                  </div>
-               </div>
             )}
 
 
