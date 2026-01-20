@@ -9,12 +9,15 @@ import { format, addDays, isTomorrow, getDay, isSameDay } from 'date-fns';
 import { useMediaQuery } from '../hooks/use-media-query';
 import { useCart } from '../contexts/CartContext';
 
+import { useRouter } from '../components/Router';
+
 interface MealPlanBottomSheetProps {
   plan: MealPlan | null;
   onClose: () => void;
 }
 
 const MealPlanBottomSheet: React.FC<MealPlanBottomSheetProps> = ({ plan, onClose }) => {
+  const { navigate } = useRouter();
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const { addItem, hasItemsFromDifferentVendor, clearCart } = useCart();
   
@@ -989,7 +992,7 @@ const MealPlanBottomSheet: React.FC<MealPlanBottomSheetProps> = ({ plan, onClose
                   const productToAdd = {
                       id: plan.id,
                       name: plan.title,
-                      price: weeklyPrice, // Note: This is base price, logic might need refinement for duration
+                      price: weeklyPrice, 
                       image: plan.image,
                       description: `${duration} Plan - ${selectedMeals.join(', ')}`,
                       category: 'Meal Plan',
@@ -997,7 +1000,7 @@ const MealPlanBottomSheet: React.FC<MealPlanBottomSheetProps> = ({ plan, onClose
                       rating: plan.rating,
                       review_count: 0,
                       is_available: true,
-                      is_veg: isVeg, // Use the state variable
+                      is_veg: isVeg,
                       created_at: new Date().toISOString()
                   };
 
@@ -1006,7 +1009,6 @@ const MealPlanBottomSheet: React.FC<MealPlanBottomSheetProps> = ({ plan, onClose
                       name: plan.vendor || 'Vendor',
                       image: plan.vendorLogo || '',
                       rating: plan.rating || 0,
-                      // Minimal vendor details as plan might not have all
                       description: '',
                       location: '',
                       deliveryTime: '',
@@ -1017,11 +1019,49 @@ const MealPlanBottomSheet: React.FC<MealPlanBottomSheetProps> = ({ plan, onClose
                       isActive: true,
                       isFeatured: false,
                       created_at: new Date().toISOString(),
-                      tags: []
+                      tags: [] // Fixed: Add missing tags property
                   };
 
-                  addItem(productToAdd, vendorObj, 1);
-                  onClose(); // Close sheet after adding
+                  // Prepare Subscription Metadata
+                  let activeDaysList: number[] = [];
+                   if (isTrial) {
+                       let count = 0;
+                       let d = startDate;
+                       while(count < 3) {
+                           if (getDay(d) !== 0) {
+                               activeDaysList.push(getDay(d));
+                               count++;
+                           }
+                           d = addDays(d, 1);
+                       }
+                   } else {
+                       activeDaysList = weekDays;
+                   }
+                   
+                   const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                   const daysString = activeDaysList.length === 6 && !activeDaysList.includes(0) 
+                       ? "Mon - Sat" 
+                       : activeDaysList.map(d => DAY_NAMES[d]).join(', ');
+
+                  const subscriptionData = {
+                      subscription: {
+                          startDate: startDate.toISOString(),
+                          days: daysString,
+                          meals: selectedMeals,
+                          planType: isTrial ? 'Trial (3 Days)' : 'Weekly Routine',
+                          isTrial: isTrial
+                      }
+                  };
+
+                  if (hasItemsFromDifferentVendor(vendorObj.id)) {
+                      addItem(productToAdd, vendorObj, 1, subscriptionData);
+                      onClose();
+                      return;
+                  }
+
+                  addItem(productToAdd, vendorObj, 1, subscriptionData);
+                  onClose(); 
+                  navigate('/checkout');
                 }}
                 className="w-full bg-gutzo-primary hover:bg-gutzo-primary-hover text-white rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-colors" style={{ height: '42px' }}> Continue <ArrowRight className="h-4 w-4" /> </button>
                <div className={`flex justify-center pt-1.5 transition-opacity duration-200 ${isRoutine ? 'opacity-100' : 'opacity-0'}`}>

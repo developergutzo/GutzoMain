@@ -100,6 +100,7 @@ router.post('/sync', asyncHandler(async (req, res) => {
     variant_id: item.variantId || item.variant_id || null,
     addons: item.addons ? JSON.stringify(item.addons) : null,
     special_instructions: item.specialInstructions || item.special_instructions || null,
+    metadata: item.metadata || null,
     created_at: new Date().toISOString()
   }));
 
@@ -150,7 +151,7 @@ router.post('/sync', asyncHandler(async (req, res) => {
 // POST /api/cart
 // ============================================
 router.post('/', validate(schemas.addToCart), asyncHandler(async (req, res) => {
-  const { product_id, vendor_id, quantity, variant_id, addons, special_instructions } = req.body;
+  const { product_id, vendor_id, quantity, variant_id, addons, special_instructions, metadata } = req.body;
 
   // Verify product exists and is available
   const { data: product, error: productError } = await supabaseAdmin
@@ -205,7 +206,8 @@ router.post('/', validate(schemas.addToCart), asyncHandler(async (req, res) => {
       quantity,
       variant_id,
       addons: addons ? JSON.stringify(addons) : null,
-      special_instructions
+      special_instructions,
+      metadata
     })
     .select()
     .single();
@@ -221,7 +223,7 @@ router.post('/', validate(schemas.addToCart), asyncHandler(async (req, res) => {
 // ============================================
 router.put('/:id', validate(schemas.updateCartItem), asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { quantity, addons, special_instructions } = req.body;
+  const { quantity, addons, special_instructions, metadata } = req.body;
 
   // Verify ownership
   const { data: existingItem } = await supabaseAdmin
@@ -256,6 +258,7 @@ router.put('/:id', validate(schemas.updateCartItem), asyncHandler(async (req, re
       quantity,
       addons: addons ? JSON.stringify(addons) : existingItem.addons,
       special_instructions: special_instructions ?? existingItem.special_instructions,
+      metadata: metadata ?? existingItem.metadata,
       updated_at: new Date().toISOString()
     })
     .eq('id', id)

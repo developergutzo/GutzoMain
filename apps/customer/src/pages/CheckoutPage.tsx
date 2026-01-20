@@ -5,10 +5,11 @@ import { useRouter } from '../components/Router';
 import { useLocation as useUserLocation } from '../contexts/LocationContext';
 import { nodeApiService as apiService } from '../utils/nodeApi';
 import { DistanceService } from '../utils/distanceService';
-import { ArrowLeft, Plus, ChevronRight, FileText, Percent, X, ChevronDown, Share, UtensilsCrossed, Clock, MapPin, Phone } from 'lucide-react';
+import { ArrowLeft, Plus, ChevronRight, FileText, Percent, X, ChevronDown, Share, UtensilsCrossed, Clock, MapPin, Phone, Calendar, Utensils } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { ImageWithFallback } from '../components/common/ImageWithFallback';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
+import { format } from 'date-fns';
 import { ProfilePanel } from '../components/auth/ProfilePanel';
 import { Header } from '../components/Header';
 import { toast } from 'sonner';
@@ -44,7 +45,7 @@ interface CartItem {
 
 export function CheckoutPage() {
   const { navigate, goBack } = useRouter();
-  const { items, updateQuantityOptimistic, removeItem } = useCart();
+  const { items, updateQuantityOptimistic, removeItem, isLoading, isReplaceModalOpen } = useCart();
   const cartItems = items as unknown as CartItem[];
   const { location: userLocation, locationDisplay, locationLabel } = useUserLocation();
   
@@ -529,26 +530,94 @@ export function CheckoutPage() {
     };
 
     // Redirect if cart is empty
-   useEffect(() => {
-     if (cartItems.length === 0) {
-        // Robust redirect logic using explicit state or history
-        const state = window.history.state;
-        if (state && state.from === 'vendor_details') {
-            goBack();
-        } else {
-            // Default behavior (homepage) if no specific source
-            // Or if goBack would take us somewhere weird (like login)
-            navigate('/');
-        }
-     }
-   }, [cartItems.length, goBack, navigate]);
+    /*
+    useEffect(() => {
+      // Grace period for state hydration or replace modal
+      const timer = setTimeout(() => {
+         // Only redirect if:
+         // 1. Cart is truly empty
+         // 2. Not loading initial state
+         // 3. Not waiting on a Replace Cart decision
+         if (cartItems.length === 0 && !isLoading && !isReplaceModalOpen) {
+             const state = window.history.state;
+             if (state && state.from === 'vendor_details') {
+                 goBack();
+             } else {
+                 navigate('/');
+             }
+         }
+      }, 600);
+      
+      return () => clearTimeout(timer);
+    }, [cartItems.length, isLoading, isReplaceModalOpen, goBack, navigate]);
+    */
 
-   if (cartItems.length === 0) {
-     return null; // Avoid flashing
-   }
+    // Force unlock scroll on mount with aggressive reset (fix for lingering modal locks)
+    useEffect(() => {
+        const unlock = () => {
+            // Reset HTML
+            document.documentElement.style.overflow = '';
+            document.documentElement.style.paddingRight = '';
+            document.documentElement.classList.remove('overflow-hidden');
+            
+            // Reset Body
+            document.body.style.overflow = 'auto';
+            document.body.style.paddingRight = '';
+            document.body.style.position = '';
+            document.body.style.width = '';
+            document.body.classList.remove('overflow-hidden');
+            
+            // Allow pointer events
+            document.body.style.pointerEvents = 'auto';
+        };
+
+        // Run immediately
+        unlock();
+        
+        // And run again after a delay to override any slow cleanup from previous page
+        const timer = setTimeout(unlock, 300);
+        
+        return () => clearTimeout(timer);
+    }, []);
+
+    // NEW: Auto-redirect on empty cart for Mobile/Tablet (<1024px)
+    useEffect(() => {
+        if (cartItems.length === 0 && !isLoading && !isReplaceModalOpen) {
+            // Check viewport width - if mobile/tablet (<1024px), go back
+            if (window.innerWidth < 1024) {
+                console.log('📱 Mobile/Tablet Empty Cart - Redirecting back...');
+                goBack();
+            }
+        }
+    }, [cartItems.length, isLoading, isReplaceModalOpen, navigate, goBack]);
+
+    if (cartItems.length === 0 && !isLoading && !isReplaceModalOpen) {
+      console.log('🛒 DEBUG: Cart is empty (checkout render)', { items: cartItems, isLoading, isReplaceModalOpen });
+      // Show explicit empty state
+      return (
+          <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                  <UtensilsCrossed className="w-8 h-8 text-gray-400" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 mb-2">Your Cart is Empty</h2>
+              <p className="text-gray-500 text-center mb-6 max-w-xs">
+                  Looks like you haven't added any meal plans yet.
+              </p>
+              <Button 
+                  onClick={() => navigate('/')}
+                  className="bg-gutzo-primary hover:bg-gutzo-primary-hover text-white rounded-xl px-8 py-6 h-auto text-base font-semibold shadow-lg shadow-green-200 w-full max-w-xs"
+              >
+                  Find a Meal Plan
+              </Button>
+          </div>
+      );
+    }
+
+    const isSubscription = cartItems.some(item => item.metadata?.planType);
+    console.log('🛒 Checkout Debug:', { cartItems, isSubscription });
 
    return (
-     <div className="min-h-screen bg-gray-50 pb-32 lg:pb-0 relative overflow-x-hidden">
+     <div className="min-h-screen bg-gray-50 pb-64 lg:pb-0 relative overflow-x-hidden">
        {/* Desktop Header */}
        <div className="hidden lg:block">
          <Header 
@@ -598,10 +667,25 @@ export function CheckoutPage() {
                                             ? 'Current Location' 
                                             : (() => {
                                                 if (!selectedAddress) return '';
-                                                if (selectedAddress.label === 'Other' || selectedAddress.type === 'Other') {
-                                                    return selectedAddress.custom_label || selectedAddress.label || selectedAddress.type || '';
+                                                // Priority: Street + Area + City (Most precise)
+                                                // Fallback: Full Address (Google)
+                                                
+                                                // Check for correct fields based on UserAddress type (street, area)
+                                                const preciseParts = [
+                                                    (selectedAddress as any).street || (selectedAddress as any).address_line1,
+                                                    (selectedAddress as any).area || (selectedAddress as any).address_line2,
+                                                    selectedAddress.city
+                                                ].filter(p => p && p.trim().length > 0);
+                                                
+                                                if (preciseParts.length >= 2) {
+                                                    return preciseParts.join(', ');
                                                 }
-                                                return selectedAddress.label || selectedAddress.type || '';
+                                                
+                                                return (selectedAddress as any).full_address || 
+                                                       (selectedAddress as any).formatted_address || 
+                                                       selectedAddress.label || 
+                                                       selectedAddress.type || 
+                                                       'Location';
                                             })()
                                         }
                                     </>
@@ -690,44 +774,145 @@ export function CheckoutPage() {
 
              <h2 className="text-xl font-bold text-gray-800 hidden lg:block">Order Summary</h2>
              <div className="bg-white rounded-xl p-4 shadow-sm space-y-3">
-            {displayItems.map((item) => (
-                <div key={item.id} className="flex gap-4 items-start py-0">
+            {displayItems.map((item) => {
+                // Subscription Detection
+                const subscription = item.metadata?.subscription;
+                
+                // --- SPECIAL UI FOR SUBSCRIPTIONS ---
+                if (subscription) {
+                    const isTrial = subscription.planType?.toLowerCase().includes('trial');
+                    
+                    return (
+                        <div key={item.id} className={`bg-white rounded-2xl border ${isTrial ? 'border-orange-100' : 'border-green-100'} shadow-[0_4px_20px_rgba(0,0,0,0.06)] mb-5 relative overflow-hidden transition-all hover:shadow-lg group`}>
+                            <div className="p-5">
+                                {/* Premium Badge (Static to ensure visibility) */}
+                                <div className="mb-3 flex items-center justify-between">
+                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider shadow-sm border ${
+                                        isTrial 
+                                            ? 'bg-orange-100 text-orange-700 border-orange-200' 
+                                            : 'bg-green-100 text-green-700 border-green-200'
+                                    }`}>
+                                       {subscription.planType || 'Subscription'}
+                                    </span>
+                                </div>
 
-                   
-                   <div className="flex-1">
-                       <div className="flex justify-between items-start">
-                           <div className="pr-2">
-                               <h3 className="font-bold text-gray-900 text-[15px] leading-tight">{item.name}</h3>
+                                {/* Title & Meta */}
+                                <div className="mb-5 relative">
+                                    <h3 className="font-extrabold text-gray-900 text-[18px] leading-snug font-primary">
+                                        {item.name}
+                                    </h3>
+                                    {!isTrial && (
+                                        <p className="text-green-600 text-xs mt-1.5 font-semibold flex items-center gap-1">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                                            Auto-renewing weekly plan
+                                        </p>
+                                    )}
+                                </div>
 
+                                {/* Rich Data Grid */}
+                                <div className="space-y-4 bg-gray-50/50 rounded-xl p-4 border border-gray-100/50">
+                                    {/* Row 1: Dates */}
+                                    <div className="flex items-start gap-4">
+                                        <div className={`w-10 h-10 min-w-[2.5rem] rounded-full bg-white border flex items-center justify-center flex-shrink-0 shadow-sm mt-0.5 ${
+                                            isTrial ? 'border-orange-100 text-orange-600' : 'border-green-100 text-[#1BA672]'
+                                        }`}>
+                                            <Calendar className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[11px] uppercase tracking-wider text-gray-400 font-bold mb-1">Start Date</p>
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <span className="text-[15px] font-bold text-gray-900 leading-tight">
+                                                    {format(new Date(subscription.startDate), 'EEE, d MMM')}
+                                                </span>
+                                                <span className="text-[11px] text-gray-500 font-semibold bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
+                                                    {subscription.days === 'Mon - Sat' ? '6 Days/Week' : 'Custom Days'}
+                                                </span>
+                                            </div>
+                                            <p className="text-[12px] text-gray-500 mt-0.5 font-medium">{subscription.days}</p>
+                                        </div>
+                                    </div>
 
-                           </div>
-                           <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                               <div 
-                                 className="flex items-center justify-between px-2 rounded-lg shadow-sm"
-                                 style={{ width: '84px', height: '32px', backgroundColor: '#E8F6F1', border: '1px solid #1BA672' }}
-                               >
-                                   <button 
-                                     onClick={() => handleQuantityChange(item.productId, item.quantity - 1)}
-                                     className="font-medium text-xl leading-none pb-1 hover:scale-110 transition-transform"
-                                     style={{ color: '#1BA672' }}
-                                   >−</button>
-                                   <span className="text-[15px] font-semibold text-gray-900 leading-none pt-0.5">{item.quantity}</span>
-                                   <button 
-                                     onClick={() => handleQuantityChange(item.productId, item.quantity + 1)}
-                                     className="font-medium text-xl leading-none pb-1 hover:scale-110 transition-transform"
-                                     style={{ color: '#1BA672' }}
-                                   >+</button>
-                               </div>
-                               <div className="flex justify-end items-center gap-1 mt-1">
-                                    <span className="text-xs font-semibold" style={{ color: '#9CA3AF', textDecoration: 'line-through' }}>₹{(item.price * item.quantity * 1.2).toFixed(0)}</span>
-                                    <span className="text-sm font-semibold text-gray-900">₹{(item.price * item.quantity).toFixed(2)}</span>
-                               </div>
-                           </div>
-                       </div>
-                   </div>
+                                    {/* Row 2: Meals */}
+                                    <div className="flex items-start gap-4">
+                                        <div className="w-10 h-10 min-w-[2.5rem] rounded-full bg-white border border-gray-100 flex items-center justify-center flex-shrink-0 shadow-sm text-orange-500 mt-0.5">
+                                            <Utensils className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[11px] uppercase tracking-wider text-gray-400 font-bold mb-1">Included Meals</p>
+                                            <div className="flex flex-wrap gap-2">
+                                                {(Array.isArray(subscription.meals) ? subscription.meals : [subscription.meals]).map((meal: string, idx: number) => (
+                                                    <span key={idx} className="text-[13px] font-semibold text-gray-700 bg-white border border-gray-200 px-3 py-1 rounded-lg shadow-sm">
+                                                        {meal}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Footer: Price & Quantity */}
+                                <div className="flex items-center justify-between mt-5 pt-3 border-t border-gray-50">
+                                    <div className="flex flex-col">
+                                         <span className="text-[16px] text-gray-400 font-bold" style={{ textDecoration: 'line-through', textDecorationColor: '#6B7280', textDecorationThickness: '2px' }}>₹{(item.price * item.quantity * 1.2).toFixed(0)}</span>
+                                         <span className="text-[18px] font-extrabold text-[#1BA672]">
+                                            ₹{(item.price * item.quantity).toFixed(0)}
+                                            <span className="text-gray-400 text-[11px] font-semibold ml-1">/ plan</span>
+                                         </span>
+                                    </div>
+
+                                    {/* Quantity Control Pill */}
+                                    <div className="flex items-center justify-between px-1 bg-white border border-gray-200 rounded-lg shadow-sm h-[44px] min-w-[120px]">
+                                        <button 
+                                          onClick={() => handleQuantityChange(item.productId, item.quantity - 1)}
+                                          className="w-12 h-full flex items-center justify-center text-2xl transition-colors pb-1 text-[#1BA672] hover:text-green-700 font-bold"
+                                        >−</button>
+                                        <span className="text-[16px] font-bold text-gray-900">{item.quantity}</span>
+                                        <button 
+                                          onClick={() => handleQuantityChange(item.productId, item.quantity + 1)}
+                                          className="w-12 h-full flex items-center justify-center text-[#1BA672] hover:text-green-700 text-2xl transition-colors pb-1"
+                                        >+</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                }
+
+                // --- STANDARD LIST UI (Existing) ---
+                return (
+                <div key={item.id} className="flex justify-between items-start py-4 border-b border-gray-100 last:border-0 last:pb-0 mb-2 last:mb-0">
+                    <div className="flex-1 min-w-0 pr-3">
+                        <h3 className="font-bold text-gray-900 text-[15px] leading-tight flex items-center gap-2">
+                            {item.name}
+                        </h3>
+                        <p className="text-gray-500 text-sm mt-1 leading-relaxed line-clamp-2">{item.product?.description}</p>
+                    </div>
+                    
+                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                        {/* Stepper */}
+                        <div className="flex items-center justify-between px-1 bg-white border border-gray-200 rounded-lg shadow-sm h-[44px] min-w-[120px]">
+                            <button 
+                              onClick={() => handleQuantityChange(item.productId, item.quantity - 1)}
+                              className="w-12 h-full flex items-center justify-center text-2xl transition-colors pb-1 text-[#1BA672] hover:text-green-700 font-bold"
+                            >−</button>
+                            <span className="text-[16px] font-bold text-gray-900">{item.quantity}</span>
+                            <button 
+                              onClick={() => handleQuantityChange(item.productId, item.quantity + 1)}
+                              className="w-12 h-full flex items-center justify-center text-[#1BA672] hover:text-green-700 text-2xl transition-colors pb-1"
+                            >+</button>
+                        </div>
+                        {/* Price */}
+                        <div className="flex justify-end items-center gap-1 mt-1">
+                             <span className="text-xs font-semibold" style={{ color: '#9CA3AF', textDecoration: 'line-through' }}>₹{(item.price * item.quantity * 1.2).toFixed(0)}</span>
+                             <span className="text-sm font-semibold text-gray-900">₹{(item.price * item.quantity).toFixed(2)}</span>
+                        </div>
+                    </div>
                 </div>
-            ))}
+                );
+            })}
             
+            {/* Only show 'Add more items' if NOT a subscription cart (to prevent logic conflicts) */}
+            {!cartItems.some(item => item.metadata?.subscription) && (
             <div>
                  <button 
                    onClick={() => navigate(`/vendor/${vendor?.id}`)} 
@@ -737,6 +922,7 @@ export function CheckoutPage() {
                      <Plus className="w-4 h-4" /> Add more items
                  </button>
             </div>
+            )}
             
              <div className="flex gap-3 pt-1 overflow-x-auto scrollbar-hide [&::-webkit-scrollbar]:hidden items-start">
                   {/* Show "Add Note" button ONLY if vendor allows notes AND no note exists */}
@@ -929,6 +1115,9 @@ export function CheckoutPage() {
                     Orders cannot be cancelled once placed. No refunds will be provided. Please review your order carefully before confirming.
                 </p>
             </div>
+
+            {/* Explicit Spacer for Fixed Footer Clearance */}
+            <div className="h-48 w-full lg:hidden" aria-hidden="true" />
         </div>
 
       </div>

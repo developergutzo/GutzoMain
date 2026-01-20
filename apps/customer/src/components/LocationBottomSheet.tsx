@@ -79,7 +79,7 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress, onEditAddre
   const handleDetectLocation = async () => {
     await refreshLocation();
     onClose();
-    navigate('/');
+    // Do not force navigate to home - stay on current page (e.g. checkout)
   };
 
   const [selectingAddressId, setSelectingAddressId] = useState<string | null>(null);
@@ -94,7 +94,7 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress, onEditAddre
             // Refresh location context
             await refreshLocation();
             onClose();
-            navigate('/'); // Ensure we land in the app
+            // Do not force navigate to home - stay on current page
           } catch (error) {
             console.error("Failed to select address:", error);
           } finally {

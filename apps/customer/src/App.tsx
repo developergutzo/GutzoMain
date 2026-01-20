@@ -237,7 +237,7 @@ function AppContent() {
     setProfileOrderData(null);
     if (returnToLocationSheetRef.current) {
       setTimeout(() => {
-        setShowCheckoutPanel(true);
+        navigate('/checkout');
         returnToLocationSheetRef.current = false;
       }, 250);
     }
@@ -251,11 +251,12 @@ function AppContent() {
     setShowCartPanel(false);
   };
   const handleShowCheckout = () => {
-    // This might not be needed if we route to /checkout, but keeping for compatibility
+    // Navigate to full checkout page instead of opening legacy panel
+    navigate('/checkout');
     setShowCartPanel(false);
-    setShowCheckoutPanel(true);
   };
   const handleCloseCheckout = () => {
+    // No-op - replaced by route navigation
     setShowCheckoutPanel(false);
   };
   const handleProceedToPayment = (orderData: any) => {
@@ -573,17 +574,7 @@ function AppContent() {
             }
           />
       )}
-      <InstantOrderPanel
-        isOpen={showCheckoutPanel}
-        onClose={handleCloseCheckout}
-        cartItems={cartItems}
-        onPaymentSuccess={handlePaymentSuccess}
-        onAddAddress={() => {
-          setShowAddressModal(true);
-        }}
-        refreshTrigger={addressRefreshTrigger}
-        newAddressId={newlyAddedAddressId}
-      />
+      {/* InstantOrderPanel removed - use /checkout route instead */}
       {paymentSuccessData && (
         <PaymentSuccessModal
           isOpen={showPaymentSuccess}

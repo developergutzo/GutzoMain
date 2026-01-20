@@ -81,7 +81,8 @@ export const schemas = {
       addon_id: Joi.string().pattern(uuidPattern).required(),
       quantity: Joi.number().integer().min(1).max(5).default(1)
     })),
-    special_instructions: Joi.string().max(200)
+    special_instructions: Joi.string().max(200),
+    metadata: Joi.object().unknown()
   }),
 
   updateCartItem: Joi.object({
@@ -90,7 +91,8 @@ export const schemas = {
       addon_id: Joi.string().pattern(uuidPattern).required(),
       quantity: Joi.number().integer().min(1).max(5).default(1)
     })),
-    special_instructions: Joi.string().max(200)
+    special_instructions: Joi.string().max(200),
+    metadata: Joi.object().unknown()
   }),
 
   // ========== ORDER ==========

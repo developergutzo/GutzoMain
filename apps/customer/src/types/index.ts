@@ -86,6 +86,7 @@ export interface CartItem {
   quantity: number;
   image: string;
   isVeg: boolean;
+  metadata?: any;
 }
 
 export interface Address {

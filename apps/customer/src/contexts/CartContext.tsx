@@ -25,6 +25,7 @@ export interface CartItem {
   variantId?: string;
   addons?: any[];
   specialInstructions?: string;
+  metadata?: any;
 }
 
 interface CartState {
@@ -45,7 +46,7 @@ interface CartState {
 }
 
 type CartAction =
-  | { type: 'ADD_ITEM'; payload: { product: Product; vendor: Vendor; quantity: number } }
+  | { type: 'ADD_ITEM'; payload: { product: Product; vendor: Vendor; quantity: number; metadata?: any } }
   | { type: 'REMOVE_ITEM'; payload: { productId: string } }
   | { type: 'UPDATE_QUANTITY'; payload: { productId: string; quantity: number } }
   | { type: 'OPTIMISTIC_UPDATE'; payload: { productId: string; quantity: number; previousQuantity: number } }
@@ -59,8 +60,8 @@ type CartAction =
   | { type: 'UPDATE_ITEM_ID'; payload: { productId: string; newId: string } };
 
 interface CartContextType extends CartState {
-  addItem: (product: Product, vendor: Vendor, quantity: number) => void;
-  addItemOptimistic: (product: Product, vendor: Vendor, quantity: number) => Promise<void>;
+  addItem: (product: Product, vendor: Vendor, quantity: number, metadata?: any) => void;
+  addItemOptimistic: (product: Product, vendor: Vendor, quantity: number, metadata?: any) => Promise<void>;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   updateQuantityOptimistic: (productId: string, quantity: number) => Promise<void>;
@@ -224,7 +225,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
     }
 
     case 'ADD_ITEM': {
-      const { product, vendor, quantity } = action.payload;
+      const { product, vendor, quantity, metadata } = action.payload;
       const existingItem = state.items.find(item => item.productId === product.id);
 
       let newItems;
@@ -235,6 +236,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
             : item
         );
       } else {
+
         const newItem: CartItem = {
           id: `${product.id}_${Date.now()}`,
           productId: product.id,
@@ -242,6 +244,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
           name: product.name,
           price: product.price,
           quantity,
+          metadata,
           vendor: {
             id: vendor.id,
             name: vendor.name,
@@ -430,7 +433,8 @@ const transformCartFromAPI = (apiCart: any): { items: CartItem[]; totalItems: nu
         image: item.image,
         description: item.product?.description || '',
         category: item.category
-      }
+      },
+      metadata: item.metadata || null // Hydrate metadata if available from API
     };
     
     // console.log(`✅ Transformed cart item ${index + 1} with fresh data:`, transformedItem);
@@ -840,9 +844,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [isAuthenticated, user]);
 
   // Enhanced addItem with direct persistence
-  const addItem = (product: Product, vendor: Vendor, quantity: number = 1) => {
+  const addItem = (product: Product, vendor: Vendor, quantity: number = 1, metadata?: any) => {
     // Redirect to optimistic version which handles API sync
-    addItemOptimistic(product, vendor, quantity);
+    addItemOptimistic(product, vendor, quantity, metadata);
   };
 
   const removeItem = (productId: string) => {
@@ -1000,7 +1004,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // Replace Cart Logic
   // ---------------------------------------------------------------------------
   const [isReplaceModalOpen, setReplaceModalOpen] = useState(false);
-  const [pendingItem, setPendingItem] = useState<{product: Product, vendor: Vendor, quantity: number} | null>(null);
+  const [pendingItem, setPendingItem] = useState<{product: Product, vendor: Vendor, quantity: number, metadata?: any} | null>(null);
   
   const closeReplaceModal = () => {
     setReplaceModalOpen(false);
@@ -1018,7 +1022,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         payload: { 
           product: pendingItem.product, 
           vendor: pendingItem.vendor, 
-          quantity: pendingItem.quantity 
+          quantity: pendingItem.quantity,
+          metadata: pendingItem.metadata
         } 
       });
 
@@ -1047,19 +1052,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
 
-  const addItemOptimistic = useCallback(async (product: Product, vendor: Vendor, quantity: number = 1) => {
+  const addItemOptimistic = useCallback(async (product: Product, vendor: Vendor, quantity: number = 1, metadata?: any) => {
     // -------------------------------------------------------------------------
     // VENDOR CONFLICT CHECK
     // -------------------------------------------------------------------------
     const currentVendor = getCurrentVendor();
     if (currentVendor && currentVendor.id !== vendor.id && state.items.length > 0) {
-       setPendingItem({ product, vendor, quantity });
+       setPendingItem({ product, vendor, quantity, metadata });
        setReplaceModalOpen(true);
        return; // STOP here
     }
 
     // Apply optimistic addition immediately
-    dispatch({ type: 'ADD_ITEM', payload: { product, vendor, quantity } });
+    dispatch({ type: 'ADD_ITEM', payload: { product, vendor, quantity, metadata } });
 
     // Only sync with API if user is authenticated
     if (isAuthenticated && user) {
@@ -1069,7 +1074,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         if (existingItem && existingItem.id && !existingItem.id.includes('_')) { // Changed from endsWith('_api') to includes('_') for consistency
              // Case 1: Item exists and has a real DB ID -> Update Quantity
              const newQuantity = existingItem.quantity + quantity;
-             const success = await apiService.updateCartItem(user.phone, existingItem.id, { quantity: newQuantity });
+             const updateData: any = { quantity: newQuantity };
+             if (metadata) updateData.metadata = metadata;
+             
+             const success = await apiService.updateCartItem(user.phone, existingItem.id, updateData);
              
              if (success) {
                // console.log('✅ Cart item update synced with API successfully');
@@ -1083,7 +1091,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
              const response = await apiService.addToCart(user.phone, {
                 product_id: product.id,
                 quantity: quantity,
-                vendor_id: vendor.id
+                vendor_id: vendor.id,
+                metadata: metadata
              });
              
              // Extract real ID from response
@@ -1102,9 +1111,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
              }
         }
 
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ API sync failed for cart addition:', error);
-        // Rollback on error
+        toast.error(`Sync Issue: ${error.message || 'Unknown error'}`);
+        // Rollback disabled for debugging - keep item in UI to verify it was added
+        /*
         const currentQuantity = state.items.find(item => item.productId === product.id)?.quantity || 0;
         const rollbackQuantity = Math.max(0, currentQuantity - quantity);
         if (rollbackQuantity === 0) {
@@ -1113,6 +1124,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
              dispatch({ type: 'UPDATE_QUANTITY', payload: { productId: product.id, quantity: rollbackQuantity } });
         }
         toast.error('Failed to add item. Please check your connection.');
+        */
       }
     }
   }, [isAuthenticated, user, state.items]);
