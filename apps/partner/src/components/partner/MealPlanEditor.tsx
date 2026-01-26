@@ -8,6 +8,10 @@ import { Calendar, Plus, Trash2, Save, X, Utensils, Sun, Moon, Coffee, ChevronLe
 import { toast } from "sonner";
 import { nodeApiService as apiService } from "../../utils/nodeApi";
 import { format, addDays, startOfWeek, addWeeks, subWeeks } from "date-fns";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "../ui/command";
+import { cn } from "../ui/utils";
+import { Check, ChevronsUpDown, Search } from "lucide-react";
 
 interface Product {
   id: string;
@@ -224,21 +228,65 @@ export function MealPlanEditor({ vendorId, plan, onBack, onSave }: MealPlanEdito
                                             {slot === 'dinner' && <Moon size={12}/>}
                                             {slot}
                                         </Label>
-                                        <Select 
-                                            value={dayData[`${slot}_product_id`] || "none"} 
-                                            onValueChange={(val) => handleProductSelect(dateStr, slot, val === "none" ? "" : val)}
-                                        >
-                                            <SelectTrigger className="w-full h-9 text-sm">
-                                                <SelectValue placeholder="Select item..." />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="none" className="text-gray-400 italic">None</SelectItem>
-                                                {filteredProducts.map(p => (
-                                                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                                                ))}
-                                                {filteredProducts.length === 0 && <div className="p-2 text-xs text-gray-400 italic text-center">No {slot} items</div>}
-                                            </SelectContent>
-                                        </Select>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    variant="outline"
+                                                    role="combobox"
+                                                    className="w-full h-9 justify-between text-sm font-normal"
+                                                >
+                                                    <span className="truncate">
+                                                        {dayData[`${slot}_product_id`] ? 
+                                                            products.find(p => p.id === dayData[`${slot}_product_id`])?.name : 
+                                                            "None"
+                                                        }
+                                                    </span>
+                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[200px] p-0" align="start">
+                                                <Command>
+                                                    <CommandInput placeholder={`Search ${slot}...`} className="h-8" />
+                                                    <CommandList>
+                                                        <CommandEmpty>No {slot} item found.</CommandEmpty>
+                                                        <CommandGroup>
+                                                            <CommandItem
+                                                                value="none"
+                                                                onSelect={() => {
+                                                                    handleProductSelect(dateStr, slot, "");
+                                                                }}
+                                                                className="italic text-gray-400"
+                                                            >
+                                                                <Check
+                                                                    className={cn(
+                                                                        "mr-2 h-4 w-4",
+                                                                        !dayData[`${slot}_product_id`] ? "opacity-100" : "opacity-0"
+                                                                    )}
+                                                                />
+                                                                None
+                                                            </CommandItem>
+                                                            {filteredProducts.map((p) => (
+                                                                <CommandItem
+                                                                    key={p.id}
+                                                                    value={p.name}
+                                                                    onSelect={() => {
+                                                                        handleProductSelect(dateStr, slot, p.id);
+                                                                    }}
+                                                                >
+                                                                    <Check
+                                                                        className={cn(
+                                                                            "mr-2 h-4 w-4",
+                                                                            dayData[`${slot}_product_id`] === p.id ? "opacity-100" : "opacity-0"
+                                                                        )}
+                                                                    />
+                                                                    <span className="truncate">{p.name}</span>
+                                                                </CommandItem>
+                                                            ))}
+                                                        </CommandGroup>
+                                                    </CommandList>
+                                                </Command>
+                                            </PopoverContent>
+                                        </Popover>
                                     </div>
                                     );
                                 })}
