@@ -8,10 +8,12 @@ interface ClearCartModalProps {
   vendorName: string;
 }
 
+import ReactDOM from 'react-dom';
+
 const ClearCartModal: React.FC<ClearCartModalProps> = ({ isOpen, onClose, onConfirm, vendorName }) => {
   if (!isOpen) return null;
 
-  return (
+  return ReactDOM.createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 p-4">
       {/* Overlay click to close */}
       <div className="absolute inset-0" onClick={onClose} />
@@ -64,7 +66,8 @@ const ClearCartModal: React.FC<ClearCartModalProps> = ({ isOpen, onClose, onConf
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
