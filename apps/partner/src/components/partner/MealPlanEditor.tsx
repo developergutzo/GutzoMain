@@ -176,12 +176,23 @@ export function MealPlanEditor({ vendorId, plan, onBack, onSave }: MealPlanEdito
     return (
         <div className="flex flex-col h-full bg-gray-50/50 p-4 rounded-xl">
              <div className="flex items-center justify-between mb-6">
-                 <div>
-                    <Button variant="ghost" onClick={onBack} size="sm" className="pl-0 gap-1 text-gray-500 hover:text-gray-900">
-                        <ChevronLeft size={16} /> Back to Plans
-                    </Button>
-                    <h2 className="text-2xl font-bold text-gray-900 mt-1">{plan.name || plan.title}</h2>
-                    <p className="text-sm text-gray-500">Manage daily menu items</p>
+                 <div className="flex items-center gap-4">
+                    {(plan.image_url || plan.image) && (
+                        <div className="w-16 h-16 rounded-xl overflow-hidden border bg-white shrink-0 shadow-sm">
+                            <img 
+                                src={plan.image_url || plan.image} 
+                                alt={plan.name || plan.title} 
+                                className="w-full h-full object-cover" 
+                            />
+                        </div>
+                    )}
+                    <div>
+                        <Button variant="ghost" onClick={onBack} size="sm" className="pl-0 gap-1 text-gray-500 hover:text-gray-900">
+                            <ChevronLeft size={16} /> Back to Plans
+                        </Button>
+                        <h2 className="text-2xl font-bold text-gray-900 mt-1">{plan.name || plan.title}</h2>
+                        <p className="text-sm text-gray-500">Manage daily menu items</p>
+                    </div>
                  </div>
                  <Button onClick={saveChanges} className="bg-gutzo-primary text-white gap-2">
                      <Save size={16} /> Save Changes
