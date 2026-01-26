@@ -114,7 +114,7 @@ export const schemas = {
     tip_amount: Joi.number().min(0).default(0),
     special_instructions: Joi.string().max(500).allow(''),
     payment_method: Joi.string().valid('upi', 'card', 'wallet', 'cod').required(),
-    order_source: Joi.string().valid('app', 'web', 'whatsapp').default('app'),
+    order_source: Joi.string().valid('app', 'web', 'whatsapp', 'subscription').default('app'),
     // Fee overrides (optional, for syncing with frontend calculations)
     delivery_fee: Joi.number().min(0),
     platform_fee: Joi.number().min(0),

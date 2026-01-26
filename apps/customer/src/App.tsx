@@ -50,7 +50,7 @@ import { CheckoutPage } from "./pages/CheckoutPage"; // Added CheckoutPage impor
 import { OrderTrackingPage } from "./pages/OrderTrackingPage";
 import { Toaster } from "./components/ui/sonner";
 import { toast } from "sonner";
-import { Loader2, MapPin, Plus, X, Zap } from "lucide-react";
+import { Loader2, MapPin, Plus, X, Zap, Utensils, ChevronRight } from "lucide-react";
 import { Vendor } from "./types/index";
 import { useVendors } from "./hooks/useVendors";
 import { filterVendors, extractCategoriesFromVendors } from "./utils/vendors";
@@ -65,6 +65,8 @@ import { LocationBottomSheet } from "./components/LocationBottomSheet";
 import { LoadingScreen } from "./components/common/LoadingScreen";
 import { OrderTrackingProvider } from "./contexts/OrderTrackingContext";
 import { ActiveOrderFloatingBar } from "./components/ActiveOrderFloatingBar";
+import { SubscriptionDetailsSheet } from "./components/SubscriptionDetailsSheet";
+import { nodeApiService as apiService } from "./utils/nodeApi";
 
 
 import { useMobileNavigation } from "./hooks/useMobileNavigation";
@@ -152,7 +154,62 @@ function AppContent() {
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
-  // Consolidated Body Scroll Lock Effect
+  const [activeSubscription, setActiveSubscription] = useState<any>(null);
+  const [showSubscriptionSheet, setShowSubscriptionSheet] = useState(false);
+
+  // Check for subscription success in URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('subscription_success') === 'true') {
+        toast.success("Subscription Activated Successfully! 🎉");
+        // Clean URL
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+        // Ensure we refresh subscriptions
+        if (isAuthenticated) fetchActiveSubscription();
+    }
+  }, [isAuthenticated]); // Run on mount and auth change
+
+  // Fetch active subscription
+  const fetchActiveSubscription = async () => {
+    if (!user?.phone) return;
+    try {
+        // Fetch user's orders that are subscriptions and active
+        // Or deeper integration: fetch active subscription endpoint if exists
+        // Since we don't have a dedicated endpoint confirmed in nodeApi list for "active subscription"
+        // we might fallback to checking orders with metadata.active = true or similar.
+        // But let's assume we can fetch orders and find the latest active subscription.
+        
+        // Actually, looking at nodeApi.ts, we have `getMyMealPlanSubscriptions`:
+        // async getMyMealPlanSubscriptions(phone: string)
+        
+        const res = await apiService.getMyMealPlanSubscriptions(user.phone);
+        if (res.success && res.data && res.data.length > 0) {
+            // Get the most recent active one
+             const active = res.data.find((sub: any) => sub.status === 'active');
+             if (active) {
+                 setActiveSubscription(active);
+             } else {
+                 // Fallback: check general orders for now if subscription API not fully ready
+                 // This is a temporary bridge if needed.
+             }
+        }
+    } catch (err) {
+        console.error("Failed to fetch subscription", err);
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+        fetchActiveSubscription();
+    } else {
+        setActiveSubscription(null);
+    }
+  }, [isAuthenticated, user?.phone]);
+
+  // Initial Data Fetch - useVendors hooks handles itself
+  // Removed redundant loadVendorProducts() call
+
   useEffect(() => {
     const shouldLock = 
       selectedMealPlan !== null || 
@@ -160,7 +217,8 @@ function AppContent() {
       showProfilePanel || 
       showCartPanel || 
       showCheckoutPanel || 
-      showAddressPanel;
+      showAddressPanel ||
+      showSubscriptionSheet;
 
     if (shouldLock) {
       document.body.style.overflow = 'hidden';
@@ -177,7 +235,9 @@ function AppContent() {
       document.body.style.overflow = '';
       document.body.style.paddingRight = '';
     };
-  }, [selectedMealPlan, showLoginPanel, showProfilePanel, showCartPanel, showCheckoutPanel, showAddressPanel]);
+  }, [selectedMealPlan, showLoginPanel, showProfilePanel, showCartPanel, showCheckoutPanel, showAddressPanel, showSubscriptionSheet]);
+
+
 
   useEffect(() => {
     //if (!locationLoading && !isInCoimbatore) {
@@ -473,6 +533,17 @@ function AppContent() {
             onClose={() => setSelectedMealPlan(null)}
           />
         </>
+      )}
+
+      {/* Subscription Details Sheet */}
+      {showSubscriptionSheet && activeSubscription && (
+         <SubscriptionDetailsSheet
+            isOpen={showSubscriptionSheet}
+            onClose={() => setShowSubscriptionSheet(false)}
+            subscription={activeSubscription}
+            onSkip={() => toast.info("Skip functionality coming soon!")}
+            onCancel={() => toast.info("Cancel functionality coming soon!")}
+         />
       )}
       <main
           className="w-full py-6 md:py-8 flex-1"

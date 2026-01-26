@@ -41,6 +41,7 @@ interface CartItem {
     description?: string;
     category?: string;
   };
+  metadata?: any;
 }
 
 export function CheckoutPage() {
@@ -138,9 +139,12 @@ export function CheckoutPage() {
     syncPrices();
   }, [cartItems]);
 
+  const [loadingAddresses, setLoadingAddresses] = useState(true);
+
   // Fetch Addresses
   const fetchAddresses = () => {
     if (user?.phone) {
+        setLoadingAddresses(true); 
         const phone = user.phone.startsWith('+91') ? user.phone : `+91${user.phone}`;
         import('../utils/addressApi').then(({ AddressApi }) => {
             AddressApi.getUserAddresses(phone).then(res => {
@@ -204,9 +208,12 @@ export function CheckoutPage() {
                        setSelectedAddress(fallbackAddress);
                     }
                 }
+            }).finally(() => {
+                setLoadingAddresses(false);
             });
         });
     } else if (userLocation && userLocation.coordinates) {
+       // Guest user logic
        const fallbackAddress = {
            id: 'device_location',
            type: locationLabel || locationDisplay || 'Current Location',
@@ -221,6 +228,10 @@ export function CheckoutPage() {
        };
        setSelectedAddress(fallbackAddress);
        setAddresses([]);
+       setLoadingAddresses(false);
+    } else {
+       // Nothing found yet
+       setLoadingAddresses(false);
     }
   };
 
@@ -367,16 +378,19 @@ export function CheckoutPage() {
        setIsProcessing(true);
        try {
          // 1. Create order
-         const orderPayload = {
-           vendor_id: vendor?.id || cartItems[0].vendorId,
-           items: displayItems.map(item => ({
-             product_id: item.productId || item.id,
-             quantity: item.quantity,
-           })),
-           delivery_address: selectedAddress,
-           delivery_phone: userPhone,
-           payment_method: 'wallet', 
+          const isSubscription = displayItems.some(item => item.metadata?.subscription);
+
+          const orderPayload = {
+            vendor_id: vendor?.id || cartItems[0].vendorId,
+            items: displayItems.map(item => ({
+              product_id: item.productId || item.id,
+              quantity: item.quantity,
+            })),
+            delivery_address: selectedAddress,
+            delivery_phone: userPhone,
+            payment_method: 'wallet', 
             special_instructions: orderNote || undefined, // Send note if exists
+            order_source: isSubscription ? 'subscription' : 'app',
             // Send dynamic fees
             delivery_fee: deliveryFee,
             platform_fee: PLATFORM_FEE,
@@ -1054,7 +1068,7 @@ export function CheckoutPage() {
 
             {/* Desktop Pay Button */}
             <div className="hidden lg:block">
-                 {loadingFee ? (
+                 {(loadingFee || loadingAddresses) ? (
                      <div className="w-full">
                          <div className="w-full h-12 bg-gray-200 animate-pulse rounded-lg mb-2"></div>
                          <div className="w-32 h-4 bg-gray-200 animate-pulse rounded mx-auto"></div>
@@ -1131,7 +1145,7 @@ export function CheckoutPage() {
       >
 
            <div className="px-4 py-4">
-                {loadingFee ? (
+                {(loadingFee || loadingAddresses) ? (
                     <div className="w-full">
                          <div className="w-full h-12 bg-gray-200 animate-pulse rounded-lg mb-2"></div>
                          <div className="w-32 h-4 bg-gray-200 animate-pulse rounded mx-auto"></div>

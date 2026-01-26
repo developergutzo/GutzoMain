@@ -66,12 +66,44 @@ export default function PaymentStatusPage() {
             if (items.length > 0) {
               await clearCart();
             }
+            
+            // Check if this is a subscription order
+            let isSubscription = false;
+            try {
+                // We need to fetch the order to check metadata
+                // Use the ID we have (transactionId or orderId)
+                // Note: The ID here might be transaction ID used for payment status, 
+                // but usually getPaymentStatus returns the internal order ID too if needed.
+                // However, the `id` variable from URL might be order_number or id.
+                // Let's rely on the result body if available, or just fetch using the ID we have.
+                
+                const finalOrderId = result?.body?.orderId || result?.orderId || result?.data?.orderId || id;
+                
+                if (user?.phone) {
+                    const orderRes = await apiService.getOrder(user.phone, finalOrderId);
+                    if (orderRes.success && orderRes.data) {
+                        const order = orderRes.data;
+                        // Check first item for subscription metadata
+                        if (order.items && order.items.length > 0 && order.items[0].metadata?.subscription) {
+                            isSubscription = true;
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to check subscription status:", err);
+            }
 
-            // Redirect to tracking page using the correct GZ ID from backend response
+            // Redirect based on order type
             const trackingId = result?.body?.transactionId || result?.transactionId || result?.data?.transactionId || id;
             
             setTimeout(() => {
-              window.location.href = `/tracking/${trackingId}`;
+              if (isSubscription) {
+                  // Redirect to Home with success flag for subscriptions
+                  window.location.href = `/?subscription_success=true`;
+              } else {
+                  // Redirect to Tracking for standard orders
+                  window.location.href = `/tracking/${trackingId}`;
+              }
             }, 100);
           }
           return;
