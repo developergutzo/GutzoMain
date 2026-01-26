@@ -44,6 +44,11 @@ export function MealPlanEditor({ vendorId, plan, onBack, onSave }: MealPlanEdito
     // We maintain a local map of date -> meals
     const [schedule, setSchedule] = useState<Record<string, MealPlanDay>>({});
     const [loading, setLoading] = useState(true);
+    const [visibleDays, setVisibleDays] = useState(3);
+
+    useEffect(() => {
+        setVisibleDays(3);
+    }, [weekStart]);
 
     useEffect(() => {
         // Fetch vendor products for the dropdowns
@@ -52,7 +57,9 @@ export function MealPlanEditor({ vendorId, plan, onBack, onSave }: MealPlanEdito
                  const res = await apiService.getVendorMenu(vendorId);
                  if (res.success && res.data) {
                      // Parse tags from description for fallback compatibility
-                     const processedProducts = res.data.products.map((p: any) => {
+                     const processedProducts = res.data.products
+                     .filter((p: any) => p.category !== 'Meal Plan') // Exclude Meal Plans from dish selection
+                     .map((p: any) => {
                          const tagRegex = /\[TAGS:(.*?)\]$/;
                          const match = p.description?.match(tagRegex);
                          let extractedTags: string[] = [];
@@ -68,28 +75,26 @@ export function MealPlanEditor({ vendorId, plan, onBack, onSave }: MealPlanEdito
                      setProducts(processedProducts);
                  }
                  
-                 // Initialize schedule from plan.dayMenu if exists
-                 if (plan.dayMenu) {
+                 // Initialize schedule from plan.nutritional_info?.day_menu or plan.dayMenu (legacy/fallback)
+                 const storedMenu = plan.nutritional_info?.day_menu || plan.dayMenu;
+                 if (storedMenu) {
                      const map: Record<string, MealPlanDay> = {};
-                     plan.dayMenu.forEach((d: any) => {
+                     storedMenu.forEach((d: any) => {
                          if (d.menu_date) {
                              map[d.menu_date] = {
                                  menu_date: d.menu_date,
                                  day_name: d.day_name,
-                                 breakfast_product_id: d.breakfast_product_id, // Assuming backend stores IDs or we map from items
-                                 // If backend only stores 'breakfast_item' string, we might struggle to map back to IDs unless we match names
-                                 // For this 'new' editor, we prefer IDs.
-                                 // Fallback: match by name
+                                 breakfast_product_id: d.breakfast_product_id,
                                  breakfast_name: d.breakfast_item,
+                                 lunch_product_id: d.lunch_product_id,
                                  lunch_name: d.lunch_item,
+                                 dinner_product_id: d.dinner_product_id,
                                  dinner_name: d.dinner_item,
+                                 snack_product_id: d.snack_product_id,
                                  snack_name: d.snack_item
                              };
                          }
                      });
-                     
-                     // If we only have names, try to find IDs (Auto-link)
-                     // (Omitting complex auto-link logic for brevity, relying on user to select if empty)
                      setSchedule(map);
                  }
              } catch (e) {
@@ -136,9 +141,16 @@ export function MealPlanEditor({ vendorId, plan, onBack, onSave }: MealPlanEdito
         }));
 
         try {
+            // Store dayMenu inside nutritional_info to avoid schema errors
+            // Ensure we preserve existing nutritional_info
+            const currentInfo = plan.nutritional_info || {};
+
             await apiService.updateVendorProduct(vendorId, plan.id, {
                 ...plan,
-                dayMenu: dayMenu
+                nutritional_info: {
+                    ...currentInfo,
+                    day_menu: dayMenu // Use day_menu (snake_case) inside JSON
+                }
             });
             toast.success("Meal Plan updated successfully!");
             if (onSave) onSave();
@@ -148,7 +160,7 @@ export function MealPlanEditor({ vendorId, plan, onBack, onSave }: MealPlanEdito
     };
 
     // Generate days for view
-    const daysToDisplay = Array.from({ length: 7 }).map((_, i) => {
+    const daysToDisplay = Array.from({ length: visibleDays }).map((_, i) => {
         const d = addDays(weekStart, i);
         return {
             date: d,
@@ -178,7 +190,7 @@ export function MealPlanEditor({ vendorId, plan, onBack, onSave }: MealPlanEdito
                      <ChevronLeft size={16} />
                  </Button>
                  <span className="font-medium text-sm">
-                     {format(weekStart, 'MMM d')} - {format(daysToDisplay[6].date, 'MMM d, yyyy')}
+                     {format(weekStart, 'MMM d')} - {format(addDays(weekStart, 6), 'MMM d, yyyy')}
                  </span>
                  <Button variant="ghost" size="icon" onClick={() => setWeekStart(addWeeks(weekStart, 1))}>
                      <ChevronRight size={16} />
@@ -235,6 +247,16 @@ export function MealPlanEditor({ vendorId, plan, onBack, onSave }: MealPlanEdito
                      );
                  })}
              </div>
+             
+             {visibleDays < 7 && (
+                <Button 
+                    variant="outline" 
+                    className="w-full mt-4 border-dashed border-2 py-6 text-gray-500 hover:border-gutzo-primary hover:text-gutzo-primary"
+                    onClick={() => setVisibleDays(prev => Math.min(prev + 1, 7))}
+                >
+                    <Plus size={20} className="mr-2" /> Add Next Day
+                </Button>
+             )}
         </div>
     );
 }

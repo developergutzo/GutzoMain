@@ -143,7 +143,10 @@ const InstantPicks: React.FC<InstantPicksProps> = ({ noPadding = false, vendorId
             });
 
             // Filter: Show if Type:Instant OR if no Availability Type tags present (Backward Compat)
+            // AND exclude 'Meal Plan' category (which belongs in the Daily Meals section)
             const filteredProducts = mappedProducts.filter((p: any) => {
+                if (p.category === 'Meal Plan') return false;
+
                 const hasInstant = p.allTags.includes('Type:Instant');
                 const hasSubscription = p.allTags.includes('Type:Subscription');
                 const hasNone = p.allTags.includes('Type:None');

@@ -588,6 +588,13 @@ class NodeApiService {
         return this.request("/meal-plans");
     }
 
+    async getMealPlanProducts(vendorId?: string) {
+        const url = vendorId
+            ? `/products?category=Meal Plan&vendor_id=${vendorId}`
+            : `/products?category=Meal Plan`;
+        return this.request(url);
+    }
+
     async getFeaturedMealPlans() {
         return this.request("/meal-plans/featured");
     }

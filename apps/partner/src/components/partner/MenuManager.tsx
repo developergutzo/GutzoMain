@@ -161,7 +161,7 @@ export function MenuManager({ vendorId }: MenuManagerProps) {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {products.map(product => (
+        {products.filter(p => p.category !== 'Meal Plan').map(product => (
           <Card key={product.id} className="overflow-hidden group hover:shadow-md transition-shadow">
             <CardContent className="p-4 flex gap-4">
               {/* Thumbnail Image */}
@@ -450,10 +450,12 @@ function ProductForm({ vendorId, product, products = [], categories, onClose, on
                     <Input id="name" required value={formData.name} onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))} placeholder="e.g. Chicken Biryani" />
                 </div>
                 
+                {/* Show Price and Category only for Instant Orders */}
+                {formData.diet_tags?.includes('Type:Instant') && (
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label htmlFor="price">Price (₹)</Label>
-                        <Input id="price" type="number" required value={formData.price} onChange={e => setFormData(prev => ({ ...prev, price: e.target.value }))} placeholder="120" />
+                        <Input id="price" type="number" required={formData.diet_tags?.includes('Type:Instant')} value={formData.price} onChange={e => setFormData(prev => ({ ...prev, price: e.target.value }))} placeholder="120" />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="category">Category</Label>
@@ -476,6 +478,7 @@ function ProductForm({ vendorId, product, products = [], categories, onClose, on
                         </Select>
                     </div>
                 </div>
+                )}
 
                 <div className="space-y-2">
                     <Label htmlFor="description">Description</Label>
@@ -676,10 +679,6 @@ function ProductForm({ vendorId, product, products = [], categories, onClose, on
                     <div className="flex items-center gap-2">
                         <Switch id="veg" checked={formData.is_veg} onCheckedChange={c => setFormData(prev => ({ ...prev, is_veg: c }))} />
                         <Label htmlFor="veg" className="cursor-pointer">Veg</Label>
-                    </div>
-                    <div className="flex items-center gap-2">
-                         <Switch id="available" checked={formData.is_available} onCheckedChange={c => setFormData(prev => ({ ...prev, is_available: c }))} />
-                        <Label htmlFor="available" className="cursor-pointer">Available</Label>
                     </div>
                 </div>
 
