@@ -11,7 +11,9 @@ import { format, addDays, startOfWeek, addWeeks, subWeeks } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "../ui/command";
 import { cn } from "../ui/utils";
-import { Check, ChevronsUpDown, Search } from "lucide-react";
+import { Check, ChevronsUpDown, Search, Settings, Pencil, ImageIcon, Upload } from "lucide-react";
+import { Dialog, DialogContent, DialogTitle } from "../ui/dialog";
+import { MealPlanForm } from "./MealPlanForm";
 
 interface Product {
   id: string;
@@ -49,6 +51,12 @@ export function MealPlanEditor({ vendorId, plan, onBack, onSave }: MealPlanEdito
     const [schedule, setSchedule] = useState<Record<string, MealPlanDay>>({});
     const [loading, setLoading] = useState(true);
     const [visibleDays, setVisibleDays] = useState(3);
+    const [showSettings, setShowSettings] = useState(false);
+    const [localPlan, setLocalPlan] = useState(plan);
+
+    useEffect(() => {
+        setLocalPlan(plan);
+    }, [plan]);
 
     useEffect(() => {
         setVisibleDays(3);
@@ -177,11 +185,11 @@ export function MealPlanEditor({ vendorId, plan, onBack, onSave }: MealPlanEdito
         <div className="flex flex-col h-full bg-gray-50/50 p-4 rounded-xl">
              <div className="flex items-center justify-between mb-6">
                  <div className="flex items-center gap-4">
-                    {(plan.image_url || plan.image) && (
+                    {(localPlan.image_url || localPlan.image) && (
                         <div className="w-16 h-16 rounded-xl overflow-hidden border bg-white shrink-0 shadow-sm">
                             <img 
-                                src={plan.image_url || plan.image} 
-                                alt={plan.name || plan.title} 
+                                src={localPlan.image_url || localPlan.image} 
+                                alt={localPlan.name || localPlan.title} 
                                 className="w-full h-full object-cover" 
                             />
                         </div>
@@ -190,8 +198,18 @@ export function MealPlanEditor({ vendorId, plan, onBack, onSave }: MealPlanEdito
                         <Button variant="ghost" onClick={onBack} size="sm" className="pl-0 gap-1 text-gray-500 hover:text-gray-900">
                             <ChevronLeft size={16} /> Back to Plans
                         </Button>
-                        <h2 className="text-2xl font-bold text-gray-900 mt-1">{plan.name || plan.title}</h2>
-                        <p className="text-sm text-gray-500">Manage daily menu items</p>
+                        <div className="flex items-center gap-2">
+                             <h2 className="text-2xl font-bold text-gray-900">{localPlan.name || localPlan.title}</h2>
+                             <Button 
+                                 variant="ghost" 
+                                 size="icon" 
+                                 className="h-7 w-7 text-gray-400 hover:text-brand-green"
+                                 onClick={() => setShowSettings(true)}
+                             >
+                                 <Pencil size={14} />
+                             </Button>
+                        </div>
+                        <p className="text-sm text-gray-500">{localPlan.description || "Manage daily menu items"}</p>
                     </div>
                  </div>
                  <Button onClick={saveChanges} className="bg-gutzo-primary text-white gap-2">
@@ -316,6 +334,21 @@ export function MealPlanEditor({ vendorId, plan, onBack, onSave }: MealPlanEdito
                     <Plus size={20} className="mr-2" /> Add Next Day
                 </Button>
              )}
+
+            <Dialog open={showSettings} onOpenChange={setShowSettings}>
+                <DialogContent className="max-w-3xl p-0 border-none bg-transparent">
+                    <DialogTitle className="sr-only">Edit Meal Plan Settings</DialogTitle>
+                    <MealPlanForm 
+                        vendorId={vendorId}
+                        existingPlan={localPlan}
+                        onSuccess={() => {
+                            setShowSettings(false);
+                            // Theoretically we should refresh localPlan or get it back from the form
+                        }}
+                        onCancel={() => setShowSettings(false)}
+                    />
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

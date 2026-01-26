@@ -70,8 +70,11 @@ export function MealPlansManager({ vendorId }: MealPlansManagerProps) {
                    <h2 className="text-xl font-bold text-gray-900">Meal Plans</h2>
                    <p className="text-sm text-gray-500">Manage subscription plans and weekly menus</p>
                 </div>
-                <Button onClick={() => setIsCreating(true)} className="bg-[#1BA672] text-white shadow-sm">
-                    <Plus className="w-4 h-4 mr-2" /> Create New Plan
+                <Button 
+                    onClick={() => setIsCreating(true)} 
+                    className="!bg-gutzo-primary text-white gap-2 shadow-sm border-none"
+                >
+                    <Plus className="w-5 h-5" /> Create New Plan
                 </Button>
             </div>
 
