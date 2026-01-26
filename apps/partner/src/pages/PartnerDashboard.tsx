@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../co
 import { Button } from "../components/ui/button";
 import { Switch } from "../components/ui/switch";
 import { Label } from "../components/ui/label";
-import { Loader2, LogOut, Store, Star, ChefHat, MapPin, TrendingUp, LayoutDashboard, UtensilsCrossed, ShoppingBag, UserCog } from "lucide-react";
+import { Loader2, LogOut, Store, Star, ChefHat, MapPin, TrendingUp, LayoutDashboard, UtensilsCrossed, ShoppingBag, UserCog, CalendarDays } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,6 +21,7 @@ import { ImageWithFallback } from "../components/common/ImageWithFallback";
 import { MenuManager } from "../components/partner/MenuManager";
 import { ProfileManager } from "../components/partner/ProfileManager";
 import { OrderManager } from "../components/partner/OrderManager";
+import { MealPlansManager } from "../components/partner/MealPlansManager";
 
 interface VendorData {
   id: string;
@@ -45,7 +46,7 @@ export function PartnerDashboard() {
   const { navigate } = useRouter();
   const [vendor, setVendor] = useState<VendorData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'menu' | 'orders' | 'profile'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'menu' | 'meal-plans' | 'orders' | 'profile'>('dashboard');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
@@ -111,6 +112,7 @@ export function PartnerDashboard() {
   const tabs = [
       { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { id: 'menu', label: 'Menu', icon: UtensilsCrossed },
+      { id: 'meal-plans', label: 'Meal Plans', icon: CalendarDays },
       { id: 'orders', label: 'Orders', icon: ShoppingBag },
       { id: 'profile', label: 'Profile', icon: UserCog },
   ];
@@ -203,6 +205,7 @@ export function PartnerDashboard() {
                 )}
 
                 {activeTab === 'menu' && <MenuManager vendorId={vendor.id} />}
+                {activeTab === 'meal-plans' && <MealPlansManager vendorId={vendor.id} />}
                 {activeTab === 'profile' && <ProfileManager vendorId={vendor.id} initialData={vendor} onUpdate={refreshProfile} />}
                 {activeTab === 'orders' && <OrderManager vendorId={vendor.id} />}
             </div>
@@ -244,4 +247,3 @@ function StatsCard({ label, value, icon: Icon, color, onClick }: any) {
         </Card>
     );
 }
-

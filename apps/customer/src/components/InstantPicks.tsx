@@ -123,13 +123,45 @@ const InstantPicks: React.FC<InstantPicksProps> = ({ noPadding = false, vendorId
           }
           
           if (responseProducts.length > 0) {
-            const mappedProducts = responseProducts.map((p: any) => ({
-              ...p,
-              ratingAccount: p.review_count || p.ratingCount || 0, // Handle DB vs Type mismatch
-              action: !p.is_available ? 'soldout' : 'add', // Logic for action button
-              image: p.image_url || p.image // Handle image_url from DB
-            }));
-            setProducts(mappedProducts);
+            const mappedProducts = responseProducts.map((p: any) => {
+              // Parse tags from description (Fallback mechanism)
+              const tagRegex = /\[TAGS:(.*?)\]$/;
+              const match = p.description?.match(tagRegex);
+              let extractedTags: string[] = [];
+              if (match) {
+                  extractedTags = match[1].split(',').map((t: string) => t.trim()).filter(Boolean);
+              }
+              const allTags = Array.from(new Set([...(p.diet_tags || []), ...(p.meal_types || []), ...extractedTags]));
+
+              return {
+                ...p,
+                allTags, // Store for filtering
+                ratingAccount: p.review_count || p.ratingCount || 0, // Handle DB vs Type mismatch
+                action: !p.is_available ? 'soldout' : 'add', // Logic for action button
+                image: p.image_url || p.image // Handle image_url from DB
+              };
+            });
+
+            // Filter: Show if Type:Instant OR if no Availability Type tags present (Backward Compat)
+            const filteredProducts = mappedProducts.filter((p: any) => {
+                const hasInstant = p.allTags.includes('Type:Instant');
+                const hasSubscription = p.allTags.includes('Type:Subscription');
+                const hasNone = p.allTags.includes('Type:None');
+                
+                // If explicitly marked as None (hidden from all), hide
+                if (hasNone) return false;
+
+                // If explicitly marked as Instant, show
+                if (hasInstant) return true;
+                
+                // If marked ONLY as Subscription, hide
+                if (hasSubscription && !hasInstant) return false;
+                
+                // If no type tags (Legacy product), show
+                return true;
+            });
+
+            setProducts(filteredProducts);
           } else {
              // console.log('No products found in response');
              setError('No instant picks available at the moment.');

@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid'; // Import uuid
+import { v4 as uuidv4 } from 'uuid';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Switch } from "../ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Checkbox } from "../ui/checkbox";
 import { Loader2, Plus, Pencil, Trash2, X, Image as ImageIcon, Check, ChevronsUpDown } from "lucide-react";
 import { nodeApiService as apiService } from "../../utils/nodeApi";
 import { toast } from "sonner";
@@ -46,6 +47,8 @@ interface Product {
   is_available: boolean;
   category: string;
   addon_ids?: string[];
+  meal_types?: string[]; // Deprecated client-side, using diet_tags
+  diet_tags?: string[];
 }
 
 interface Category {
@@ -82,7 +85,6 @@ export function MenuManager({ vendorId }: MenuManagerProps) {
       if (categoriesRes.success && categoriesRes.data) {
         setCategories(categoriesRes.data);
       } else if (Array.isArray(categoriesRes)) {
-         // handle if it returns array directly (legacy api structure sometimes)
          setCategories(categoriesRes);
       }
     } catch (error) {
@@ -93,7 +95,6 @@ export function MenuManager({ vendorId }: MenuManagerProps) {
   };
 
   const fetchMenu = async () => {
-      // Refresh just menu
       try {
         const res = await apiService.getVendorMenu(vendorId);
         if (res.success && res.data) {
@@ -122,10 +123,7 @@ export function MenuManager({ vendorId }: MenuManagerProps) {
 
   const toggleAvailability = async (product: Product) => {
     const newStatus = !product.is_available;
-    
-    // Optimistic update
     setProducts(prev => prev.map(p => p.id === product.id ? { ...p, is_available: newStatus } : p));
-    
     try {
       const res = await apiService.updateVendorProduct(vendorId, product.id, { is_available: newStatus });
       if (res.success) {
@@ -134,12 +132,16 @@ export function MenuManager({ vendorId }: MenuManagerProps) {
         throw new Error('Failed');
       }
     } catch (error) {
-      // Revert if failed
       setProducts(prev => prev.map(p => p.id === product.id ? { ...p, is_available: !newStatus } : p));
       toast.error('Failed to update status');
     }
   };
 
+  const handleAddProduct = () => {
+     setEditingProduct(null);
+     setIsEditing(true);
+  };
+  
   if (loading) return <div className="text-center py-8"><Loader2 className="animate-spin mx-auto" /></div>;
 
   return (
@@ -150,7 +152,7 @@ export function MenuManager({ vendorId }: MenuManagerProps) {
            <p className="text-sm text-gray-500">Manage your dishes and prices</p>
         </div>
         <Button 
-          onClick={() => { setEditingProduct(null); setIsEditing(true); }} 
+          onClick={handleAddProduct} 
           className="shadow-sm"
           style={{ backgroundColor: '#1BA672', color: 'white' }}
         >
@@ -179,18 +181,34 @@ export function MenuManager({ vendorId }: MenuManagerProps) {
                       <h3 className="font-bold text-gray-900 leading-tight">{product.name}</h3>
                       <p className="text-sm text-[#1BA672] font-semibold mt-0.5">₹{product.price}</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                         <div className={`shrink-0 w-3 h-3 rounded-full border ${product.is_veg ? 'border-green-600 bg-green-50' : 'border-red-600 bg-red-50'} flex items-center justify-center`}>
-                            <div className={`w-1.5 h-1.5 rounded-full ${product.is_veg ? 'bg-green-600' : 'bg-red-600'}`}></div>
-                         </div>
-                         <div onClick={(e) => e.stopPropagation()} title="Toggle Availability">
-                           <Switch 
-                              checked={product.is_available} 
-                              onCheckedChange={() => toggleAvailability(product)}
-                              className="scale-75 data-[state=checked]:bg-[#1BA672]"
-                           />
-                         </div>
-                    </div>
+                     <div className="flex items-center gap-2">
+                          <div className={`shrink-0 w-3 h-3 rounded-full border ${product.is_veg ? 'border-green-600 bg-green-50' : 'border-red-600 bg-red-50'} flex items-center justify-center`}>
+                             <div className={`w-1.5 h-1.5 rounded-full ${product.is_veg ? 'bg-green-600' : 'bg-red-600'}`}></div>
+                          </div>
+                          {(() => {
+                              // Check availability type to disable toggle for Subscription Only items
+                              const { tags } = parseTagsFromDescription(product.description || '');
+                              const allTags = new Set([...(product.diet_tags || []), ...(product.meal_types || []), ...tags]);
+                              const isInstant = allTags.has('Type:Instant');
+                              const isSubscription = allTags.has('Type:Subscription');
+                              // It is subscription ONLY if it has Subscription tag AND no Instant tag
+                              // Legacy items (no tags) are treated as Instant, so we check if tags exist at all
+                              const hasAnyType = isInstant || isSubscription;
+                              const isSubscriptionOnly = hasAnyType && isSubscription && !isInstant;
+
+                              if (isSubscriptionOnly) return null;
+
+                              return (
+                                  <div onClick={(e) => e.stopPropagation()} title="Toggle Availability">
+                                    <Switch 
+                                        checked={product.is_available} 
+                                        onCheckedChange={() => toggleAvailability(product)}
+                                        className="scale-75 data-[state=checked]:bg-[#1BA672]"
+                                    />
+                                  </div>
+                              );
+                          })()}
+                     </div>
                  </div>
                  
                  <p className="text-xs text-gray-500 line-clamp-2 mb-3 flex-1">{product.description}</p>
@@ -234,6 +252,23 @@ export function MenuManager({ vendorId }: MenuManagerProps) {
 
       )}
 
+      {/* Edit/Add Modal Overlay */}
+      {isEditing && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 overflow-y-auto">
+           <div className="bg-white rounded-xl w-full max-w-lg shadow-xl my-8">
+              <ProductForm 
+                 vendorId={vendorId} 
+                 product={editingProduct} 
+                 products={products}
+                 categories={categories}
+                 onClose={() => setIsEditing(false)} 
+                 onSuccess={() => { setIsEditing(false); fetchMenu(); }} 
+              />
+           </div>
+        </div>
+
+      )}
+
       <AlertDialog open={!!productToDelete} onOpenChange={(open) => !open && setProductToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -254,23 +289,60 @@ export function MenuManager({ vendorId }: MenuManagerProps) {
   );
 }
 
-function ProductForm({ vendorId, product, products = [], categories, onClose, onSuccess }: { vendorId: string, product: Product | null, products?: Product[], categories: Category[], onClose: () => void, onSuccess: () => void }) {
+const TAG_PREFIX = "[TAGS:";
+const TAG_SUFFIX = "]";
+
+const parseTagsFromDescription = (description: string): { cleanDescription: string, tags: string[] } => {
+    if (!description) return { cleanDescription: '', tags: [] };
+    const tagRegex = /\[TAGS:(.*?)\]$/;
+    const match = description.match(tagRegex);
+    if (match) {
+        const tagsString = match[1];
+        const tags = tagsString.split(',').map(t => t.trim()).filter(Boolean);
+        const cleanDescription = description.replace(tagRegex, '').trim();
+        return { cleanDescription, tags };
+    }
+    return { cleanDescription: description, tags: [] };
+};
+
+interface ProductFormProps {
+    vendorId: string;
+    product: Product | null;
+    products?: Product[];
+    categories: Category[];
+    onClose: () => void;
+    onSuccess: () => void;
+}
+
+function ProductForm({ vendorId, product, products = [], categories, onClose, onSuccess }: ProductFormProps) {
     // Calculate initial parent links (products that have THIS product as an addon)
     const initialParentIds = product 
       ? products.filter(p => p.addon_ids?.includes(product.id)).map(p => p.id)
       : [];
 
+    // Parse tags from description if present
+    const { cleanDescription, tags: descriptionTags } = parseTagsFromDescription(product?.description || '');
+    let initialTags = descriptionTags.length > 0 ? descriptionTags : (product?.diet_tags || product?.meal_types || []);
+    
+    // Backward compatibility: If no availability type is set, assume Instant
+    // This ensures existing products show the Add-on/Links section by default
+    if (!initialTags.some(t => t === 'Type:Instant' || t === 'Type:Subscription')) {
+        initialTags = [...initialTags, 'Type:Instant'];
+    }
+
     const [formData, setFormData] = useState({
         id: product?.id || uuidv4(), // Generate ID if new
         name: product?.name || '',
-        description: product?.description || '',
+        description: cleanDescription,
         price: product?.price || '',
         image_url: product?.image_url || '',
         is_veg: product?.is_veg ?? true,
         is_available: product?.is_available ?? true,
         category: product?.category || (categories[0]?.name || 'Main Course'),
         addon_ids: product?.addon_ids || [],
-        parent_product_ids: initialParentIds
+        parent_product_ids: initialParentIds,
+        meal_types: [],
+        diet_tags: initialTags
     });
     const [loading, setLoading] = useState(false);
     const [openParentSelect, setOpenParentSelect] = useState(false);
@@ -292,7 +364,38 @@ function ProductForm({ vendorId, product, products = [], categories, onClose, on
                 }
             }
 
-            const payload = { ...formData, price: Number(formData.price), image_url: finalImageUrl };
+            // Ensure explicit availability tagging
+            // If user unchecks both Instant and Subscription, we mark it as Type:None
+            // to distinguish it from legacy products (which have no tags but should default to Instant)
+            let effectiveTags = formData.diet_tags || [];
+            
+            // Remove Type:None if it exists to start fresh
+            effectiveTags = effectiveTags.filter(t => t !== 'Type:None');
+            
+            const hasInstant = effectiveTags.includes('Type:Instant');
+            const hasSubscription = effectiveTags.includes('Type:Subscription');
+            
+            if (!hasInstant && !hasSubscription) {
+                effectiveTags.push('Type:None');
+            }
+
+            // Append tags to description
+            let finalDescription = formData.description;
+            if (effectiveTags.length > 0) {
+                const uniqueTags = Array.from(new Set(effectiveTags));
+                finalDescription = `${finalDescription.trim()} [TAGS:${uniqueTags.join(',')}]`;
+            }
+
+            // Create payload WITHOUT diet_tags to avoid backend 500 error
+            // We store tags in the description instead
+            const { diet_tags, meal_types, ...rest } = formData;
+            const payload = { 
+                ...rest, 
+                description: finalDescription,
+                price: Number(formData.price), 
+                image_url: finalImageUrl 
+            };
+
             if (product) {
                await apiService.updateVendorProduct(vendorId, product.id, payload);
                toast.success('Product updated');
@@ -306,6 +409,14 @@ function ProductForm({ vendorId, product, products = [], categories, onClose, on
         } finally {
             setLoading(false);
         }
+    };
+
+    const toggleMealType = (type: string) => {
+        setFormData(prev => {
+            const current = (prev.diet_tags || []) as string[];
+            if (current.includes(type)) return { ...prev, diet_tags: current.filter(t => t !== type) };
+            return { ...prev, diet_tags: [...current, type] };
+        });
     };
 
     const toggleAddonForThis = (id: string) => {
@@ -396,8 +507,53 @@ function ProductForm({ vendorId, product, products = [], categories, onClose, on
                     />
                 </div>
 
-                {/* Add-ons Section */}
-                <div className="grid md:grid-cols-2 gap-4 border rounded-lg p-3 bg-gray-50">
+                {/* Availability Channel Selection */}
+                <div className="space-y-2 border-t pt-4 mt-4">
+                    <Label className="font-semibold text-base">Availability Channel</Label>
+                    <p className="text-xs text-gray-500 mb-2">Where should this item be sold?</p>
+                    <div className="flex gap-6">
+                         <div className="flex items-center gap-2">
+                             <Checkbox 
+                                 id="channel-instant" 
+                                 checked={formData.diet_tags?.includes('Type:Instant')} 
+                                 onCheckedChange={() => toggleMealType('Type:Instant')} 
+                             />
+                             <Label htmlFor="channel-instant" className="cursor-pointer font-medium">Instant Order</Label>
+                         </div>
+                         <div className="flex items-center gap-2">
+                             <Checkbox 
+                                 id="channel-sub" 
+                                 checked={formData.diet_tags?.includes('Type:Subscription')} 
+                                 onCheckedChange={() => toggleMealType('Type:Subscription')} 
+                             />
+                             <Label htmlFor="channel-sub" className="cursor-pointer font-medium">Meal Plan (Subscription)</Label>
+                         </div>
+                    </div>
+                </div>
+
+                {/* Meal Types Selection (Only for Subscription) */}
+                {formData.diet_tags?.includes('Type:Subscription') && (
+                    <div className="space-y-2 border-t pt-4 mt-4 bg-green-50/50 p-3 rounded-md">
+                        <Label className="text-[#1BA672] font-semibold">Meal Plan Settings</Label>
+                        <p className="text-xs text-gray-500 mb-2">Select which meal slots this item fits into.</p>
+                        <div className="flex flex-wrap gap-4">
+                            {['Breakfast', 'Lunch', 'Snack', 'Dinner'].map(type => (
+                                <div key={type} className="flex items-center gap-2">
+                                    <Checkbox 
+                                        id={`meal-${type}`} 
+                                        checked={formData.diet_tags?.includes(type)} 
+                                        onCheckedChange={() => toggleMealType(type)} 
+                                    />
+                                    <Label htmlFor={`meal-${type}`} className="cursor-pointer">{type}</Label>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Add-ons Section (Only for Instant) */}
+                {formData.diet_tags?.includes('Type:Instant') && (
+                <div className="grid md:grid-cols-2 gap-4 border rounded-lg p-3 bg-gray-50 mt-4">
                     <div className="space-y-2">
                         <Label className="text-xs font-semibold uppercase text-gray-500">Add Add-ons to {formData.name || 'this item'}</Label>
                         <Popover open={openAddonSelect} onOpenChange={setOpenAddonSelect} modal={true}>
@@ -515,6 +671,7 @@ function ProductForm({ vendorId, product, products = [], categories, onClose, on
                         </Popover>
                     </div>
                 </div>
+                )}
                 <div className="flex items-center gap-6 pt-2">
                     <div className="flex items-center gap-2">
                         <Switch id="veg" checked={formData.is_veg} onCheckedChange={c => setFormData(prev => ({ ...prev, is_veg: c }))} />
