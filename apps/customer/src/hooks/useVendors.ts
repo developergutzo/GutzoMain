@@ -4,6 +4,7 @@ import { Product, Vendor } from "../types";
 import { nodeApiService as apiService } from "../utils/nodeApi";
 import { processVendorData } from "../utils/vendors";
 import { useLocation } from "../contexts/LocationContext";
+import { DistanceService } from "../utils/distanceService";
 
 export const useVendors = () => {
   const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -92,7 +93,54 @@ export const useVendors = () => {
                 : (res.data.value?.is_serviceable ?? true));
 
             if (isServiceable) {
-              servicedVendors.push(vendor);
+              const pickupEtaStr = res.data.pickup_eta ||
+                res.data.value?.pickup_eta;
+              // Default to existing if calc fails
+              let dynamicDeliveryTime = vendor.deliveryTime;
+
+              if (pickupEtaStr) {
+                try {
+                  // Calculate travel time from vendor to customer
+                  const travelTimeStr = await DistanceService.getTravelTime(
+                    {
+                      latitude: vendor.latitude!,
+                      longitude: vendor.longitude!,
+                    },
+                    {
+                      latitude: userLocation.coordinates.latitude,
+                      longitude: userLocation.coordinates.longitude,
+                    },
+                  );
+
+                  if (travelTimeStr) {
+                    const pickupMins = DistanceService.parseDurationToMinutes(
+                      pickupEtaStr,
+                    );
+                    const travelMins = DistanceService.parseDurationToMinutes(
+                      travelTimeStr,
+                    );
+
+                    if (pickupMins > 0 && travelMins > 0) {
+                      const totalMins = pickupMins + travelMins;
+                      // Create a range, e.g., "35-40 mins"
+                      dynamicDeliveryTime = `${totalMins}-${
+                        totalMins + 5
+                      } mins`;
+                    }
+                  } else {
+                    // Fallback just pickup ETA? No, that's too short. content with default or just pickup?
+                    // Let's rely on default if travel time fails, or maybe just pickup+15?
+                    // Safe: specific default "30-45 mins" or keep vendor's static default.
+                  }
+                } catch (e) {
+                  console.error("Distance Calc Error", e);
+                }
+              }
+
+              servicedVendors.push({
+                ...vendor,
+                deliveryTime: dynamicDeliveryTime,
+              });
             } else {
               // console.log(
               //   `Vendor ${vendor.name} is not serviceable at current location.`,
@@ -144,6 +192,8 @@ export const useVendors = () => {
 
   const loadVendorProducts = async (vendorId: string): Promise<Product[]> => {
     try {
+      // Small optimization: if validVendors already filtered, we might not need this if we pass products in
+      // But preserving existing specific fetch structure
       const response: any = await apiService.getVendorProducts(vendorId);
       let products: Product[] = [];
 
