@@ -85,9 +85,7 @@ export function ImageUpload({
     }
   };
 
-  const handleClick = () => {
-    inputRef.current?.click();
-  };
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -116,15 +114,9 @@ export function ImageUpload({
         onDragLeave={onDrag}
         onDragOver={onDrag}
         onDrop={onDrop}
-        onClick={handleClick}
       >
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={handleChange}
-        />
+
+
 
         {value ? (
           <div className="w-full h-full relative group">
@@ -163,6 +155,21 @@ export function ImageUpload({
             </div>
           </div>
         )}
+
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50"
+          onChange={handleChange}
+          onDragEnter={onDrag}
+          onDragLeave={onDrag}
+          onDragOver={onDrag}
+          onDrop={(e) => {
+             e.preventDefault();
+             setIsDragActive(false);
+          }}
+        />
       </div>
       
       {error && (

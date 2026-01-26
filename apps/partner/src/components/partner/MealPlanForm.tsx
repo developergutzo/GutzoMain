@@ -8,7 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui
 import { Checkbox } from "../ui/checkbox";
 import { toast } from "sonner";
 import { nodeApiService as apiService } from "../../utils/nodeApi";
-import { Calendar, Plus, Trash2, Save, X, Utensils, Sun, Moon, Coffee, ImageIcon, Upload } from "lucide-react";
+import { Calendar, Plus, Trash2, Save, X, Utensils, Sun, Moon, Coffee } from "lucide-react";
+import { ImageUpload } from "../common/ImageUpload";
 
 interface MealPlanFormData {
   id?: string;
@@ -143,19 +144,14 @@ export function MealPlanForm({ vendorId, existingPlan, onSuccess, onCancel, onCl
                    3. UI is a standard Div with an explicit click handler.
                    4. stopPropagation() is used to prevent any bubble-up issues.
                 */}
-                <input 
-                    id="meal-plan-image-upload"
-                    type="file" 
-                    accept="image/*" 
-                    className="sr-only" 
-                    onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        console.log("File input changed:", file?.name);
-                        if (!file) {
-                             // User might have cancelled file dialog
-                             return;
-                        }
-                        
+
+                <ImageUpload
+                    value={formData.image_url || formData.image}
+                    onChange={(url) => setFormData({ ...formData, image_url: url, image: url })}
+                    label="Meal Plan Image"
+                    className="min-h-[200px]"
+                    onUpload={async (file) => {
+                        console.log("ImageUpload triggered: ", file.name);
                         setLoading(true);
                         const toastId = toast.loading("Uploading image...");
                         
@@ -177,56 +173,6 @@ export function MealPlanForm({ vendorId, existingPlan, onSuccess, onCancel, onCl
                         }
                     }}
                 />
-
-                <div className="relative group">
-                    <div 
-                        className="flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-2xl bg-gray-50/50 hover:bg-gray-50 transition-all border-gray-200 hover:border-gutzo-primary min-h-[200px] cursor-pointer"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            console.log("Upload container clicked. Triggering input.");
-                            const fileInput = document.getElementById('meal-plan-image-upload');
-                            if (fileInput) {
-                                fileInput.click();
-                            } else {
-                                toast.error("Upload interface error: Input not found");
-                            }
-                        }}
-                    >
-                        {(formData.image_url || formData.image) ? (
-                            <div className="relative pointer-events-none">
-                                <div className="w-56 h-56 rounded-xl overflow-hidden border-4 border-white shadow-xl">
-                                    <img 
-                                        src={formData.image_url || formData.image} 
-                                        alt="Preview" 
-                                        className="w-full h-full object-cover" 
-                                    />
-                                </div>
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
-                                    <div className="bg-white text-gray-900 px-4 py-2 rounded-full font-semibold flex items-center gap-2 text-sm shadow-lg transform scale-90 group-hover:scale-100 transition-transform">
-                                        <ImageIcon size={18} /> Change Image
-                                    </div>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center gap-4 text-center pointer-events-none">
-                                <div className="w-16 h-16 rounded-full bg-white shadow-sm border flex items-center justify-center text-gray-400 group-hover:text-gutzo-primary group-hover:scale-110 transition-all">
-                                    <Upload size={32} />
-                                </div>
-                                <div>
-                                    <p className="text-base font-semibold text-gray-700">Click to upload image</p>
-                                    <p className="text-sm text-gray-500 mt-1">PNG, JPG, JPEG (Max 5MB)</p>
-                                </div>
-                            </div>
-                        )}
-                        
-                        <div className="mt-4 pointer-events-none">
-                            <span className="bg-white border border-gray-300 shadow-sm text-gray-700 px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2">
-                                <Upload size={14} /> Select Image File
-                            </span>
-                        </div>
-                    </div>
-                </div>
              </div>
 
 
