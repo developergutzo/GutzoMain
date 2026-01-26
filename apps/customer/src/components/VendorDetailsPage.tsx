@@ -11,59 +11,6 @@ import { nodeApiService as apiService } from "../utils/nodeApi";
 import { DistanceService } from "../utils/distanceService";
 import { processVendorData } from "../utils/vendors";
 import React, { useState, useEffect } from "react";
-
-// Simple right panel for desktop
-const RightPanelNextSteps = ({ plan, onClose }: { plan: any; onClose: () => void }) => (
-  <div style={{
-    position: 'fixed',
-    top: 0,
-    right: 0,
-    width: 400,
-    height: '100vh',
-    background: '#fff',
-    boxShadow: '-2px 0 8px rgba(0,0,0,0.08)',
-    zIndex: 1000,
-    padding: 24,
-    display: 'flex',
-    flexDirection: 'column',
-  }}>
-    <button style={{ alignSelf: 'flex-end', marginBottom: 16 }} onClick={onClose}>Close</button>
-    <h2>{plan?.title}</h2>
-    <p>Vendor: {plan?.vendor}</p>
-    <p>Price: {plan?.price}</p>
-    <p>Schedule: {plan?.schedule}</p>
-    <ul>
-      {plan?.features?.map((f: string, i: number) => <li key={i}>{f}</li>)}
-    </ul>
-    {/* Add next steps UI here */}
-  </div>
-);
-
-// Simple bottom sheet for mobile
-const BottomSheetNextSteps = ({ plan, onClose }: { plan: any; onClose: () => void }) => (
-  <div style={{
-    position: 'fixed',
-    left: 0,
-    bottom: 0,
-    width: '100vw',
-    background: '#fff',
-    boxShadow: '0 -2px 8px rgba(0,0,0,0.08)',
-    zIndex: 1000,
-    padding: 20,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-  }}>
-    <button style={{ float: 'right', marginBottom: 8 }} onClick={onClose}>Close</button>
-    <h2>{plan?.title}</h2>
-    <p>Vendor: {plan?.vendor}</p>
-    <p>Price: {plan?.price}</p>
-    <p>Schedule: {plan?.schedule}</p>
-    <ul>
-      {plan?.features?.map((f: string, i: number) => <li key={i}>{f}</li>)}
-    </ul>
-    {/* Add next steps UI here */}
-  </div>
-);
 import { motion, AnimatePresence } from "framer-motion";
 import { cubicBezier } from "framer-motion";
 import { useRouter } from "../components/Router";
@@ -150,26 +97,6 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors
       let userLat = userLocation?.coordinates?.latitude;
       let userLng = userLocation?.coordinates?.longitude;
       let dropAddress = locationDisplay;
-
-      //// If authenticated, try to use default address coordinates for more precision
-      // if (isAuthenticated && user?.phone) {
-      //   try {
-      //     const res = await AddressApi.getDefaultAddress(user.phone);
-      //     if (res.success && res.data) {
-      //       if (res.data.latitude && res.data.longitude) {
-      //         userLat = res.data.latitude;
-      //         userLng = res.data.longitude;
-      //       }
-      //       // Use precise address string if available
-      //       const formattedAddress = AddressApi.getAddressDisplayText(res.data);
-      //       if (formattedAddress) {
-      //         dropAddress = formattedAddress;
-      //       }
-      //     }
-      //   } catch (e) {
-      //     // Fallback to GPS/Context location
-      //   }
-      // }
 
       if (userLat && userLng) {
         try {
@@ -339,17 +266,10 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors
           />
           {/* Show next steps UI when a meal plan is selected */}
           {selectedMealPlan && (
-            window.innerWidth >= 1024 ? (
-              <RightPanelNextSteps
+              <MealPlanBottomSheet
                 plan={selectedMealPlan}
                 onClose={() => setSelectedMealPlan(null)}
               />
-            ) : (
-                <MealPlanBottomSheet
-                plan={selectedMealPlan}
-                onClose={() => setSelectedMealPlan(null)}
-              />
-            )
           )}
           {/* Today's best picks section inside same container */}
           <InstantPicks 
