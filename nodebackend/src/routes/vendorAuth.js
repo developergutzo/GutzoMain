@@ -437,42 +437,7 @@ router.get('/:id/products', asyncHandler(async (req, res) => {
              data: { order_id: order.id }
          });
 
-         // 🚀 TRIGGER SHADOWFAX DELIVERY
-         try {
-             // Fetch full vendor details for pickup location
-             const { data: vendorDetails } = await supabaseAdmin
-                 .from('vendors')
-                 .select('*')
-                 .eq('id', id)
-                 .single();
 
-             if (vendorDetails) {
-                 // Dynamic import to avoid top-level failures if file missing/error
-                 const { createShadowfaxOrder } = await import('../utils/shadowfax.js');
-                 const deliveryResp = await createShadowfaxOrder(order, vendorDetails);
-                 
-                 if (deliveryResp && deliveryResp.is_order_created) {
-                     console.log('✅ Shadowfax Order Created:', deliveryResp);
-                     
-                     // Save details to DB
-                     await supabaseAdmin.from('orders').update({ 
-                         delivery_partner_details: {
-                             provider: 'shadowfax',
-                             flash_order_id: deliveryResp.flash_order_id,
-                             pickup_otp: deliveryResp.pickup_otp,
-                             drop_otp: deliveryResp.drop_otp,
-                             rider_incentive: deliveryResp.rain_rider_incentive,
-                             surge: deliveryResp.high_demand_surge
-                         },
-                         delivery_otp: deliveryResp.drop_otp // Also save to main column if handy
-                     }).eq('id', orderId);
-                 }
-             }
-         } catch (deliveryError) {
-             console.error('❌ Failed to create Shadowfax order:', deliveryError);
-             // We logic: Don't fail the vendor "Accept" action just because delivery API failed?
-             // Or maybe we should warn? For now, we log error and proceed.
-         }
 
     } else if (status === 'ready') {
         await supabaseAdmin.from('notifications').insert({

@@ -105,7 +105,7 @@ export function CheckoutPage() {
   // Constants
   const ITEMS_GST_RATE = 0.05;
   const FEES_GST_RATE = 0.18;
-  const PLATFORM_FEE = 5;
+    const PLATFORM_FEE = 10;
 
   const vendor = cartItems[0]?.vendor;
 
