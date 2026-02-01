@@ -364,4 +364,75 @@ router.post('/webhook', async (req, res) => {
 });
 
 
+
+/**
+ * POST /api/shadowfax/mock-create-order
+ * DEV ONLY: Simulates Shadowfax order creation
+ */
+router.post('/mock-create-order', async (req, res) => {
+    try {
+        const { orderId } = req.body;
+        if (!orderId) return res.status(400).json({ error: 'Order ID is required' });
+
+        console.log(`🛠️ [Mock Shadowfax] Creating mock order for ${orderId}`);
+
+        // 1. Fetch Order
+        const { data: order } = await supabaseAdmin
+            .from('orders')
+            .select('*, vendor:vendors(*)')
+            .eq('id', orderId)
+            .single();
+
+        if (!order) return res.status(404).json({ error: 'Order not found' });
+
+        // Generate Mock Data
+        const mockSfId = `SFX_MOCK_${Date.now()}`;
+        const pickupOtp = "1234";
+        const deliveryOtp = "5678";
+
+        // 2. Update Deliveries Table
+        const initialHistory = [{
+            status: 'searching_rider',
+            timestamp: new Date().toISOString(),
+            note: 'Mock Order Created'
+        }];
+
+        await supabaseAdmin
+            .from('deliveries')
+            .upsert({ 
+                order_id: orderId,
+                external_order_id: mockSfId,
+                partner_id: 'shadowfax',
+                status: 'searching_rider',
+                pickup_otp: pickupOtp,
+                delivery_otp: deliveryOtp,
+                history: initialHistory,
+                courier_request_payload: { mock: true, timestamp: Date.now() },
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'order_id' });
+
+        // 3. Update Orders Table
+        await supabaseAdmin
+            .from('orders')
+            .update({ 
+                shadowfax_order_id: mockSfId,
+                status: 'searching_rider' // Set status visible to user
+            })
+            .eq('id', orderId);
+
+        console.log(`✅ [Mock Shadowfax] Created ${mockSfId}`);
+
+        return res.json({ 
+            success: true, 
+            shadowfax_order_id: mockSfId,
+            message: "Mock Shadowfax order created",
+            otps: { pickup: pickupOtp, delivery: deliveryOtp }
+        });
+
+    } catch (err) {
+        console.error('Mock Shadowfax Error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 export default router;

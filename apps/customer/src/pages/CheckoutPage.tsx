@@ -100,6 +100,7 @@ export function CheckoutPage() {
   const [dontAddCutlery, setDontAddCutlery] = useState(false);
   const [expandedBill, setExpandedBill] = useState(false);
   const [useMockPayment, setUseMockPayment] = useState(false);
+  const [useMockShadowfax, setUseMockShadowfax] = useState(true);
 
   // Constants
   const ITEMS_GST_RATE = 0.05;
@@ -389,7 +390,8 @@ export function CheckoutPage() {
             delivery_address: selectedAddress,
             delivery_phone: userPhone,
             payment_method: 'wallet', 
-            special_instructions: orderNote || undefined, // Send note if exists
+            special_instructions: `${orderNote || ''}${useMockShadowfax ? ' [MOCK_SFX]' : ''}`.trim() || undefined,
+            mock_shadowfax: useMockShadowfax,
             order_source: isSubscription ? 'subscription' : 'app',
             // Send dynamic fees
             delivery_fee: deliveryFee,
@@ -412,7 +414,7 @@ export function CheckoutPage() {
          // 2. Initiate Payment
          if (useMockPayment) {
             // Mock Payment Flow
-            const mockRes = await (apiService as any).mockSuccessPayment(userPhone, order.order_number);
+            const mockRes = await (apiService as any).mockSuccessPayment(userPhone, order.order_number, useMockShadowfax);
             if (mockRes.success) {
                 navigate(`/payment-status?orderId=${order.order_number}` as any);
                 toast.success('Mock Payment Successful');
@@ -1183,6 +1185,20 @@ export function CheckoutPage() {
                             />
                             <label htmlFor="mockPaymentMobile" className="text-xs text-gray-600 font-medium cursor-pointer select-none">
                                 Use Mock Payment (Dev Only)
+                            </label>
+                        </div>
+
+                        {/* Mock Shadowfax Checkbox */}
+                        <div className="flex items-center gap-2 mb-3 px-1">
+                            <input 
+                                type="checkbox" 
+                                id="mockShadowfaxMobile" 
+                                checked={useMockShadowfax} 
+                                onChange={(e) => setUseMockShadowfax(e.target.checked)}
+                                className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                            />
+                            <label htmlFor="mockShadowfaxMobile" className="text-xs text-gray-600 font-medium cursor-pointer select-none">
+                                Mock Shadowfax Order
                             </label>
                         </div>
 

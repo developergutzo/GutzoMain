@@ -688,12 +688,16 @@ class NodeApiService {
         });
     }
 
-    async mockSuccessPayment(phone: string, orderId: string) {
+    async mockSuccessPayment(
+        phone: string,
+        orderId: string,
+        mockShadowfax: boolean = false,
+    ) {
         const formattedPhone = this.formatPhone(phone);
         return this.request("/payments/mock-success", {
             method: "POST",
             headers: { "x-user-phone": formattedPhone },
-            body: { orderId },
+            body: { orderId, mockShadowfax },
         });
     }
 

@@ -227,117 +227,125 @@ router.post('/callback', asyncHandler(async (req, res) => {
                
                // Update status to 'paid' (already done) or specific subscription status if needed
           } else {
+
               // STANDARD ORDER - SHADOWFAX LOGIC
-              const { createShadowfaxOrder } = await import('../utils/shadowfax.js');
-              
-              // Ensure delivery_address is an object (Supabase sometimes returns it as JSON string)
-              if (updatedOrder.delivery_address && typeof updatedOrder.delivery_address === 'string') {
-                    try {
-                        updatedOrder.delivery_address = JSON.parse(updatedOrder.delivery_address);
-                    } catch (e) {
-                        console.error("Failed to parse delivery_address JSON:", e);
+              let deliverySuccess = false;
+              let sfResponse = null;
+
+              // MOCK SHADOWFAX CHECK (Real Payment, Mock Delivery)
+              // Check DB column OR special_instructions text flag (Fallback)
+              const isMockShadowfax = updatedOrder.mock_shadowfax || (updatedOrder.special_instructions && updatedOrder.special_instructions.includes('[MOCK_SFX]'));
+
+              if (isMockShadowfax) {
+                   console.log(`🛠️ [Mock Shadowfax] Triggering Mock Delivery for Paid Order ${orderId}`);
+                   const mockSfId = `SFX_MOCK_PAY_${Date.now()}`;
+                   const pickupOtp = "1234";
+                   const deliveryOtp = "5678";
+
+                   const insertPayload = {
+                       order_id: updatedOrder.id,
+                       partner_id: 'shadowfax',
+                       external_order_id: mockSfId,
+                       status: 'searching_rider',
+                       pickup_otp: pickupOtp,
+                       delivery_otp: deliveryOtp,
+                       history: [{
+                             status: 'searching_rider',
+                             timestamp: new Date().toISOString(),
+                             note: 'Mock Order Created (Real Payment)'
+                       }],
+                       courier_request_payload: { mock: true, source: 'real-payment' }
+                   };
+                   
+                   await supabaseAdmin.from('deliveries').upsert(insertPayload, { onConflict: 'order_id' });
+                   
+                   await supabaseAdmin.from('orders').update({ 
+                         shadowfax_order_id: mockSfId 
+                   }).eq('id', updatedOrder.id);
+                   
+                   console.log("✅ Mock Delivery Created.");
+                   deliverySuccess = true;
+
+              } else {
+                   // REAL SHADOWFAX
+                   const { createShadowfaxOrder } = await import('../utils/shadowfax.js');
+                   
+                   // Ensure delivery_address is an object
+                   if (updatedOrder.delivery_address && typeof updatedOrder.delivery_address === 'string') {
+                         try {
+                             updatedOrder.delivery_address = JSON.parse(updatedOrder.delivery_address);
+                         } catch (e) {
+                             console.error("Failed to parse delivery_address JSON:", e);
+                         }
+                   }
+     
+                   // Generate OTPs
+                   const pickupOtp = Math.floor(1000 + Math.random() * 9000).toString();
+                   const deliveryOtp = Math.floor(1000 + Math.random() * 9000).toString();
+     
+                   // Call Shadowfax
+                   sfResponse = await createShadowfaxOrder(updatedOrder, updatedOrder.vendor, { pickup_otp: pickupOtp, delivery_otp: deliveryOtp });
+     
+                   if (sfResponse && sfResponse.success) {
+                       const shadowfaxId = sfResponse.data.sfx_order_id || sfResponse.data.flash_order_id || sfResponse.data.client_order_id || sfResponse.data.id;
+                       
+                       console.log(`[Shadowfax] Order ${orderId} accepted. ID: ${shadowfaxId}. OTPs: ${pickupOtp}/${deliveryOtp}`);
+                       
+                       const insertPayload = {
+                           order_id: updatedOrder.id,
+                           partner_id: 'shadowfax',
+                           external_order_id: shadowfaxId, 
+                           status: 'searching_rider',
+                           pickup_otp: pickupOtp,
+                           delivery_otp: deliveryOtp
+                       };
+     
+                       await supabaseAdmin.from('deliveries').upsert(insertPayload, { onConflict: 'order_id' });
+     
+                       // Force Update OTPs
+                       await supabaseAdmin.from('deliveries').update({ pickup_otp: pickupOtp, delivery_otp: deliveryOtp }).eq('order_id', updatedOrder.id);
+     
+                       // Update Order
+                       await supabaseAdmin.from('orders').update({ shadowfax_order_id: shadowfaxId }).eq('id', updatedOrder.id);
+                       
+                       deliverySuccess = true;
                     }
               }
 
-              // Generate OTPs HERE (Controller Side) to ensure we have them
-              const pickupOtp = Math.floor(1000 + Math.random() * 9000).toString();
-              const deliveryOtp = Math.floor(1000 + Math.random() * 9000).toString();
-
-              // Pass OTPs to Shadowfax Service
-              const sfResponse = await createShadowfaxOrder(updatedOrder, updatedOrder.vendor, { pickup_otp: pickupOtp, delivery_otp: deliveryOtp });
-
-              if (sfResponse && sfResponse.success) {
-                  const shadowfaxId = sfResponse.data.sfx_order_id || sfResponse.data.flash_order_id || sfResponse.data.client_order_id || sfResponse.data.id;
-                  
-                  console.log(`[Shadowfax] Order ${orderId} accepted. ID: ${shadowfaxId}. OTPs: ${pickupOtp}/${deliveryOtp}`);
-                  
-                  const insertPayload = {
-                      order_id: updatedOrder.id,
-                      partner_id: 'shadowfax',
-                      external_order_id: shadowfaxId, 
-                      status: 'searching_rider',
-                      pickup_otp: pickupOtp,
-                      delivery_otp: deliveryOtp
-                  };
-                  console.log('[Debug] Insert Payload:', insertPayload);
-
-                  // Update delivery status (Use upsert to handle race condition with Webhook)
-                  const { data: insertedDelivery, error: insertError } = await supabaseAdmin
-                      .from('deliveries')
-                      .upsert(insertPayload, { onConflict: 'order_id' })
-                      .select()
-                      .single();
-
-                  if (insertError) {
-                      console.error("❌ Delivery Insert Error:", insertError);
-                  } else {
-                      console.log("✅ Delivery Row Created:", insertedDelivery?.id);
-                      
-                      // FORCE UPDATE to ensure OTPs stick (Paranoid Check)
-                      const { error: forceError } = await supabaseAdmin.from('deliveries')
-                        .update({ 
-                            pickup_otp: pickupOtp,
-                            delivery_otp: deliveryOtp 
-                        })
-                        .eq('id', insertedDelivery.id);
-                        
-                      if (forceError) console.error("❌ Force OTP Update Error:", forceError);
-                      else console.log("✅ OTPs Force Updated.");
-
-                      // PARANOID VERIFICATION: Read it back
-                      const { data: verifyRow } = await supabaseAdmin.from('deliveries')
-                        .select('pickup_otp, delivery_otp')
-                        .eq('id', insertedDelivery.id)
-                        .single();
-                      
-                      console.log("🔍 [VERIFY ID]", insertedDelivery.id, "OTPs in DB:", verifyRow);
-                  }
-
-                  // CRITICAL: Update ORDERS table so Webhook can find it later
-                  await supabaseAdmin.from('orders')
-                      .update({ shadowfax_order_id: shadowfaxId })
-                      .eq('id', updatedOrder.id);
-
-                  // Notify User (Success)
-                  await supabaseAdmin.from('notifications').insert({
-                      user_id: updatedOrder.user_id,
-                      type: 'payment_success',
-                      title: 'Payment Successful!',
-                      message: `Payment received. Searching for delivery partner...`,
-                      data: { order_id: orderId, txn_id: txnId }
-                  });
-
-                  // Notify Vendor (Email & Push) - MOVED TO SHADOWFAX WEBHOOK (Rider Assigned Event)
-                  // Only notify user here
-                  console.log(`[Shadowfax] Order ${orderId} accepted. Notification delayed until rider allocation.`);
+              if (deliverySuccess) {
+                   // Notify User (Success)
+                   await supabaseAdmin.from('notifications').insert({
+                       user_id: updatedOrder.user_id,
+                       type: 'payment_success',
+                       title: 'Payment Successful!',
+                       message: `Payment received. Searching for delivery partner...`,
+                       data: { order_id: orderId, txn_id: txnId }
+                   });
+                   console.log(`[Shadowfax] Order ${orderId} accepted. Notification delayed until rider allocation.`);
 
               } else {
-                  console.error(`[Shadowfax] Order ${orderId} rejected/failed. Reason: ${sfResponse?.error}`);
-                  
-                  // 1. Mark Order as Cancelled / Refund Initiated
-                  await supabaseAdmin.from('orders').update({
-                      status: 'cancelled',
-                      cancellation_reason: 'Delivery partner unavailable',
-                      cancelled_by: 'system',
-                      cancelled_at: new Date().toISOString()
-                  }).eq('id', updatedOrder.id);
-
-                  // 2. Initiate Auto-Refund (Internal Logic)
-                  // We call the refund endpoint logic internally or trigger it.
-                  // For now, let's mark payment as 'refund_initiated' and log it.
-                  // Ideally call Paytm Refund API here.
-                  console.log(`[Auto-Refund] Initiating refund for ${orderId}`);
-                  
-                  // Notify User (Failure)
-                  await supabaseAdmin.from('notifications').insert({
-                      user_id: updatedOrder.user_id,
-                      type: 'order_cancelled',
-                      title: 'Order Cancelled',
-                      message: `Payment successful but no delivery partner available. Refund initiated.`,
-                      data: { order_id: orderId }
-                  });
-
-                  // DO NOT Notify Vendor
+                   // Failure Block
+                   console.error(`[Shadowfax] Order ${orderId} rejected/failed. Reason: ${sfResponse?.error}`);
+                   
+                   // 1. Mark Order as Cancelled / Refund Initiated
+                   await supabaseAdmin.from('orders').update({
+                       status: 'cancelled',
+                       cancellation_reason: 'Delivery partner unavailable',
+                       cancelled_by: 'system',
+                       cancelled_at: new Date().toISOString()
+                   }).eq('id', updatedOrder.id);
+ 
+                   // 2. Initiate Auto-Refund
+                   console.log(`[Auto-Refund] Initiating refund for ${orderId}`);
+                   
+                   // Notify User (Failure)
+                   await supabaseAdmin.from('notifications').insert({
+                       user_id: updatedOrder.user_id,
+                       type: 'order_cancelled',
+                       title: 'Order Cancelled',
+                       message: `Payment successful but no delivery partner available. Refund initiated.`,
+                       data: { order_id: orderId }
+                   });
               }
           }
       } catch (err) {
@@ -797,7 +805,7 @@ router.get('/history', authenticate, asyncHandler(async (req, res) => {
 // ============================================
 if (process.env.NODE_ENV === 'development') {
     router.post('/mock-success', asyncHandler(async (req, res) => {
-        const { orderId } = req.body;
+        const { orderId, mockShadowfax } = req.body;
         
         // Mark order as paid
         const { data: order } = await supabaseAdmin.from('orders').update({
@@ -816,9 +824,41 @@ if (process.env.NODE_ENV === 'development') {
               data: { order_id: orderId }
         });
 
+        // Trigger Mock Shadowfax LOGIC if requested
+        if (mockShadowfax && order) {
+             console.log(`🛠️ [Mock Payment] Triggering Mock Shadowfax Logic for ${orderId}`);
+             
+             // LOGIC MIRRORS /api/shadowfax/mock-create-order
+             const mockSfId = `SFX_MOCK_AUTO_${Date.now()}`;
+             const pickupOtp = "1234";
+             const deliveryOtp = "5678";
+             
+             const initialHistory = [{
+                status: 'searching_rider',
+                timestamp: new Date().toISOString(),
+                note: 'Mock Order Created (Auto-Payment)'
+             }];
+
+             await supabaseAdmin.from('deliveries').upsert({ 
+                order_id: order.id, 
+                external_order_id: mockSfId,
+                partner_id: 'shadowfax',
+                status: 'searching_rider',
+                pickup_otp: pickupOtp,
+                delivery_otp: deliveryOtp,
+                history: initialHistory,
+                courier_request_payload: { mock: true, source: 'mock-payment' }
+             }, { onConflict: 'order_id' });
+
+             await supabaseAdmin.from('orders').update({ 
+                shadowfax_order_id: mockSfId,
+                status: 'searching_rider'
+             }).eq('id', order.id);
+        }
+
         // Notify Vendor logic... (simplified here)
 
-        successResponse(res, { order }, "Order marked as paid (Mock)");
+        successResponse(res, { order, mockTriggered: !!mockShadowfax }, "Order marked as paid (Mock)");
     }));
 }
 

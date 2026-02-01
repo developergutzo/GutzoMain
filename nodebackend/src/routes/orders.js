@@ -151,7 +151,8 @@ router.post('/', validate(schemas.createOrder), asyncHandler(async (req, res) =>
       platform_fee,
       packaging_fee,
       taxes,
-      discount_amount
+      discount_amount,
+      mock_shadowfax // New field
     } = req.body;
 
     // console.log('📦 Creating Order:', { vendor_id, itemCount: items.length });
@@ -216,7 +217,8 @@ router.post('/', validate(schemas.createOrder), asyncHandler(async (req, res) =>
       payment_status: payment_method === 'cod' ? 'pending' : 'pending',
       special_instructions,
       order_source,
-      coupon_code
+      coupon_code,
+      mock_shadowfax // Added for Dev/Mock handling
     })
     .select()
     .single();
