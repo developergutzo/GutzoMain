@@ -8,7 +8,7 @@ const supabase = createClient(
 );
 
 // Configuration
-const CRON_INTERVAL = process.env.DELIVERY_CRON_INTERVAL || 30; // seconds
+const CRON_INTERVAL = process.env.DELIVERY_CRON_INTERVAL || 60; // seconds
 const ENABLE_CRON = process.env.ENABLE_DELIVERY_CRON !== 'false'; // default enabled
 const MAX_ORDERS_PER_RUN = 50;
 const API_CALL_DELAY = 100; // ms between API calls
