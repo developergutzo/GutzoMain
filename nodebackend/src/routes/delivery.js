@@ -119,9 +119,9 @@ router.get('/track/:orderId', async (req, res) => {
             return res.status(500).json({ success: false, message: 'Failed to fetch tracking info' });
         }
 
-        // --- SAFETY NET: Self-Healing Notification Logic ---
+        // --- UNIVERSAL SYNC LOGIC (Fallbacks for Failed Webhooks) ---
         
-        // A. Fetch Local Delivery Status First (Fixing undefined 'delivery' bug)
+        // A. Fetch Local Delivery Status First
         const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
         const { data: delivery } = await supabase
             .from('deliveries')
@@ -129,50 +129,93 @@ router.get('/track/:orderId', async (req, res) => {
             .eq('order_id', orderUUID)
             .single();
 
-        if (delivery && trackingInfo.status === 'ALLOTTED' && (delivery.status === 'searching_rider' || delivery.status === 'created')) {
-             console.log(`[SafetyNet] ⚠️ Webhook potentially missed for ${trackingId}. Triggering Vendor Notification...`);
+        if (delivery) {
+             const sfStatus = trackingInfo.status ? trackingInfo.status.toUpperCase() : ''; // Normalize
+             let internalStatus = sfStatus.toLowerCase(); // Default
 
-             // 1. Update DB to prevent double-send (Schema v2)
-             const newHistoryItem = {
-                status: 'allotted',
-                timestamp: new Date().toISOString(),
-                note: 'SafetyNet: Live API detected Rider Assigned'
-             };
-             
-             const updatedHistory = delivery.history ? [...delivery.history, newHistoryItem] : [newHistoryItem];
+             // MAPPING LOGIC (Must match shadowfax.js webhook logic)
+             if (sfStatus === 'ARRIVED') internalStatus = 'reached_location';
+             else if (sfStatus === 'COLLECTED') internalStatus = 'picked_up';
+             else if (sfStatus === 'CUSTOMER_DOOR_STEP') internalStatus = 'arrived_at_drop';
+             else if (sfStatus === 'ALLOTTED') internalStatus = 'allotted';
+             else if (sfStatus === 'DELIVERED') internalStatus = 'delivered';
 
-             await supabase
-                 .from('deliveries')
-                 .update({ 
-                     status: 'allotted',
+             // Check for Drift (Database Status vs Real API Status)
+             // We only update if the status is DIFFERENT and meaningful
+             // (Simple check: if internalStatus !== delivery.status)
+             // Note: internalStatus is the fresh truth.
+
+             if (internalStatus !== delivery.status && internalStatus !== 'unknown') {
+                 console.log(`[Sync] 🔄 Resolving Status Drift for ${trackingId}: DB=${delivery.status} -> API=${internalStatus}`);
+
+                 // 1. Prepare Delivery Update
+                 const newHistoryItem = {
+                    status: internalStatus,
+                    timestamp: new Date().toISOString(),
+                    note: `Auto-Sync: API Polling detected ${sfStatus}`
+                 };
+                 
+                 const updatedHistory = delivery.history ? [...delivery.history, newHistoryItem] : [newHistoryItem];
+
+                 const deliveryUpdatePayload = {
+                     status: internalStatus,
                      rider_name: trackingInfo.rider_details?.name,
                      rider_phone: trackingInfo.rider_details?.contact_number,
                      rider_coordinates: trackingInfo.rider_details?.current_location,
                      rider_id: trackingInfo.rider_details?.id ? String(trackingInfo.rider_details.id) : null,
                      history: updatedHistory,
                      updated_at: new Date().toISOString()
-                 })
-                 .eq('id', delivery.id);
+                 };
 
-             // 2. Fetch Full Order Details for Email
-             const { data: fullOrder } = await supabase
-                 .from('orders')
-                 .select('*, vendor:vendors(*)')
-                 .eq('id', orderUUID) 
-                 .single();
+                 await supabase
+                     .from('deliveries')
+                     .update(deliveryUpdatePayload)
+                     .eq('id', delivery.id);
 
-             if (fullOrder && fullOrder.vendor) {
-                  // 3. Send Email
-                  import('../utils/emailService.js').then(({ sendVendorOrderNotification }) => {
-                      sendVendorOrderNotification(fullOrder.vendor.email, fullOrder);
-                  });
+                 // 2. Prepare Order Update (For critical status changes)
+                 const orderPayload = {};
+                 if (sfStatus === 'DELIVERED') {
+                     orderPayload.status = 'completed'; 
+                 } else if (sfStatus === 'COLLECTED') {
+                     orderPayload.status = 'on_way'; 
+                 } else if (sfStatus === 'ALLOTTED' && (delivery.status === 'searching_rider' || delivery.status === 'created')) {
+                     // Special Case: Vendor needs to know driver is assigned to start cooking/release food
+                     // Only if we are moving TO allotted FROM searching
+                     orderPayload.status = 'placed'; 
+                     
+                     // Trigger Vendor Notification (Re-using existing logic)
+                     const { data: fullOrder } = await supabase
+                         .from('orders')
+                         .select('*, vendor:vendors(*)')
+                         .eq('id', orderUUID) 
+                         .single();
 
-                  // 4. Send Push
-                  import('../utils/pushService.js').then(({ sendVendorPush }) => {
-                      const msg = `Rider Assigned! ${trackingInfo.rider_details?.name || 'Partner'} is on the way.`;
-                      sendVendorPush(fullOrder.vendor.id, 'Order Update 🔔', msg);
-                  });
-                  console.log(`[SafetyNet] ✅ Vendor Notified successfully.`);
+                     if (fullOrder && fullOrder.vendor) {
+                          // Send Email
+                          import('../utils/emailService.js').then(({ sendVendorOrderNotification }) => {
+                              sendVendorOrderNotification(fullOrder.vendor.email, fullOrder);
+                          });
+                          // Send Push
+                          import('../utils/pushService.js').then(({ sendVendorPush }) => {
+                              const msg = `Rider Assigned! ${trackingInfo.rider_details?.name || 'Partner'} is on the way.`;
+                              sendVendorPush(fullOrder.vendor.id, 'Order Update 🔔', msg);
+                          });
+                          console.log(`[Sync] ✅ Vendor Notified of Rider Assignment.`);
+                     }
+                 }
+
+                 if (Object.keys(orderPayload).length > 0) {
+                     await supabase
+                        .from('orders')
+                        .update({
+                            ...orderPayload,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('id', orderUUID);
+                     console.log(`[Sync] ✅ Orders table updated to ${orderPayload.status}`);
+                 }
+
+                 console.log(`[Sync] ✅ Delivery state synchronized.`);
              }
         }
         // ---------------------------------------------------

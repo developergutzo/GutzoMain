@@ -44,6 +44,9 @@ import mealCalendarRoutes from './routes/mealCalendar.js'; // [NEW]
 // Import middleware
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 
+// Import and start cron services
+import './utils/deliveryCronService.js'; // Auto-starts delivery status sync cron
+
 const app = express();
 const PORT = process.env.PORT;
 
