@@ -1,7 +1,14 @@
 import fetch from 'node-fetch';
 
-const SHADOWFAX_API_URL = process.env.SHADOWFAX_API_URL;
+// Support mock mode for testing
+const USE_MOCK = process.env.USE_MOCK_SHADOWFAX === 'true';
+const MOCK_URL = process.env.MOCK_SHADOWFAX_URL || 'http://localhost:3002';
+const SHADOWFAX_API_URL = USE_MOCK ? MOCK_URL : process.env.SHADOWFAX_API_URL;
 const SHADOWFAX_API_TOKEN = process.env.SHADOWFAX_API_TOKEN;
+
+if (USE_MOCK) {
+    console.log('🧪 [Shadowfax] MOCK MODE ENABLED - Using:', MOCK_URL);
+}
 
 export const createShadowfaxOrder = async (order, vendor, otps = {}) => {
     if (!SHADOWFAX_API_TOKEN) {
