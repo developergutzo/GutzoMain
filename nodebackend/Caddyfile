@@ -11,7 +11,7 @@ https://192-168-1-36.nip.io {
     @backend path /service/*
     handle @backend {
         uri strip_prefix /service
-        reverse_proxy 35.194.40.59:8000
+        reverse_proxy 35.222.248.64:8000
     }
 
     # 2. Node.js Backend API Proxy

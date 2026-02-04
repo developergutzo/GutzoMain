@@ -3,7 +3,7 @@
 # Simple deployment script that builds locally with env vars
 set -e
 
-PROJECT_ID="gutzo-478017"
+PROJECT_ID="project-6733e5b0-e5f8-4631-895"
 REGION="us-central1"
 SERVICE_NAME="gutzo-app"
 
@@ -23,7 +23,7 @@ ENV VITE_SUPABASE_URL="https://api.gutzo.in/service"
 ENV VITE_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE"
 ENV VITE_SUPABASE_FUNCTION_URL="https://api.gutzo.in"
 ENV VITE_DUMMY_LOGIN=true
-ENV VITE_GOOGLE_MAPS_API_KEY="AIzaSyCHTG5c0iMf2Sme31nBFDKXxOm460AGZlA"
+ENV VITE_GOOGLE_MAPS_API_KEY="AIzaSyA5P5eNfyXHcd-Qoy5NDlDQPmTg5olfHZY"
 
 RUN npm run build
 
