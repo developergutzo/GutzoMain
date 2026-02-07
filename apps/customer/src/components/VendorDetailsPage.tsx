@@ -77,9 +77,9 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors
         try {
           const res = await apiService.getVendor(id);
           if (res.success && res.data) {
-             setFetchedVendor(processVendorData(res.data));
+            setFetchedVendor(processVendorData(res.data));
           } else if (res.vendor) {
-             setFetchedVendor(processVendorData(res.vendor));
+            setFetchedVendor(processVendorData(res.vendor));
           }
         } catch (e) {
           console.error("Failed to fetch vendor details", e);
@@ -112,40 +112,40 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors
           };
 
           const res = await apiService.getDeliveryServiceability(pickup, drop);
-          
+
           if (res.data) {
-             // Check serviceability explicitly
-             const serviceable = res.data.is_serviceable !== undefined ? res.data.is_serviceable : (res.data.value?.is_serviceable ?? true);
-             setIsServiceable(serviceable);
+            // Check serviceability explicitly
+            const serviceable = res.data.is_serviceable !== undefined ? res.data.is_serviceable : (res.data.value?.is_serviceable ?? true);
+            setIsServiceable(serviceable);
 
-             if (serviceable) {
-                const pickupEtaStr = res.data.pickup_eta || res.data.value?.pickup_eta;
-                
-                if (pickupEtaStr) {
-                  // Calculate travel time from vendor to customer
-                  const travelTimeStr = await DistanceService.getTravelTime(
-                    { latitude: vendor.latitude, longitude: vendor.longitude },
-                    { latitude: userLat, longitude: userLng }
-                  );
+            if (serviceable) {
+              const pickupEtaStr = res.data.pickup_eta || res.data.value?.pickup_eta;
 
-                  let totalEtaDisplay = pickupEtaStr;
+              if (pickupEtaStr) {
+                // Calculate travel time from vendor to customer
+                const travelTimeStr = await DistanceService.getTravelTime(
+                  { latitude: vendor.latitude, longitude: vendor.longitude },
+                  { latitude: userLat, longitude: userLng }
+                );
 
-                  if (travelTimeStr) {
-                    const pickupMins = DistanceService.parseDurationToMinutes(pickupEtaStr);
-                    const travelMins = DistanceService.parseDurationToMinutes(travelTimeStr);
-                    
-                    if (pickupMins > 0 && travelMins > 0) {
-                      const totalMins = pickupMins + travelMins;
-                      // Create a range, e.g., "35-40 mins"
-                      totalEtaDisplay = `${totalMins}-${totalMins + 5} mins`;
-                    }
+                let totalEtaDisplay = pickupEtaStr;
+
+                if (travelTimeStr) {
+                  const pickupMins = DistanceService.parseDurationToMinutes(pickupEtaStr);
+                  const travelMins = DistanceService.parseDurationToMinutes(travelTimeStr);
+
+                  if (pickupMins > 0 && travelMins > 0) {
+                    const totalMins = pickupMins + travelMins;
+                    // Create a range, e.g., "35-40 mins"
+                    totalEtaDisplay = `${totalMins}-${totalMins + 5} mins`;
                   }
-                  
-                  setDynamicEta(totalEtaDisplay);
                 }
-             } else {
-                setDynamicEta(null);
-             }
+
+                setDynamicEta(totalEtaDisplay);
+              }
+            } else {
+              setDynamicEta(null);
+            }
           }
         } catch (e) {
           console.error("Failed to fetch dynamic ETA", e);
@@ -162,7 +162,7 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors
 
   const handleShowLogin = () => setShowLoginPanel(true);
   const handleCloseAuth = () => setShowLoginPanel(false);
-  
+
   const handleAuthComplete = async (authData: any) => {
     try {
       await login(authData);
@@ -219,8 +219,8 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors
       <div className="vendor-details-page desktop" style={{ background: '#f7f7fa', minHeight: '100vh' }}>
         {/* Always render header; use CSS for responsive visibility */}
         <div className="hidden lg:block">
-          <Header 
-            onShowCart={() => navigate('/checkout', { from: 'vendor_details' })} 
+          <Header
+            onShowCart={() => navigate('/checkout', { from: 'vendor_details' })}
             onShowLogin={handleShowLogin}
             onShowProfile={handleShowProfile}
             onLogout={handleLogout}
@@ -266,93 +266,93 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors
           />
           {/* Show next steps UI when a meal plan is selected */}
           {selectedMealPlan && (
-              <MealPlanBottomSheet
-                plan={selectedMealPlan}
-                onClose={() => setSelectedMealPlan(null)}
-              />
+            <MealPlanBottomSheet
+              plan={selectedMealPlan}
+              onClose={() => setSelectedMealPlan(null)}
+            />
           )}
           {/* Today's best picks section inside same container */}
-          <InstantPicks 
-             noPadding 
-             vendorId={vendor.id} 
-             disabled={!isServiceable || !vendor.isOpen} 
-             isOpen={vendor.isOpen}
+          <InstantPicks
+            noPadding
+            vendorId={vendor.id}
+            disabled={!isServiceable || !vendor.isOpen}
+            isOpen={vendor.isOpen}
           />
         </div>
-      {(!showCartPanel && !showCheckoutPanel) && (
-        <CartStrip 
-            onShowCart={() => navigate('/checkout', { from: 'vendor_details' })} 
+        {(!showCartPanel && !showCheckoutPanel) && (
+          <CartStrip
+            onShowCart={() => navigate('/checkout', { from: 'vendor_details' })}
             isOpen={
               cartItems.length > 0
-                ? (cartItems[0].vendorId === vendor.id 
-                    ? vendor.isOpen !== false 
-                    : (vendors.find(v => v.id === cartItems[0].vendorId)?.isOpen ?? true))
+                ? (cartItems[0].vendorId === vendor.id
+                  ? vendor.isOpen !== false
+                  : (vendors.find(v => v.id === cartItems[0].vendorId)?.isOpen ?? true))
                 : true
             }
+          />
+        )}
+        <CartPanel
+          isOpen={showCartPanel}
+          onClose={() => setShowCartPanel(false)}
+          isAuthenticated={isAuthenticated}
+          onShowLogin={handleShowLogin}
+          onShowCheckout={handleShowCheckout}
         />
-      )}
-      <CartPanel
-        isOpen={showCartPanel}
-        onClose={() => setShowCartPanel(false)}
-        isAuthenticated={isAuthenticated}
-        onShowLogin={handleShowLogin}
-        onShowCheckout={handleShowCheckout}
-      />
 
-      <InstantOrderPanel
-        isOpen={showCheckoutPanel}
-        onClose={() => setShowCheckoutPanel(false)}
-        cartItems={cartItems}
-        onPaymentSuccess={handlePaymentSuccess}
-        onAddAddress={() => setShowAddressModal(true)}
-        refreshTrigger={addressRefreshTrigger}
-        newAddressId={newlyAddedAddressId}
-        onShowLogin={handleShowLogin}
-      />
-
-      {paymentSuccessData && (
-        <PaymentSuccessModal
-          isOpen={showPaymentSuccess}
-          onClose={() => setShowPaymentSuccess(false)}
-          paymentDetails={paymentSuccessData.paymentDetails}
-          orderSummary={paymentSuccessData.orderSummary}
-          onViewOrders={() => {
-            setShowPaymentSuccess(false);
-            setProfilePanelContent('orders');
-            setShowProfilePanel(true);
-          }}
-          onContinueExploring={() => {
-            setShowPaymentSuccess(false);
-            navigate('/');
-          }}
+        <InstantOrderPanel
+          isOpen={showCheckoutPanel}
+          onClose={() => setShowCheckoutPanel(false)}
+          cartItems={cartItems}
+          onPaymentSuccess={handlePaymentSuccess}
+          onAddAddress={() => setShowAddressModal(true)}
+          refreshTrigger={addressRefreshTrigger}
+          newAddressId={newlyAddedAddressId}
+          onShowLogin={handleShowLogin}
         />
-      )}
 
-      <AddressModal
-        isOpen={showAddressModal}
-        onClose={() => setShowAddressModal(false)}
-        onSave={handleAddressAdded}
-      />
-      
-      <LoginPanel 
-        isOpen={showLoginPanel}
-        onClose={handleCloseAuth}
-        onAuthComplete={handleAuthComplete}
-      />
-      
-      <ProfilePanel 
-        isOpen={showProfilePanel}
-        onClose={() => setShowProfilePanel(false)}
-        onLogout={handleLogout}
-        content={profilePanelContent}
-        userInfo={user ? {
-          name: user.name,
-          phone: user.phone,
-          email: user.email
-        } : null}
-      />
-    </div>
-  );
+        {paymentSuccessData && (
+          <PaymentSuccessModal
+            isOpen={showPaymentSuccess}
+            onClose={() => setShowPaymentSuccess(false)}
+            paymentDetails={paymentSuccessData.paymentDetails}
+            orderSummary={paymentSuccessData.orderSummary}
+            onViewOrders={() => {
+              setShowPaymentSuccess(false);
+              setProfilePanelContent('orders');
+              setShowProfilePanel(true);
+            }}
+            onContinueExploring={() => {
+              setShowPaymentSuccess(false);
+              navigate('/');
+            }}
+          />
+        )}
+
+        <AddressModal
+          isOpen={showAddressModal}
+          onClose={() => setShowAddressModal(false)}
+          onSave={handleAddressAdded}
+        />
+
+        <LoginPanel
+          isOpen={showLoginPanel}
+          onClose={handleCloseAuth}
+          onAuthComplete={handleAuthComplete}
+        />
+
+        <ProfilePanel
+          isOpen={showProfilePanel}
+          onClose={() => setShowProfilePanel(false)}
+          onLogout={handleLogout}
+          content={profilePanelContent}
+          userInfo={user ? {
+            name: user.name,
+            phone: user.phone,
+            email: user.email
+          } : null}
+        />
+      </div>
+    );
   }
 
   if (loading) {

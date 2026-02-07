@@ -44,6 +44,37 @@ const saveData = () => {
     }
 };
 
+// Helper: Send Webhook
+const sendWebhook = async (order) => {
+    const WEBHOOK_URL = 'http://localhost:5000/api/shadowfax/webhook';
+    try {
+        const payload = {
+            coid: order.client_order_id,
+            sfx_order_id: order.shadowfax_id,
+            status: order.status,
+            action_time: new Date().toISOString(),
+            rider_id: 101,
+            rider_name: order.rider_details?.name || 'Mock Rider',
+            rider_contact_number: order.rider_details?.contact_number || '9999999999',
+            rider_latitude: order.rider_details?.latitude,
+            rider_longitude: order.rider_details?.longitude,
+            cancel_reason: order.cancellation_reason,
+            cancelled_by: order.cancelled_by || 'sfx'
+        };
+
+        console.log(`📡 [Mock Shadowfax] Sending Webhook: ${order.status} -> ${WEBHOOK_URL}`);
+
+        fetch(WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        }).catch(err => console.error("Webhook Fetch Error:", err.message));
+
+    } catch (e) {
+        console.error('❌ [Mock Shadowfax] Webhook Setup Failed:', e);
+    }
+};
+
 // Load on start
 loadData();
 
@@ -214,7 +245,7 @@ app.post('/order/serviceability/', (req, res) => {
  */
 app.post('/order/cancel/', (req, res) => {
     try {
-        const { order_id, cancellation_reason } = req.body;
+        const { order_id, cancellation_reason, cancelled_by } = req.body;
         const order = orders.get(order_id);
 
         if (!order) {
@@ -233,12 +264,17 @@ app.post('/order/cancel/', (req, res) => {
 
         order.status = 'CANCELLED';
         order.updated_at = timestamp();
+        order.cancelled_by = cancelled_by || 'sfx'; // Default to sfx if not provided
+        order.cancellation_reason = cancellation_reason;
+
         order.history.push({
             status: 'CANCELLED',
             timestamp: timestamp(),
-            note: cancellation_reason || 'Order cancelled'
+            note: cancellation_reason || 'Order cancelled',
+            meta: { cancelled_by }
         });
         saveData();
+        sendWebhook(order);
 
         console.log(`🚫 [Mock Shadowfax] Order Cancelled: ${order_id}`);
 
@@ -291,12 +327,30 @@ app.post('/api/orders/:orderId/update-status', (req, res) => {
         order.status = status;
         order.updated_at = timestamp();
 
-        // Update rider details if provided
+        // Update rider details if provided (from request body)
         if (rider_details) {
             order.rider_details = {
                 ...order.rider_details,
                 ...rider_details
             };
+        }
+
+        // Simulate Rider Movement (Mock Logic)
+        if (order.rider_details && order.pickup_details?.latitude && order.drop_details?.latitude) {
+            const pLat = Number(order.pickup_details.latitude);
+            const pLng = Number(order.pickup_details.longitude);
+            const dLat = Number(order.drop_details.latitude);
+            const dLng = Number(order.drop_details.longitude);
+
+            if (['CUSTOMER_DOOR_STEP', 'DELIVERED'].includes(status)) {
+                // Teleport to drop
+                order.rider_details.latitude = dLat;
+                order.rider_details.longitude = dLng;
+            } else if (['ARRIVED'].includes(status)) {
+                // Reset to pickup (Rider has arrived at store)
+                order.rider_details.latitude = pLat;
+                order.rider_details.longitude = pLng;
+            }
         }
 
         // Add to history
@@ -306,6 +360,7 @@ app.post('/api/orders/:orderId/update-status', (req, res) => {
             note: `Status updated via UI to ${status}`
         });
         saveData();
+        sendWebhook(order);
 
         console.log(`🔄 [Mock Shadowfax] Status Updated: ${orderId} → ${status}`);
 
@@ -342,8 +397,8 @@ app.post('/api/orders/:orderId/assign-rider', (req, res) => {
         order.rider_details = {
             name: randomName,
             contact_number: `+91${Math.floor(7000000000 + Math.random() * 3000000000)}`,
-            latitude: order.pickup_details?.latitude || 12.9716,
-            longitude: order.pickup_details?.longitude || 77.5946
+            latitude: order.rider_details?.latitude || order.pickup_details?.latitude || 12.9716,
+            longitude: order.rider_details?.longitude || order.pickup_details?.longitude || 77.5946
         };
 
         order.history.push({
@@ -352,6 +407,7 @@ app.post('/api/orders/:orderId/assign-rider', (req, res) => {
             note: `Rider ${randomName} assigned`
         });
         saveData();
+        sendWebhook(order);
 
         console.log(`👤 [Mock Shadowfax] Rider Assigned: ${orderId} → ${randomName}`);
 
@@ -364,6 +420,40 @@ app.post('/api/orders/:orderId/assign-rider', (req, res) => {
         console.error('❌ [Mock Shadowfax] Assign Rider Error:', error);
         res.status(500).json({ error: error.message });
     }
+});
+
+/**
+ * POST /api/orders/:orderId/update-location
+ * Manually update rider coordinates
+ */
+app.post('/api/orders/:orderId/update-location', (req, res) => {
+    const { orderId } = req.params;
+    const { latitude, longitude } = req.body;
+
+    console.log(`📍 Request Update Location: ${orderId} -> ${latitude}, ${longitude}`);
+
+    const order = orders.get(orderId);
+
+    if (!order) {
+        console.error(`❌ Order not found: ${orderId}`);
+        return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    if (!order.rider_details) order.rider_details = {};
+
+    // Update coordinates
+    order.rider_details.latitude = parseFloat(latitude);
+    order.rider_details.longitude = parseFloat(longitude);
+
+    // Also update common nested structure if present
+    order.rider_details.current_location = {
+        latitude: parseFloat(latitude),
+        longitude: parseFloat(longitude)
+    };
+
+    saveData();
+    res.json({ success: true, message: 'Location updated' });
+    console.log(`📍 [Mock Shadowfax] Location Updated: ${orderId} -> ${latitude}, ${longitude}`);
 });
 
 // ============================================

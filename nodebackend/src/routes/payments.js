@@ -827,35 +827,68 @@ if (process.env.NODE_ENV === 'development') {
     });
 
     // Trigger Mock Shadowfax LOGIC if requested
+    // Trigger Mock Shadowfax LOGIC if requested
     if (mockShadowfax && order) {
-      console.log(`🛠️ [Mock Payment] Triggering Mock Shadowfax Logic for ${orderId}`);
+      console.log(`🛠️ [Mock Payment] Triggering Shadowfax Logic for ${orderId} (via API)`);
 
-      // LOGIC MIRRORS /api/shadowfax/mock-create-order
-      const mockSfId = `SFX_MOCK_AUTO_${Date.now()}`;
-      const pickupOtp = "1234";
-      const deliveryOtp = "5678";
+      try {
+        const { createShadowfaxOrder } = await import('../utils/shadowfax.js');
 
-      const initialHistory = [{
-        status: 'searching_rider',
-        timestamp: new Date().toISOString(),
-        note: 'Mock Order Created (Auto-Payment)'
-      }];
+        // Fetch Vendor
+        const { data: vendor } = await supabaseAdmin
+          .from('vendors')
+          .select('*')
+          .eq('id', order.vendor_id)
+          .single();
 
-      await supabaseAdmin.from('deliveries').upsert({
-        order_id: order.id,
-        external_order_id: mockSfId,
-        partner_id: 'shadowfax',
-        status: 'searching_rider',
-        pickup_otp: pickupOtp,
-        delivery_otp: deliveryOtp,
-        history: initialHistory,
-        courier_request_payload: { mock: true, source: 'mock-payment' }
-      }, { onConflict: 'order_id' });
+        if (vendor) {
+          // Parse address if needed
+          if (order.delivery_address && typeof order.delivery_address === 'string') {
+            try {
+              order.delivery_address = JSON.parse(order.delivery_address);
+            } catch (e) {
+              console.error("Failed to parse delivery_address JSON:", e);
+            }
+          }
 
-      await supabaseAdmin.from('orders').update({
-        shadowfax_order_id: mockSfId,
-        status: 'searching_rider'
-      }).eq('id', order.id);
+          const pickupOtp = Math.floor(1000 + Math.random() * 9000).toString();
+          const deliveryOtp = Math.floor(1000 + Math.random() * 9000).toString();
+
+          const sfResponse = await createShadowfaxOrder(order, vendor, { pickup_otp: pickupOtp, delivery_otp: deliveryOtp });
+
+          if (sfResponse && sfResponse.success) {
+            const shadowfaxId = sfResponse.data.sfx_order_id || sfResponse.data.flash_order_id || sfResponse.data.client_order_id || sfResponse.data.id;
+            console.log(`✅ [Mock Payment] Shadowfax Order Created: ${shadowfaxId}`);
+
+            await supabaseAdmin.from('deliveries').upsert({
+              order_id: order.id,
+              external_order_id: shadowfaxId,
+              partner_id: 'shadowfax',
+              status: 'searching_rider',
+              pickup_otp: pickupOtp,
+              delivery_otp: deliveryOtp,
+              history: [{
+                status: 'searching_rider',
+                timestamp: new Date().toISOString(),
+                note: 'Mock Order Created (Via Shadowfax API)'
+              }],
+              courier_request_payload: sfResponse.data
+            }, { onConflict: 'order_id' });
+
+            await supabaseAdmin.from('orders').update({
+              shadowfax_order_id: shadowfaxId,
+              status: 'searching_rider'
+            }).eq('id', order.id);
+
+          } else {
+            console.error("❌ [Mock Payment] Failed to create Shadowfax order:", sfResponse);
+          }
+        } else {
+          console.error("❌ [Mock Payment] Vendor not found");
+        }
+      } catch (err) {
+        console.error("❌ [Mock Payment] Error triggering Shadowfax:", err);
+      }
     }
 
     // Notify Vendor logic... (simplified here)

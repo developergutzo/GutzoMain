@@ -5,21 +5,44 @@ const API_BASE = '';
 let orders = [];
 let selectedOrder = null;
 
-// Status progression map
+// Status progression map (Happy Path)
 const STATUS_FLOW = {
     'CREATED': 'ALLOTTED',
     'ALLOTTED': 'ACCEPTED',
     'ACCEPTED': 'ARRIVED',
     'ARRIVED': 'COLLECTED',
-    'COLLECTED': 'ARRIVED_AT_CUSTOMER_DOORSTEP',
-    'ARRIVED_AT_CUSTOMER_DOORSTEP': 'DELIVERED'
+    'COLLECTED': 'CUSTOMER_DOOR_STEP',
+    'CUSTOMER_DOOR_STEP': 'DELIVERED',
+    // RTS Flow
+    'RTS_INITIATED': 'RTS_COMPLETED'
 };
+
+const CANCEL_REASONS = [
+    "Cancelled by Customer",
+    "Rider Not Available or is Late",
+    "Customer Not Available",
+    "Duplicate Order",
+    "Delivery Address Unserviceable or Incorrect",
+    "Operational Issue with order",
+    "Cancelled by Seller",
+    "Rider not having enough cash for purchase",
+    "Delivered by seller",
+    "Item not available",
+    "Incorrect seller location",
+    "Customer Not responding / Phone switched off",
+    "Placed order by mistake",
+    "Order item is not ready",
+    "Got faster option from other provider",
+    "Expected a shorter wait time",
+    "Delivery partner refused pickup"
+];
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     fetchOrders();
     // Auto-refresh every 5 seconds
     setInterval(fetchOrders, 5000);
+    createCancelModal(); // Inject modal on load
 });
 
 // Fetch all orders
@@ -106,6 +129,8 @@ function renderActionButtons(order) {
     if (STATUS_FLOW[order.status]) {
         const nextStatus = STATUS_FLOW[order.status];
         const label = getStatusLabel(nextStatus);
+
+        // Primary Action
         buttons.push(`
             <button class="btn btn-secondary" onclick="updateStatus('${order.shadowfax_id}', '${nextStatus}')">
                 ${label}
@@ -113,11 +138,30 @@ function renderActionButtons(order) {
         `);
     }
 
-    // Cancel button (if not delivered/cancelled)
-    if (!['DELIVERED', 'CANCELLED'].includes(order.status)) {
+    // RTS Option (Available after Pickup)
+    const rtsActiveStatuses = ['COLLECTED', 'CUSTOMER_DOOR_STEP'];
+    if (rtsActiveStatuses.includes(order.status)) {
         buttons.push(`
-            <button class="btn btn-danger" onclick="cancelOrder('${order.shadowfax_id}')">
+            <button class="btn btn-warning" onclick="updateStatus('${order.shadowfax_id}', 'RTS_INITIATED')" style="background-color: #f59e0b; color: white; border: none;">
+                🔄 Initiate RTS
+            </button>
+        `);
+    }
+
+    // Cancel button (if not delivered/cancelled/rts_completed)
+    if (!['DELIVERED', 'CANCELLED', 'RTS_COMPLETED'].includes(order.status)) {
+        buttons.push(`
+            <button class="btn btn-danger" onclick="openCancelModal('${order.shadowfax_id}')">
                 🚫 Cancel
+            </button>
+        `);
+    }
+
+    // Map Button (Location Simulation)
+    if (!['CANCELLED', 'REJECTED'].includes(order.status)) {
+        buttons.push(`
+            <button class="btn" onclick="openLocationModal('${order.shadowfax_id}')" style="background-color: #3b82f6; color: white; border: none; margin-left: 5px;">
+                📍 Update Location
             </button>
         `);
     }
@@ -130,9 +174,9 @@ function getStatusLabel(status) {
     const labels = {
         'ALLOTTED': '✅ Assign Rider',
         'ACCEPTED': '👍 Mark Accepted',
-        'ARRIVED': '📍 Mark Arrived at Store',
+        'ARRIVED': '📍 Arrived at Store',
         'COLLECTED': '📦 Mark Picked Up',
-        'ARRIVED_AT_CUSTOMER_DOORSTEP': '🚪 At Customer Door',
+        'CUSTOMER_DOOR_STEP': '🚪 At Customer Door',
         'DELIVERED': '✅ Mark Delivered',
         'RTS_INITIATED': '🔄 Initiate RTS',
         'RTS_COMPLETED': '✅ Complete RTS'
@@ -143,10 +187,10 @@ function getStatusLabel(status) {
 // Assign rider to order
 async function assignRider(orderId) {
     try {
-        const response = await fetch(`${API_BASE}/api/orders/${orderId}/assign-rider`, {
+        const response = await fetch(`${API_BASE} /api/orders / ${orderId}/assign-rider`, {
             method: 'POST'
         });
-        
+
         if (response.ok) {
             console.log('✅ Rider assigned');
             await fetchOrders();
@@ -165,7 +209,7 @@ async function updateStatus(orderId, newStatus) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: newStatus })
         });
-        
+
         if (response.ok) {
             console.log(`✅ Status updated to ${newStatus}`);
             await fetchOrders();
@@ -176,30 +220,86 @@ async function updateStatus(orderId, newStatus) {
     }
 }
 
-// Cancel order
-async function cancelOrder(orderId) {
-    if (!confirm('Are you sure you want to cancel this order?')) return;
+// --- CANCELLATION MODAL LOGIC ---
+
+function createCancelModal() {
+    const modalHtml = `
+    <div class="modal" id="cancelModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Cancel Order</h2>
+                <button class="close-btn" onclick="closeCancelModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p>Please select a reason for cancellation:</p>
+                <select id="cancelReasonInput" style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px;">
+                    ${CANCEL_REASONS.map(r => `<option value="${r}">${r}</option>`).join('')}
+                </select>
+                
+                <p>Cancelled By:</p>
+                <div class="radio-group" style="display: flex; gap: 20px; margin-bottom: 20px;">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="radio" name="cancelledBy" value="sfx" checked> Shadowfax (sfx)
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="radio" name="cancelledBy" value="client"> Client
+                    </label>
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button class="btn" onclick="closeCancelModal()" style="background: #e5e7eb; color: #374151;">Close</button>
+                    <button class="btn btn-danger" onclick="submitCancel()">Confirm Cancellation</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+let orderToCancel = null;
+
+function openCancelModal(orderId) {
+    orderToCancel = orderId;
+    document.getElementById('cancelModal').classList.add('active');
+}
+
+function closeCancelModal() {
+    document.getElementById('cancelModal').classList.remove('active');
+    orderToCancel = null;
+}
+
+async function submitCancel() {
+    if (!orderToCancel) return;
+
+    const reason = document.getElementById('cancelReasonInput').value;
+    const cancelledBy = document.querySelector('input[name="cancelledBy"]:checked').value;
 
     try {
-        const order = orders.find(o => o.shadowfax_id === orderId);
         const response = await fetch(`${API_BASE}/order/cancel/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                order_id: orderId,
-                cancellation_reason: 'Cancelled via dashboard'
+                order_id: orderToCancel,
+                cancellation_reason: reason,
+                cancelled_by: cancelledBy
             })
         });
-        
+
         if (response.ok) {
             console.log('✅ Order cancelled');
+            closeCancelModal();
             await fetchOrders();
+        } else {
+            const err = await response.json();
+            alert('Failed to cancel: ' + err.message);
         }
     } catch (error) {
         console.error('Failed to cancel order:', error);
         alert('Failed to cancel order');
     }
 }
+
 
 // Open order detail modal
 function openOrderModal(orderId) {
@@ -314,7 +414,7 @@ function closeModal() {
 // Update stats
 function updateStats() {
     const total = orders.length;
-    const active = orders.filter(o => !['DELIVERED', 'CANCELLED'].includes(o.status)).length;
+    const active = orders.filter(o => !['DELIVERED', 'CANCELLED', 'RTS_COMPLETED'].includes(o.status)).length;
     const delivered = orders.filter(o => o.status === 'DELIVERED').length;
 
     document.getElementById('totalOrders').textContent = total;
@@ -352,3 +452,128 @@ document.getElementById('orderModal')?.addEventListener('click', (e) => {
         closeModal();
     }
 });
+
+// --- MAP SIMULATION LOGIC ---
+let map = null;
+let riderMarker = null;
+let newRiderLocation = null;
+
+function openLocationModal(shadowfaxId) {
+    const order = orders.find(o => o.shadowfax_id === shadowfaxId);
+    if (!order) return;
+
+    selectedOrder = order;
+    document.getElementById('location-modal').style.display = 'block';
+
+    // Defer map init to ensure container is visible
+    setTimeout(() => {
+        initMap(order);
+    }, 100);
+}
+
+function closeLocationModal() {
+    document.getElementById('location-modal').style.display = 'none';
+}
+
+function initMap(order) {
+    // Default: Coimbatore (or Order Loc)
+    let defaultLat = 11.0168;
+    let defaultLng = 76.9558;
+
+    if (order.pickup_details?.latitude) {
+        defaultLat = parseFloat(order.pickup_details.latitude);
+        defaultLng = parseFloat(order.pickup_details.longitude);
+    }
+
+    if (!map) {
+        map = L.map('simulation-map').setView([defaultLat, defaultLng], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        map.on('click', function (e) {
+            updateRiderMarker(e.latlng.lat, e.latlng.lng);
+        });
+    }
+
+    // Clear existing markers
+    map.eachLayer((layer) => {
+        if (layer instanceof L.Marker) map.removeLayer(layer);
+    });
+
+    // Add Markers
+    // Pickup (Green)
+    if (order.pickup_details?.latitude) {
+        const pLat = parseFloat(order.pickup_details.latitude);
+        const pLng = parseFloat(order.pickup_details.longitude);
+        const pickupIcon = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', // Location pin
+            iconSize: [32, 32],
+            iconAnchor: [16, 32]
+        });
+        L.marker([pLat, pLng], { icon: pickupIcon }).addTo(map).bindPopup('🏠 Pickup: ' + (order.pickup_details.name || ''));
+    }
+
+    // Drop (Red)
+    if (order.drop_details?.latitude) {
+        const dLat = parseFloat(order.drop_details.latitude);
+        const dLng = parseFloat(order.drop_details.longitude);
+        const dropIcon = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            className: 'hue-rotate-180' // Hack to change color
+        });
+        L.marker([dLat, dLng]).addTo(map).bindPopup('🏁 Drop: ' + (order.drop_details.name || ''));
+    }
+
+    // Rider (Bike)
+    let rLat = order.rider_details?.latitude ? parseFloat(order.rider_details.latitude) : defaultLat;
+    let rLng = order.rider_details?.longitude ? parseFloat(order.rider_details.longitude) : defaultLng;
+
+    updateRiderMarker(rLat, rLng);
+    map.setView([rLat, rLng], 14);
+}
+
+function updateRiderMarker(lat, lng) {
+    if (riderMarker) map.removeLayer(riderMarker);
+    const icon = L.icon({
+        iconUrl: 'https://cdn-icons-png.flaticon.com/512/3082/3082383.png',
+        iconSize: [40, 40],
+        iconAnchor: [20, 20]
+    });
+
+    riderMarker = L.marker([lat, lng], { icon: icon, draggable: true }).addTo(map);
+    riderMarker.bindPopup("🛵 Rider (Drag Me)").openPopup();
+
+    riderMarker.on('dragend', function (event) {
+        const position = event.target.getLatLng();
+        newRiderLocation = { lat: position.lat, lng: position.lng };
+    });
+
+    newRiderLocation = { lat, lng };
+}
+
+async function confirmLocationUpdate() {
+    if (!selectedOrder || !newRiderLocation) return;
+
+    try {
+        const response = await fetch(`${API_BASE}/api/orders/${selectedOrder.shadowfax_id}/update-location`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                latitude: newRiderLocation.lat,
+                longitude: newRiderLocation.lng
+            })
+        });
+
+        if (response.ok) {
+            console.log("Rider location updated");
+            closeLocationModal();
+            // Don't full refresh to avoid closing modal? No, we closed it.
+            fetchOrders();
+        } else {
+            alert("Update failed");
+        }
+    } catch (e) { console.error(e); alert("Update failed"); }
+}

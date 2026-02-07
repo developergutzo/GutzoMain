@@ -5,6 +5,11 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Mock Shadowfax - Delivery Partner Dashboard</title>
         <link rel="stylesheet" href="style.css">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+        <style>
+            .map-container { height: 400px; width: 100%; border-radius: 8px; margin-bottom: 1rem; }
+        </style>
     </head>
     <body>
         <div class="container">
@@ -68,6 +73,22 @@
             </div>
         </div>
 
+        <!-- Location Modal -->
+        <div id="location-modal" class="modal" style="display: none;">
+            <div class="modal-content" style="max-width: 800px; width: 90%;">
+                <div class="modal-header">
+                    <h2>📍 Set Rider Location</h2>
+                    <span class="close-btn" onclick="closeLocationModal()">&times;</span>
+                </div>
+                <div id="simulation-map" class="map-container"></div>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" onclick="closeLocationModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="confirmLocationUpdate()">Update Position</button>
+                </div>
+                <p style="margin-top: 10px; font-size: 0.8rem; color: #666;">Click anywhere on map to move the rider marker.</p>
+            </div>
+        </div>
+        
         <script src="app.js"></script>
     </body>
 </html>

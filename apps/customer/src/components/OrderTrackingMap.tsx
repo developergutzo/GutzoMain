@@ -18,9 +18,9 @@ interface OrderTrackingMapProps {
   onDurationUpdate?: (duration: string) => void;
 }
 
-export function OrderTrackingMap({ 
-  storeLocation, 
-  userLocation, 
+export function OrderTrackingMap({
+  storeLocation,
+  userLocation,
   driverLocation,
   status,
   fitBoundsPadding = 50,
@@ -32,7 +32,7 @@ export function OrderTrackingMap({
   const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
   const directionsServiceRef = useRef<google.maps.DirectionsService | null>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
-  
+
   // Internal driver location state for animation
   const [driverPos, setDriverPos] = useState<Coordinates | null>(storeLocation);
   const animationFrameRef = useRef<number>();
@@ -51,9 +51,9 @@ export function OrderTrackingMap({
     } else {
       setIsMapLoaded(true);
     }
-    
+
     return () => {
-       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
     };
   }, []);
 
@@ -77,13 +77,13 @@ export function OrderTrackingMap({
       // Initialize Directions Service and Renderer
       directionsServiceRef.current = new google.maps.DirectionsService();
       directionsRendererRef.current = new google.maps.DirectionsRenderer({
-          map: map,
-          suppressMarkers: true, // We'll handle markers ourselves
-          polylineOptions: {
-              strokeColor: "#222",
-              strokeOpacity: 0.8,
-              strokeWeight: 4,
-          }
+        map: map,
+        suppressMarkers: true, // We'll handle markers ourselves
+        polylineOptions: {
+          strokeColor: "#222",
+          strokeOpacity: 0.8,
+          strokeWeight: 4,
+        }
       });
 
       // Add Markers
@@ -92,8 +92,8 @@ export function OrderTrackingMap({
         position: storeLocation,
         map,
         icon: {
-            url: "https://maps.google.com/mapfiles/ms/icons/restaurant.png",
-            scaledSize: new google.maps.Size(32, 32)
+          url: "https://maps.google.com/mapfiles/ms/icons/restaurant.png",
+          scaledSize: new google.maps.Size(32, 32)
         },
         title: "Kitchen"
       });
@@ -103,25 +103,25 @@ export function OrderTrackingMap({
         position: userLocation,
         map,
         icon: {
-             url: "https://maps.google.com/mapfiles/ms/icons/homegardenbusiness.png",
-             scaledSize: new google.maps.Size(32, 32)
+          url: "https://maps.google.com/mapfiles/ms/icons/homegardenbusiness.png",
+          scaledSize: new google.maps.Size(32, 32)
         },
         title: "Accura"
       });
-      
+
       // Driver Marker
       driverMarkerRef.current = new google.maps.Marker({
-          position: storeLocation,
-          map,
-          icon: {
-              path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-              scale: 5,
-              fillColor: "#000",
-              fillOpacity: 1,
-              strokeWeight: 2,
-              rotation: 0,
-          },
-          title: "Driver"
+        position: storeLocation,
+        map,
+        icon: {
+          path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+          scale: 5,
+          fillColor: "#000",
+          fillOpacity: 1,
+          strokeWeight: 2,
+          rotation: 0,
+        },
+        title: "Driver"
       });
 
       // Fit bounds to show both points
@@ -143,96 +143,96 @@ export function OrderTrackingMap({
     // Optional: Calculate heading from previous position if we tracked it, 
     // but for now just pointing it? Or maybe leave rotation alone.
     // Shadowfax might not provide heading.
-    
+
     // If we have a previous position, we could animate/slide to new one, 
     // but direct setPosition is fine for v1.
   }, [driverLocation]);
 
   // Handle status-based visibility or simulation (Optional: Removed pure simulation to rely on real data)
   useEffect(() => {
-      // If no driver location yet but status says on_way, maybe show at store?
-     if (!driverLocation && driverMarkerRef.current) {
-         driverMarkerRef.current.setPosition(storeLocation);
-     }
+    // If no driver location yet but status says on_way, maybe show at store?
+    if (!driverLocation && driverMarkerRef.current) {
+      driverMarkerRef.current.setPosition(storeLocation);
+    }
   }, [status, driverLocation, storeLocation]);
 
   // 3. Routing Logic (Directions API)
   // 3. Routing & Marker Logic
   useEffect(() => {
-      // Guard: Critical locations required for routing
-      if (!isMapLoaded || !directionsServiceRef.current || !directionsRendererRef.current || !storeLocation || !userLocation) return;
-      
-      const isSearching = status === 'searching_rider' || status === 'placed' || status === 'preparing' || status === 'ready';
-      // Phase 2: ONLY when moving TO the store. Once reached, we show the next leg.
-      const isPickUpPhase = ['driver_assigned', 'allotted'].includes(status);
-      const isDeliveryPhase = ['picked_up', 'on_way', 'arrived_at_drop', 'out_for_delivery'].includes(status);
+    // Guard: Critical locations required for routing
+    if (!isMapLoaded || !directionsServiceRef.current || !directionsRendererRef.current || !storeLocation || !userLocation) return;
 
-      console.log(`🗺️ Map Routing - Status: ${status}, isSearching: ${isSearching}, isPickUpPhase: ${isPickUpPhase}, isDeliveryPhase: ${isDeliveryPhase}`);
+    const isSearching = status === 'searching_rider' || status === 'placed' || status === 'preparing' || status === 'ready';
+    // Phase 2: ONLY when moving TO the store. Once reached, we show the next leg.
+    const isPickUpPhase = ['driver_assigned', 'allotted', 'accepted', 'arrived'].includes(status);
+    const isDeliveryPhase = ['picked_up', 'on_way', 'arrived_at_drop', 'out_for_delivery', 'collected', 'customer_door_step'].includes(status);
 
-      // A. Marker Visibility
-      if (driverMarkerRef.current) {
-          // Hide rider marker if we are still searching
-          driverMarkerRef.current.setVisible(!isSearching);
-          console.log(`👁️ Driver marker visible: ${!isSearching}`);
-      }
+    console.log(`🗺️ Map Routing - Status: ${status}, isSearching: ${isSearching}, isPickUpPhase: ${isPickUpPhase}, isDeliveryPhase: ${isDeliveryPhase}`);
 
-      // B. Routing Logic
-      let origin: Coordinates | null = null;
-      let destination: Coordinates | null = null;
+    // A. Marker Visibility
+    if (driverMarkerRef.current) {
+      // Hide rider marker if we are still searching
+      driverMarkerRef.current.setVisible(!isSearching);
+      console.log(`👁️ Driver marker visible: ${!isSearching}`);
+    }
 
-      if (isSearching) {
-          // Phase 1: searching -> Static Path (Store -> User)
-          // No rider to track yet.
-          origin = storeLocation;
-          destination = userLocation;
-          console.log('📍 Phase 1 (Searching): Route from Store → User');
-      } else if (isPickUpPhase) {
-          // Phase 2: Rider Assigned -> Rider is coming to Store
-          origin = driverLocation || storeLocation; // Fallback to store if loc missing (e.g. just assigned)
-          destination = storeLocation;
-          console.log('📍 Phase 2 (Pickup): Route from Driver → Store', { driverLocation, storeLocation });
-      } else if (isDeliveryPhase) {
-          // Phase 3: Order Picked Up -> Rider is coming to User
-          origin = driverLocation || storeLocation; 
-          destination = userLocation;
-          console.log('📍 Phase 3 (Delivery): Route from Driver → User', { driverLocation, userLocation });
-      } else {
-           // Completed / Default
-           origin = storeLocation;
-           destination = userLocation;
-           console.log('📍 Default: Route from Store → User');
-      }
+    // B. Routing Logic
+    let origin: Coordinates | null = null;
+    let destination: Coordinates | null = null;
 
-      if (origin && destination) {
-          console.log(`🛫 Calculating route from (${origin.lat}, ${origin.lng}) → (${destination.lat}, ${destination.lng})`);
-          directionsServiceRef.current.route({
-              origin,
-              destination,
-              travelMode: google.maps.TravelMode.DRIVING
-          }, (result: any, status: any) => {
-              if (status === 'OK' && result) {
-                  directionsRendererRef.current?.setDirections(result);
-                  // Extract Duration
-                  const leg = result.routes[0]?.legs[0];
-                  if (leg && leg.duration && onDurationUpdate) {
-                      console.log(`⏱️ Route duration: ${leg.duration.text}`);
-                      onDurationUpdate(leg.duration.text);
-                  }
-              } else {
-                  console.error('❌ Directions request failed:', status);
-              }
-          });
-      }
+    if (isSearching) {
+      // Phase 1: searching -> Static Path (Store -> User)
+      // No rider to track yet.
+      origin = storeLocation;
+      destination = userLocation;
+      console.log('📍 Phase 1 (Searching): Route from Store → User');
+    } else if (isPickUpPhase) {
+      // Phase 2: Rider Assigned -> Rider is coming to Store
+      origin = driverLocation || storeLocation; // Fallback to store if loc missing (e.g. just assigned)
+      destination = storeLocation;
+      console.log('📍 Phase 2 (Pickup): Route from Driver → Store', { driverLocation, storeLocation });
+    } else if (isDeliveryPhase) {
+      // Phase 3: Order Picked Up -> Rider is coming to User
+      origin = driverLocation || storeLocation;
+      destination = userLocation;
+      console.log('📍 Phase 3 (Delivery): Route from Driver → User', { driverLocation, userLocation });
+    } else {
+      // Completed / Default
+      origin = storeLocation;
+      destination = userLocation;
+      console.log('📍 Default: Route from Store → User');
+    }
+
+    if (origin && destination) {
+      console.log(`🛫 Calculating route from (${origin.lat}, ${origin.lng}) → (${destination.lat}, ${destination.lng})`);
+      directionsServiceRef.current.route({
+        origin,
+        destination,
+        travelMode: google.maps.TravelMode.DRIVING
+      }, (result: any, status: any) => {
+        if (status === 'OK' && result) {
+          directionsRendererRef.current?.setDirections(result);
+          // Extract Duration
+          const leg = result.routes[0]?.legs[0];
+          if (leg && leg.duration && onDurationUpdate) {
+            console.log(`⏱️ Route duration: ${leg.duration.text}`);
+            onDurationUpdate(leg.duration.text);
+          }
+        } else {
+          console.error('❌ Directions request failed:', status);
+        }
+      });
+    }
 
   }, [isMapLoaded, status, driverLocation, storeLocation, userLocation, onDurationUpdate]);
 
   // Render Loading/Error state if locations are missing
   if (!storeLocation || !userLocation) {
-      return (
-          <div className="flex items-center justify-center w-full h-full bg-gray-100 text-gray-400">
-              <span className="text-sm">Location details unavailable</span>
-          </div>
-      );
+    return (
+      <div className="flex items-center justify-center w-full h-full bg-gray-100 text-gray-400">
+        <span className="text-sm">Location details unavailable</span>
+      </div>
+    );
   }
 
   return (
