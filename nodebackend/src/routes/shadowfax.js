@@ -152,9 +152,11 @@ router.post('/create-order', async (req, res) => {
 
         const sfData = sfResponse.data;
 
-        if (sfData.status === 'CREATED' || sfData.order_id) {
+        if (sfData.status === 'CREATED' || sfData.order_id || sfData.flash_order_id || sfData.is_order_created) {
             // 4. Update 'deliveries' table (Schema v2)
             // We no longer update 'orders' table for delivery status.
+
+            const shadowfaxId = sfData.order_id || sfData.flash_order_id || sfData.client_order_id;
 
             const initialHistory = [{
                 status: 'searching_rider',
@@ -167,7 +169,7 @@ router.post('/create-order', async (req, res) => {
             const { error: deliveryUpdateError } = await supabaseAdmin
                 .from('deliveries')
                 .update({
-                    external_order_id: sfData.order_id, // Moved from orders.shadowfax_order_id
+                    external_order_id: shadowfaxId, // Moved from orders.shadowfax_order_id
                     status: 'searching_rider',
                     courier_request_payload: payload, // Store RAW Request (Audit)
                     history: initialHistory,
@@ -180,9 +182,9 @@ router.post('/create-order', async (req, res) => {
                 // Fallback: Try insert if not exists (unlikely given order flow)
             }
 
-            console.log(`✅ Order Created! Shadowfax ID: ${sfData.order_id}`);
+            console.log(`✅ Order Created! Shadowfax ID: ${shadowfaxId}`);
 
-            return res.json({ success: true, shadowfax_order_id: sfData.order_id });
+            return res.json({ success: true, shadowfax_order_id: shadowfaxId });
         } else {
             console.error('Shadowfax Error:', sfData);
             return res.status(400).json({ error: 'Failed to create Shadowfax order', details: sfData });

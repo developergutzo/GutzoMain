@@ -87,6 +87,7 @@ export const useVendors = () => {
             );
 
             // Check implicit or explicit serviceability
+            // Check implicit or explicit serviceability
             const isServiceable = res.data &&
               (res.data.is_serviceable !== undefined
                 ? res.data.is_serviceable
