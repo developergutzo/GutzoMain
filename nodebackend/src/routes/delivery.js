@@ -4,10 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 const router = express.Router();
 
 // Shadowfax API Config
-// Shadowfax API Config
-const USE_MOCK = process.env.USE_MOCK_SHADOWFAX === 'true';
-const MOCK_URL = process.env.MOCK_SHADOWFAX_URL || 'http://localhost:3002';
-const SHADOWFAX_API_URL = USE_MOCK ? MOCK_URL : process.env.SHADOWFAX_API_URL;
+const SHADOWFAX_API_URL = process.env.SHADOWFAX_API_URL;
 const SHADOWFAX_API_TOKEN = process.env.SHADOWFAX_API_TOKEN;
 
 router.post('/serviceability', async (req, res) => {
@@ -55,20 +52,20 @@ router.post('/serviceability', async (req, res) => {
     const data = await response.json();
 
     if (response.ok) {
-      // Shadowfax success response
-      // data structure: { value: { is_serviceable: true, pickup_eta: "10 Mins", ... } } 
-      // Note: The docs say structure varies by example, but standard success is usually inside 'value' or direct keys 
-      // depending on if it's Swagger example or real response.
-      // Real response usually flat properties or inside a wrapper.
-      // Let's pass the whole data back for frontend to parse, or parse here.
-      // Docs example: "value": { "is_serviceable": true, "pickup_eta": "10 Mins", ... }
-      // Wait, the docs showed "examples" key. The actual response likely just has the fields directly or data wrapper.
-      // Let's assume standard response matches the schema: ServiceabilityRequest -> ServiceabilityResponse (implied).
-      // I will return the full data.
-      res.json({ success: true, data: data });
+        // Shadowfax success response
+        // data structure: { value: { is_serviceable: true, pickup_eta: "10 Mins", ... } } 
+        // Note: The docs say structure varies by example, but standard success is usually inside 'value' or direct keys 
+        // depending on if it's Swagger example or real response.
+        // Real response usually flat properties or inside a wrapper.
+        // Let's pass the whole data back for frontend to parse, or parse here.
+        // Docs example: "value": { "is_serviceable": true, "pickup_eta": "10 Mins", ... }
+        // Wait, the docs showed "examples" key. The actual response likely just has the fields directly or data wrapper.
+        // Let's assume standard response matches the schema: ServiceabilityRequest -> ServiceabilityResponse (implied).
+        // I will return the full data.
+        res.json({ success: true, data: data });
     } else {
-      console.error('Shadowfax Error:', data);
-      res.status(response.status).json({ success: false, message: data.message || 'Shadowfax Provider Error', details: data });
+        console.error('Shadowfax Error:', data);
+        res.status(response.status).json({ success: false, message: data.message || 'Shadowfax Provider Error', details: data });
     }
 
   } catch (error) {
@@ -79,162 +76,162 @@ router.post('/serviceability', async (req, res) => {
 
 // Live Tracking Route
 router.get('/track/:orderId', async (req, res) => {
-  try {
-    const { orderId } = req.params;
+    try {
+        const { orderId } = req.params;
 
-    // 1. Get deliveries record
-    // OrderId could be UUID or 'GZ...' (order_number)
-    // Let's assume orderId param is EITHER. We need to find the delivery record.
-    // First find order UUID if it's a number
-    let orderUUID = orderId;
+        // 1. Get deliveries record
+        // OrderId could be UUID or 'GZ...' (order_number)
+        // Let's assume orderId param is EITHER. We need to find the delivery record.
+        // First find order UUID if it's a number
+        let orderUUID = orderId;
+        
+        // Quick check if orderId is likely a UUID
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId);
 
-    // Quick check if orderId is likely a UUID
-    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId);
+        if (!isUUID) {
+             // It's already the order number (GZ...)
+             const { data: ord } = await createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY)
+                .from('orders').select('id, order_number').eq('order_number', orderId).single();
+             if (ord) {
+                 orderUUID = ord.id;
+                 // It is the order number, so use it directly
+             }
+             else return res.status(404).json({ success: false, message: 'Order not found' });
+        } else {
+             // It is a UUID, fetch the order_number
+             const { data: ord } = await createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY)
+                .from('orders').select('order_number').eq('id', orderId).single();
+             if (!ord) return res.status(404).json({ success: false, message: 'Order UUID not found' });
+             // Update orderId param to be the number for tracking
+             // Actually, let's just define a trackingId variable
+             orderId = ord.order_number; 
+        }
 
-    if (!isUUID) {
-      // It's already the order number (GZ...)
-      const { data: ord } = await createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY)
-        .from('orders').select('id, order_number').eq('order_number', orderId).single();
-      if (ord) {
-        orderUUID = ord.id;
-        // It is the order number, so use it directly
-      }
-      else return res.status(404).json({ success: false, message: 'Order not found' });
-    } else {
-      // It is a UUID, fetch the order_number
-      const { data: ord } = await createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY)
-        .from('orders').select('order_number').eq('id', orderId).single();
-      if (!ord) return res.status(404).json({ success: false, message: 'Order UUID not found' });
-      // Update orderId param to be the number for tracking
-      // Actually, let's just define a trackingId variable
-      orderId = ord.order_number;
-    }
+        // 2. Call Shadowfax Tracking
+        const { trackShadowfaxOrder } = await import('../utils/shadowfax.js');
+        
+        // Empirically Proven: Shadowfax Staging API expects Client Order ID (GZ...), NOT sfx_order_id
+        const trackingId = isUUID ? (await createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY).from('orders').select('order_number').eq('id', orderUUID).single()).data?.order_number : orderId;
+        
+        const trackingInfo = await trackShadowfaxOrder(trackingId);
 
-    // 2. Call Shadowfax Tracking
-    const { trackShadowfaxOrder } = await import('../utils/shadowfax.js');
+        if (!trackingInfo) {
+            return res.status(500).json({ success: false, message: 'Failed to fetch tracking info' });
+        }
 
-    // Empirically Proven: Shadowfax Staging API expects Client Order ID (GZ...), NOT sfx_order_id
-    const trackingId = isUUID ? (await createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY).from('orders').select('order_number').eq('id', orderUUID).single()).data?.order_number : orderId;
-
-    const trackingInfo = await trackShadowfaxOrder(trackingId);
-
-    if (!trackingInfo) {
-      return res.status(500).json({ success: false, message: 'Failed to fetch tracking info' });
-    }
-
-    // --- UNIVERSAL SYNC LOGIC (Fallbacks for Failed Webhooks) ---
-
-    // A. Fetch Local Delivery Status First
-    const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
-    const { data: delivery } = await supabase
-      .from('deliveries')
-      .select('*')
-      .eq('order_id', orderUUID)
-      .single();
-
-    if (delivery) {
-      const sfStatus = trackingInfo.status ? trackingInfo.status.toUpperCase() : ''; // Normalize
-      let internalStatus = sfStatus.toLowerCase(); // Default
-
-      // MAPPING LOGIC (Must match shadowfax.js webhook logic)
-      if (sfStatus === 'ARRIVED') internalStatus = 'reached_location';
-      else if (sfStatus === 'COLLECTED') internalStatus = 'picked_up';
-      else if (sfStatus === 'CUSTOMER_DOOR_STEP') internalStatus = 'arrived_at_drop';
-      else if (sfStatus === 'ALLOTTED') internalStatus = 'allotted';
-      else if (sfStatus === 'DELIVERED') internalStatus = 'delivered';
-
-      // Check for Drift (Database Status vs Real API Status)
-      // We only update if the status is DIFFERENT and meaningful
-      // (Simple check: if internalStatus !== delivery.status)
-      // Note: internalStatus is the fresh truth.
-
-      if (internalStatus !== delivery.status && internalStatus !== 'unknown') {
-        console.log(`[Sync] 🔄 Resolving Status Drift for ${trackingId}: DB=${delivery.status} -> API=${internalStatus}`);
-
-        // 1. Prepare Delivery Update
-        const newHistoryItem = {
-          status: internalStatus,
-          timestamp: new Date().toISOString(),
-          note: `Auto-Sync: API Polling detected ${sfStatus}`
-        };
-
-        const updatedHistory = delivery.history ? [...delivery.history, newHistoryItem] : [newHistoryItem];
-
-        const deliveryUpdatePayload = {
-          status: internalStatus,
-          rider_name: trackingInfo.rider_details?.name,
-          rider_phone: trackingInfo.rider_details?.contact_number,
-          rider_coordinates: trackingInfo.rider_details?.current_location,
-          rider_id: trackingInfo.rider_details?.id ? String(trackingInfo.rider_details.id) : null,
-          history: updatedHistory,
-          updated_at: new Date().toISOString()
-        };
-
-        await supabase
-          .from('deliveries')
-          .update(deliveryUpdatePayload)
-          .eq('id', delivery.id);
-
-        // 2. Prepare Order Update (For critical status changes)
-        const orderPayload = {};
-        if (sfStatus === 'DELIVERED') {
-          orderPayload.status = 'completed';
-        } else if (sfStatus === 'COLLECTED') {
-          orderPayload.status = 'on_way';
-        } else if (sfStatus === 'ALLOTTED' && (delivery.status === 'searching_rider' || delivery.status === 'created')) {
-          // Special Case: Vendor needs to know driver is assigned to start cooking/release food
-          // Only if we are moving TO allotted FROM searching
-          orderPayload.status = 'placed';
-
-          // Trigger Vendor Notification (Re-using existing logic)
-          const { data: fullOrder } = await supabase
-            .from('orders')
-            .select('*, vendor:vendors(*)')
-            .eq('id', orderUUID)
+        // --- UNIVERSAL SYNC LOGIC (Fallbacks for Failed Webhooks) ---
+        
+        // A. Fetch Local Delivery Status First
+        const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+        const { data: delivery } = await supabase
+            .from('deliveries')
+            .select('*')
+            .eq('order_id', orderUUID)
             .single();
 
-          if (fullOrder && fullOrder.vendor) {
-            // Send Email
-            import('../utils/emailService.js').then(({ sendVendorOrderNotification }) => {
-              sendVendorOrderNotification(fullOrder.vendor.email, fullOrder);
-            });
-            // Send Push
-            import('../utils/pushService.js').then(({ sendVendorPush }) => {
-              const msg = `Rider Assigned! ${trackingInfo.rider_details?.name || 'Partner'} is on the way.`;
-              sendVendorPush(fullOrder.vendor.id, 'Order Update 🔔', msg);
-            });
-            console.log(`[Sync] ✅ Vendor Notified of Rider Assignment.`);
-          }
+        if (delivery) {
+             const sfStatus = trackingInfo.status ? trackingInfo.status.toUpperCase() : ''; // Normalize
+             let internalStatus = sfStatus.toLowerCase(); // Default
+
+             // MAPPING LOGIC (Must match shadowfax.js webhook logic)
+             if (sfStatus === 'ARRIVED') internalStatus = 'reached_location';
+             else if (sfStatus === 'COLLECTED') internalStatus = 'picked_up';
+             else if (sfStatus === 'CUSTOMER_DOOR_STEP') internalStatus = 'arrived_at_drop';
+             else if (sfStatus === 'ALLOTTED') internalStatus = 'allotted';
+             else if (sfStatus === 'DELIVERED') internalStatus = 'delivered';
+
+             // Check for Drift (Database Status vs Real API Status)
+             // We only update if the status is DIFFERENT and meaningful
+             // (Simple check: if internalStatus !== delivery.status)
+             // Note: internalStatus is the fresh truth.
+
+             if (internalStatus !== delivery.status && internalStatus !== 'unknown') {
+                 console.log(`[Sync] 🔄 Resolving Status Drift for ${trackingId}: DB=${delivery.status} -> API=${internalStatus}`);
+
+                 // 1. Prepare Delivery Update
+                 const newHistoryItem = {
+                    status: internalStatus,
+                    timestamp: new Date().toISOString(),
+                    note: `Auto-Sync: API Polling detected ${sfStatus}`
+                 };
+                 
+                 const updatedHistory = delivery.history ? [...delivery.history, newHistoryItem] : [newHistoryItem];
+
+                 const deliveryUpdatePayload = {
+                     status: internalStatus,
+                     rider_name: trackingInfo.rider_details?.name,
+                     rider_phone: trackingInfo.rider_details?.contact_number,
+                     rider_coordinates: trackingInfo.rider_details?.current_location,
+                     rider_id: trackingInfo.rider_details?.id ? String(trackingInfo.rider_details.id) : null,
+                     history: updatedHistory,
+                     updated_at: new Date().toISOString()
+                 };
+
+                 await supabase
+                     .from('deliveries')
+                     .update(deliveryUpdatePayload)
+                     .eq('id', delivery.id);
+
+                 // 2. Prepare Order Update (For critical status changes)
+                 const orderPayload = {};
+                 if (sfStatus === 'DELIVERED') {
+                     orderPayload.status = 'completed'; 
+                 } else if (sfStatus === 'COLLECTED') {
+                     orderPayload.status = 'on_way'; 
+                 } else if (sfStatus === 'ALLOTTED' && (delivery.status === 'searching_rider' || delivery.status === 'created')) {
+                     // Special Case: Vendor needs to know driver is assigned to start cooking/release food
+                     // Only if we are moving TO allotted FROM searching
+                     orderPayload.status = 'placed'; 
+                     
+                     // Trigger Vendor Notification (Re-using existing logic)
+                     const { data: fullOrder } = await supabase
+                         .from('orders')
+                         .select('*, vendor:vendors(*)')
+                         .eq('id', orderUUID) 
+                         .single();
+
+                     if (fullOrder && fullOrder.vendor) {
+                          // Send Email
+                          import('../utils/emailService.js').then(({ sendVendorOrderNotification }) => {
+                              sendVendorOrderNotification(fullOrder.vendor.email, fullOrder);
+                          });
+                          // Send Push
+                          import('../utils/pushService.js').then(({ sendVendorPush }) => {
+                              const msg = `Rider Assigned! ${trackingInfo.rider_details?.name || 'Partner'} is on the way.`;
+                              sendVendorPush(fullOrder.vendor.id, 'Order Update 🔔', msg);
+                          });
+                          console.log(`[Sync] ✅ Vendor Notified of Rider Assignment.`);
+                     }
+                 }
+
+                 if (Object.keys(orderPayload).length > 0) {
+                     await supabase
+                        .from('orders')
+                        .update({
+                            ...orderPayload,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('id', orderUUID);
+                     console.log(`[Sync] ✅ Orders table updated to ${orderPayload.status}`);
+                 }
+
+                 console.log(`[Sync] ✅ Delivery state synchronized.`);
+             }
+        }
+        // ---------------------------------------------------
+
+        if (delivery) {
+             // INJECT INTERNAL OTPs into the response
+             trackingInfo.delivery_otp = delivery.delivery_otp;
+             trackingInfo.pickup_otp = delivery.pickup_otp; // Included for Vendor/Debug visibility
         }
 
-        if (Object.keys(orderPayload).length > 0) {
-          await supabase
-            .from('orders')
-            .update({
-              ...orderPayload,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', orderUUID);
-          console.log(`[Sync] ✅ Orders table updated to ${orderPayload.status}`);
-        }
+        res.json({ success: true, data: trackingInfo });
 
-        console.log(`[Sync] ✅ Delivery state synchronized.`);
-      }
+    } catch (e) {
+        console.error("Tracking Route Error:", e);
+        res.status(500).json({ success: false, message: 'Internal Error' });
     }
-    // ---------------------------------------------------
-
-    if (delivery) {
-      // INJECT INTERNAL OTPs into the response
-      trackingInfo.delivery_otp = delivery.delivery_otp;
-      trackingInfo.pickup_otp = delivery.pickup_otp; // Included for Vendor/Debug visibility
-    }
-
-    res.json({ success: true, data: trackingInfo });
-
-  } catch (e) {
-    console.error("Tracking Route Error:", e);
-    res.status(500).json({ success: false, message: 'Internal Error' });
-  }
 });
 
 export default router;
