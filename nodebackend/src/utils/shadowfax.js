@@ -18,7 +18,7 @@ export const createShadowfaxOrder = async (order, vendor, otps = {}) => {
 
     // Map Order to Shadowfax Payload
     const isPrepaid = order.payment_status === 'paid' || order.payment_status === 'success';
-    
+
     // Ensure Lat/Long are valid (not 0)
     const pickupLat = Number(vendor.latitude);
     const pickupLng = Number(vendor.longitude);
@@ -83,7 +83,7 @@ export const createShadowfaxOrder = async (order, vendor, otps = {}) => {
             address: dropAddress,
             city: order.delivery_address.city,
             state: order.delivery_address.state,
-             ...(dropLat && dropLng ? { latitude: dropLat, longitude: dropLng } : {})
+            ...(dropLat && dropLng ? { latitude: dropLat, longitude: dropLng } : {})
         },
         user_details: {
             name: "Gutzo",
@@ -111,7 +111,14 @@ export const createShadowfaxOrder = async (order, vendor, otps = {}) => {
 
 
     try {
-        const response = await fetch(`${SHADOWFAX_API_URL}/order/create/`, { 
+        // LOGGING TO FILE FOR DEBUGGING
+        const fs = await import('fs');
+        const path = await import('path');
+        const logFile = path.resolve('shadowfax_debug.log');
+        const logMsg = `\n[${new Date().toISOString()}] Creating Order: ${order.order_number}\nPayload: ${JSON.stringify(payload)}\n`;
+        fs.appendFileSync(logFile, logMsg);
+
+        const response = await fetch(`${SHADOWFAX_API_URL}/order/create/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -119,25 +126,35 @@ export const createShadowfaxOrder = async (order, vendor, otps = {}) => {
             },
             body: JSON.stringify(payload)
         });
-        
+
         const data = await response.json();
+
+        // LOG RESPONSE
+        fs.appendFileSync(logFile, `Response Status: ${response.status}\nResponse Data: ${JSON.stringify(data)}\n`);
+
         if (!response.ok) {
             console.error("Shadowfax Order Failed:", data);
             return { success: false, error: data.message || "Failed to create delivery order", details: data };
         }
-        
+
         // Return Shadowfax ID + Generated OTPs
-        return { 
-            success: true, 
+        return {
+            success: true,
             data: {
                 ...data,
                 generated_pickup_otp: pickupOtp,
                 generated_delivery_otp: deliveryOtp
-            } 
-        }; 
+            }
+        };
     } catch (e) {
+        // LOG ERROR
+        const fs = await import('fs');
+        const path = await import('path');
+        const logFile = path.resolve('shadowfax_debug.log');
+        fs.appendFileSync(logFile, `ERROR: ${e.message}\n${e.stack}\n`);
+
         console.error("Shadowfax Integration Error:", e);
-        return { success: false, error: e.message }; 
+        return { success: false, error: e.message };
     }
 };
 
@@ -145,20 +162,20 @@ export const trackShadowfaxOrder = async (flashOrderId) => {
     if (!SHADOWFAX_API_TOKEN || !flashOrderId) return null;
 
     try {
-        const response = await fetch(`${SHADOWFAX_API_URL}/order/track/${flashOrderId}/`, { 
+        const response = await fetch(`${SHADOWFAX_API_URL}/order/track/${flashOrderId}/`, {
             method: 'GET',
             headers: {
                 'Authorization': SHADOWFAX_API_TOKEN
             }
         });
-        
+
         const data = await response.json();
-        
+
         if (!response.ok) {
             console.error(`❌ Tracking Failed [${response.status}]:`, JSON.stringify(data));
             return null;
         }
-        
+
         const trackingData = {
             status: data.status,
             awb_number: data.awb_number || flashOrderId,
@@ -176,10 +193,10 @@ export const trackShadowfaxOrder = async (flashOrderId) => {
         // Conditional Logging per user request
         const activeStatuses = ['ALLOTTED', 'PICKED_UP', 'DELIVERED', 'REACHED_LOCATION', 'ARRIVED_AT_DROP'];
         if (data.status && activeStatuses.includes(data.status.toUpperCase())) {
-             console.log(`🚴 Shadowfax Live Tracking for ${flashOrderId} [${data.status}]:`, JSON.stringify(data, null, 2));
-             console.log(`📍 Rider Location: lat=${data.rider_latitude}, lng=${data.rider_longitude}`);
+            console.log(`🚴 Shadowfax Live Tracking for ${flashOrderId} [${data.status}]:`, JSON.stringify(data, null, 2));
+            console.log(`📍 Rider Location: lat=${data.rider_latitude}, lng=${data.rider_longitude}`);
         }
-        
+
         return trackingData;
     } catch (e) {
         console.error("Shadowfax Tracking Error:", e);
@@ -199,7 +216,7 @@ export const cancelShadowfaxOrder = async (flashOrderId, reason = "Vendor Reject
 
     try {
         // Try standard cancel endpoint
-        const response = await fetch(`${SHADOWFAX_API_URL}/order/cancel/`, { 
+        const response = await fetch(`${SHADOWFAX_API_URL}/order/cancel/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -207,14 +224,14 @@ export const cancelShadowfaxOrder = async (flashOrderId, reason = "Vendor Reject
             },
             body: JSON.stringify(payload)
         });
-        
+
         const data = await response.json();
-        
+
         if (!response.ok || !data.is_cancelled) {
             console.error(`❌ Shadowfax Cancel Failed [${response.status}]:`, JSON.stringify(data));
             return { success: false, error: data.message || "Cancellation failed" };
         }
-        
+
         console.log("✅ Shadowfax Cancel Success:", data);
         return { success: true, data };
 

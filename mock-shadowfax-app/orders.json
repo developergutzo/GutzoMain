@@ -1,0 +1,299 @@
+[
+  [
+    "SFX_MOCK_1770446398660_u8nttgj49",
+    {
+      "shadowfax_id": "SFX_MOCK_1770446398660_u8nttgj49",
+      "client_order_id": "TEST_GZ_123",
+      "status": "CANCELLED",
+      "awb_number": "SFX_MOCK_1770446398660_u8nttgj49",
+      "created_at": "2026-02-07T06:39:58.660Z",
+      "updated_at": "2026-02-07T06:46:21.837Z",
+      "pickup_details": {
+        "address": "Test Pickup"
+      },
+      "drop_details": {
+        "address": "Test Drop"
+      },
+      "order_details": {
+        "order_id": "TEST_GZ_123"
+      },
+      "rider_details": null,
+      "history": [
+        {
+          "status": "CREATED",
+          "timestamp": "2026-02-07T06:39:58.661Z",
+          "note": "Order created via Mock API"
+        },
+        {
+          "status": "CANCELLED",
+          "timestamp": "2026-02-07T06:46:21.837Z",
+          "note": "Cancelled via dashboard"
+        }
+      ]
+    }
+  ],
+  [
+    "SFX_MOCK_RESTORED_001",
+    {
+      "shadowfax_id": "SFX_MOCK_RESTORED_001",
+      "client_order_id": "GZ2026020706379LFR",
+      "status": "CANCELLED",
+      "awb_number": "SFX_MOCK_RESTORED_001",
+      "created_at": "2026-02-07T06:30:00.000Z",
+      "updated_at": "2026-02-07T06:46:24.864Z",
+      "pickup_details": {
+        "address": "Restored Pickup Location"
+      },
+      "drop_details": {
+        "address": "Restored Drop Location"
+      },
+      "order_details": {
+        "order_id": "GZ2026020706379LFR"
+      },
+      "rider_details": null,
+      "history": [
+        {
+          "status": "CREATED",
+          "timestamp": "2026-02-07T06:30:00.000Z",
+          "note": "Order restored manually after server restart"
+        },
+        {
+          "status": "CANCELLED",
+          "timestamp": "2026-02-07T06:46:24.865Z",
+          "note": "Cancelled via dashboard"
+        }
+      ]
+    }
+  ],
+  [
+    "SFX_MOCK_1770447391736_b5pv4efr7",
+    {
+      "shadowfax_id": "SFX_MOCK_1770447391736_b5pv4efr7",
+      "client_order_id": "GZ202602070650B8GR",
+      "status": "CANCELLED",
+      "awb_number": "SFX_MOCK_1770447391736_b5pv4efr7",
+      "created_at": "2026-02-07T06:56:31.736Z",
+      "updated_at": "2026-02-07T06:58:18.128Z",
+      "pickup_details": {
+        "address": "Coimbatore Cafe, Nava India",
+        "latitude": 11,
+        "longitude": 77
+      },
+      "drop_details": {
+        "address": "Customer Location",
+        "latitude": 11.1,
+        "longitude": 77.1
+      },
+      "order_details": {
+        "order_id": "GZ202602070650B8GR"
+      },
+      "validations": {
+        "pickup": {
+          "otp": "1234"
+        },
+        "drop": {
+          "otp": "5678"
+        }
+      },
+      "rider_details": null,
+      "history": [
+        {
+          "status": "CREATED",
+          "timestamp": "2026-02-07T06:56:31.736Z",
+          "note": "Order created via Mock API"
+        },
+        {
+          "status": "CANCELLED",
+          "timestamp": "2026-02-07T06:58:18.128Z",
+          "note": "Cancelled via dashboard"
+        }
+      ]
+    }
+  ],
+  [
+    "SFX_MOCK_1770447887158_04ippa1gf",
+    {
+      "shadowfax_id": "SFX_MOCK_1770447887158_04ippa1gf",
+      "client_order_id": "GZ202602070659WNNN",
+      "status": "CANCELLED",
+      "awb_number": "SFX_MOCK_1770447887158_04ippa1gf",
+      "created_at": "2026-02-07T07:04:47.158Z",
+      "updated_at": "2026-02-07T07:07:43.451Z",
+      "pickup_details": {
+        "address": "Coimbatore Cafe, SITRA",
+        "latitude": 11,
+        "longitude": 77
+      },
+      "drop_details": {
+        "address": "Customer Location",
+        "latitude": 11.1,
+        "longitude": 77.1
+      },
+      "order_details": {
+        "order_id": "GZ202602070659WNNN"
+      },
+      "validations": {
+        "pickup": {
+          "otp": "8888"
+        },
+        "drop": {
+          "otp": "9999"
+        }
+      },
+      "rider_details": null,
+      "history": [
+        {
+          "status": "CREATED",
+          "timestamp": "2026-02-07T07:04:47.159Z",
+          "note": "Order created via Mock API"
+        },
+        {
+          "status": "CANCELLED",
+          "timestamp": "2026-02-07T07:07:43.451Z",
+          "note": "Cancelled via dashboard"
+        }
+      ]
+    }
+  ],
+  [
+    "SFX_MOCK_1770448098843_krej9bk62",
+    {
+      "shadowfax_id": "SFX_MOCK_1770448098843_krej9bk62",
+      "client_order_id": "GZ202602070708FFBD",
+      "status": "CANCELLED",
+      "awb_number": "SFX_MOCK_1770448098843_krej9bk62",
+      "created_at": "2026-02-07T07:08:18.843Z",
+      "updated_at": "2026-02-07T07:08:25.650Z",
+      "pickup_details": {
+        "name": "Coimbatore Cafe, GK Nagar",
+        "contact_number": "9790312308",
+        "address": "164/165, Avinashi Rd, Coimbatore, Tamil Nadu 641004",
+        "latitude": 11.0469961850896,
+        "longitude": 77.0557655766639
+      },
+      "drop_details": {
+        "contact_number": "+919944751745",
+        "address": "3328+XVJ, Teachers Colony, Chinniyampalayam, Coimbatore, Tamil Nadu 641062, India",
+        "city": "Coimbatore",
+        "state": "Tamil Nadu",
+        "latitude": 11.0525207,
+        "longitude": 77.0671894
+      },
+      "order_details": {
+        "order_id": "GZ202602070708FFBD",
+        "actual_order_value": 180.62,
+        "paid": true,
+        "is_prepaid": true,
+        "cash_to_be_collected": 0,
+        "payment_mode": "prepaid",
+        "delivery_charge_to_be_collected_from_customer": 0
+      },
+      "validations": {
+        "pickup": {
+          "is_otp_required": true,
+          "otp": "3481"
+        },
+        "drop": {
+          "is_otp_required": true,
+          "otp": "8683"
+        }
+      },
+      "rider_details": null,
+      "history": [
+        {
+          "status": "CREATED",
+          "timestamp": "2026-02-07T07:08:18.843Z",
+          "note": "Order created via Mock API"
+        },
+        {
+          "status": "CANCELLED",
+          "timestamp": "2026-02-07T07:08:25.650Z",
+          "note": "Cancelled via dashboard"
+        }
+      ]
+    }
+  ],
+  [
+    "SFX_MOCK_1770448250457_qkif91ujd",
+    {
+      "shadowfax_id": "SFX_MOCK_1770448250457_qkif91ujd",
+      "client_order_id": "GZ202602070710IWG9",
+      "status": "DELIVERED",
+      "awb_number": "SFX_MOCK_1770448250457_qkif91ujd",
+      "created_at": "2026-02-07T07:10:50.457Z",
+      "updated_at": "2026-02-07T07:11:37.825Z",
+      "pickup_details": {
+        "name": "Coimbatore Cafe, Nava India",
+        "contact_number": "9790312308",
+        "address": "164/165, Avinashi Rd, Coimbatore, Tamil Nadu 641004",
+        "latitude": 11.0206723067603,
+        "longitude": 76.9927615925775
+      },
+      "drop_details": {
+        "contact_number": "+919944751745",
+        "address": "3328+XVJ, Teachers Colony, Chinniyampalayam, Coimbatore, Tamil Nadu 641062, India",
+        "city": "Coimbatore",
+        "state": "Tamil Nadu",
+        "latitude": 11.0525207,
+        "longitude": 77.0671894
+      },
+      "order_details": {
+        "order_id": "GZ202602070710IWG9",
+        "actual_order_value": 256.15,
+        "paid": true,
+        "is_prepaid": true,
+        "cash_to_be_collected": 0,
+        "payment_mode": "prepaid",
+        "delivery_charge_to_be_collected_from_customer": 0
+      },
+      "validations": {
+        "pickup": {
+          "is_otp_required": true,
+          "otp": "6338"
+        },
+        "drop": {
+          "is_otp_required": true,
+          "otp": "7749"
+        }
+      },
+      "rider_details": null,
+      "history": [
+        {
+          "status": "CREATED",
+          "timestamp": "2026-02-07T07:10:50.457Z",
+          "note": "Order created via Mock API"
+        },
+        {
+          "status": "ALLOTTED",
+          "timestamp": "2026-02-07T07:11:00.574Z",
+          "note": "Status updated via UI to ALLOTTED"
+        },
+        {
+          "status": "ACCEPTED",
+          "timestamp": "2026-02-07T07:11:08.429Z",
+          "note": "Status updated via UI to ACCEPTED"
+        },
+        {
+          "status": "ARRIVED",
+          "timestamp": "2026-02-07T07:11:15.437Z",
+          "note": "Status updated via UI to ARRIVED"
+        },
+        {
+          "status": "COLLECTED",
+          "timestamp": "2026-02-07T07:11:22.341Z",
+          "note": "Status updated via UI to COLLECTED"
+        },
+        {
+          "status": "ARRIVED_AT_CUSTOMER_DOORSTEP",
+          "timestamp": "2026-02-07T07:11:30.359Z",
+          "note": "Status updated via UI to ARRIVED_AT_CUSTOMER_DOORSTEP"
+        },
+        {
+          "status": "DELIVERED",
+          "timestamp": "2026-02-07T07:11:37.825Z",
+          "note": "Status updated via UI to DELIVERED"
+        }
+      ]
+    }
+  ]
+]

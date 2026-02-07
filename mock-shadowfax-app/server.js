@@ -2,20 +2,50 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = 3002;
+const DATA_FILE = path.join(__dirname, 'orders.json');
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// In-Memory Storage
-const orders = new Map();
+// In-Memory Storage (Synced with File)
+let orders = new Map();
+
+// Helper: Load Data
+const loadData = () => {
+    try {
+        if (fs.existsSync(DATA_FILE)) {
+            const data = fs.readFileSync(DATA_FILE, 'utf8');
+            const json = JSON.parse(data);
+            orders = new Map(json);
+            console.log(`📂 [Mock Shadowfax] Loaded ${orders.size} orders from disk.`);
+        }
+    } catch (e) {
+        console.error('❌ [Mock Shadowfax] Failed to load data:', e);
+    }
+};
+
+// Helper: Save Data
+const saveData = () => {
+    try {
+        const json = JSON.stringify(Array.from(orders.entries()), null, 2);
+        fs.writeFileSync(DATA_FILE, json);
+        // console.log('DISK_SAVE_SUCCESS');
+    } catch (e) {
+        console.error('❌ [Mock Shadowfax] Failed to save data:', e);
+    }
+};
+
+// Load on start
+loadData();
 
 // Helper: Generate Mock Shadowfax ID
 const generateShadowfaxId = () => `SFX_MOCK_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -35,7 +65,7 @@ app.post('/order/create/', (req, res) => {
     try {
         const payload = req.body;
         const orderId = payload.order_details?.order_id;
-        
+
         if (!orderId) {
             return res.status(400).json({
                 status: 'FAILED',
@@ -44,7 +74,7 @@ app.post('/order/create/', (req, res) => {
         }
 
         const shadowfaxId = generateShadowfaxId();
-        
+
         // Store order in memory
         const order = {
             shadowfax_id: shadowfaxId,
@@ -66,6 +96,7 @@ app.post('/order/create/', (req, res) => {
         };
 
         orders.set(shadowfaxId, order);
+        saveData();
 
         console.log(`✅ [Mock Shadowfax] Order Created: ${shadowfaxId} (Client: ${orderId})`);
 
@@ -96,7 +127,17 @@ app.post('/order/create/', (req, res) => {
 app.get('/order/track/:orderId/', (req, res) => {
     try {
         const { orderId } = req.params;
-        const order = orders.get(orderId);
+        let order = orders.get(orderId);
+
+        // If not found by ID, try finding by client_order_id
+        if (!order) {
+            for (const o of orders.values()) {
+                if (o.client_order_id === orderId) {
+                    order = o;
+                    break;
+                }
+            }
+        }
 
         if (!order) {
             return res.status(404).json({
@@ -133,7 +174,7 @@ app.get('/order/track/:orderId/', (req, res) => {
 app.post('/order/serviceability/', (req, res) => {
     try {
         const { pickup_details, drop_details } = req.body;
-        
+
         if (!pickup_details?.address || !drop_details?.address) {
             return res.status(400).json({
                 message: 'pickup_details.address and drop_details.address are required',
@@ -197,6 +238,7 @@ app.post('/order/cancel/', (req, res) => {
             timestamp: timestamp(),
             note: cancellation_reason || 'Order cancelled'
         });
+        saveData();
 
         console.log(`🚫 [Mock Shadowfax] Order Cancelled: ${order_id}`);
 
@@ -224,7 +266,7 @@ app.post('/order/cancel/', (req, res) => {
  * Get all orders for UI dashboard
  */
 app.get('/api/orders', (req, res) => {
-    const orderList = Array.from(orders.values()).sort((a, b) => 
+    const orderList = Array.from(orders.values()).sort((a, b) =>
         new Date(b.created_at) - new Date(a.created_at)
     );
     res.json({ orders: orderList });
@@ -238,9 +280,9 @@ app.post('/api/orders/:orderId/update-status', (req, res) => {
     try {
         const { orderId } = req.params;
         const { status, rider_details } = req.body;
-        
+
         const order = orders.get(orderId);
-        
+
         if (!order) {
             return res.status(404).json({ error: 'Order not found' });
         }
@@ -248,7 +290,7 @@ app.post('/api/orders/:orderId/update-status', (req, res) => {
         // Update status
         order.status = status;
         order.updated_at = timestamp();
-        
+
         // Update rider details if provided
         if (rider_details) {
             order.rider_details = {
@@ -263,12 +305,13 @@ app.post('/api/orders/:orderId/update-status', (req, res) => {
             timestamp: timestamp(),
             note: `Status updated via UI to ${status}`
         });
+        saveData();
 
         console.log(`🔄 [Mock Shadowfax] Status Updated: ${orderId} → ${status}`);
 
-        res.json({ 
-            success: true, 
-            order: order 
+        res.json({
+            success: true,
+            order: order
         });
 
     } catch (error) {
@@ -285,7 +328,7 @@ app.post('/api/orders/:orderId/assign-rider', (req, res) => {
     try {
         const { orderId } = req.params;
         const order = orders.get(orderId);
-        
+
         if (!order) {
             return res.status(404).json({ error: 'Order not found' });
         }
@@ -293,7 +336,7 @@ app.post('/api/orders/:orderId/assign-rider', (req, res) => {
         // Generate mock rider details
         const riderNames = ['Rajesh Kumar', 'Amit Singh', 'Priya Sharma', 'Vikram Patel'];
         const randomName = riderNames[Math.floor(Math.random() * riderNames.length)];
-        
+
         order.status = 'ALLOTTED';
         order.updated_at = timestamp();
         order.rider_details = {
@@ -308,12 +351,13 @@ app.post('/api/orders/:orderId/assign-rider', (req, res) => {
             timestamp: timestamp(),
             note: `Rider ${randomName} assigned`
         });
+        saveData();
 
         console.log(`👤 [Mock Shadowfax] Rider Assigned: ${orderId} → ${randomName}`);
 
-        res.json({ 
-            success: true, 
-            order: order 
+        res.json({
+            success: true,
+            order: order
         });
 
     } catch (error) {

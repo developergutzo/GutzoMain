@@ -13,8 +13,14 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
 // Shadowfax Config
-const SHADOWFAX_BASE_URL = process.env.SHADOWFAX_URL;
+const USE_MOCK = process.env.USE_MOCK_SHADOWFAX === 'true';
+const MOCK_URL = process.env.MOCK_SHADOWFAX_URL || 'http://localhost:3002';
+const SHADOWFAX_BASE_URL = USE_MOCK ? MOCK_URL : process.env.SHADOWFAX_API_URL;
 const SHADOWFAX_TOKEN = process.env.SHADOWFAX_API_TOKEN;
+
+if (USE_MOCK) {
+    console.log('🧪 [Shadowfax Route] MOCK MODE ENABLED - Routing to:', SHADOWFAX_BASE_URL);
+}
 
 /**
  * POST /api/shadowfax/create-order
@@ -48,8 +54,8 @@ router.post('/create-order', async (req, res) => {
         // Check if Shadowfax order already exists
         if (delivery?.external_order_id) {
             console.log(`✅ Shadowfax order already exists for ${orderId}: ${delivery.external_order_id}`);
-            return res.json({ 
-                success: true, 
+            return res.json({
+                success: true,
                 shadowfax_order_id: delivery.external_order_id,
                 message: 'Delivery partner already assigned'
             });
@@ -64,9 +70,9 @@ router.post('/create-order', async (req, res) => {
 
         // Update DB if we generated new ones
         if (delivery && (!delivery.delivery_otp || !delivery.pickup_otp)) {
-             await supabaseAdmin
+            await supabaseAdmin
                 .from('deliveries')
-                .update({ 
+                .update({
                     delivery_otp: deliveryOtp,
                     pickup_otp: pickupOtp,
                     updated_at: new Date().toISOString()
@@ -77,9 +83,9 @@ router.post('/create-order', async (req, res) => {
         // 2. Construct Shadowfax Payload
         // Note: Ensure your environment logic handles parsing coordinates correctly if stored as text or json
         // For now, assuming delivery_address contains valid fields.
-        
+
         // Mock/Default lat/lng if missing (Safe fallback for dev)
-        const pickupLat = Number(order.vendor?.latitude); 
+        const pickupLat = Number(order.vendor?.latitude);
         const pickupLng = Number(order.vendor?.longitude);
         const dropLat = order.delivery_address?.latitude;
         const dropLng = order.delivery_address?.longitude;
@@ -88,7 +94,7 @@ router.post('/create-order', async (req, res) => {
             "pickup_details": {
                 "name": order.vendor?.name,
                 "contact_number": order.vendor?.phone,
-                "address": order.vendor?.address ? `${order.vendor.address}${order.vendor.city ? ', ' + order.vendor.city : ''}` : order.vendor?.location, 
+                "address": order.vendor?.address ? `${order.vendor.address}${order.vendor.city ? ', ' + order.vendor.city : ''}` : order.vendor?.location,
                 "landmark": "",
                 "latitude": pickupLat,
                 "longitude": pickupLng
@@ -145,22 +151,22 @@ router.post('/create-order', async (req, res) => {
         });
 
         const sfData = sfResponse.data;
-        
-        if (sfData.status === 'CREATED' || sfData.order_id) {
-             // 4. Update 'deliveries' table (Schema v2)
-             // We no longer update 'orders' table for delivery status.
-             
-             const initialHistory = [{
-                 status: 'searching_rider',
-                 timestamp: new Date().toISOString(),
-                 note: 'Order Created via API'
-             }];
 
-             // Check if delivery record exists (it should, created on order placement)
-             // or upsert it.
-             const { error: deliveryUpdateError } = await supabaseAdmin
+        if (sfData.status === 'CREATED' || sfData.order_id) {
+            // 4. Update 'deliveries' table (Schema v2)
+            // We no longer update 'orders' table for delivery status.
+
+            const initialHistory = [{
+                status: 'searching_rider',
+                timestamp: new Date().toISOString(),
+                note: 'Order Created via API'
+            }];
+
+            // Check if delivery record exists (it should, created on order placement)
+            // or upsert it.
+            const { error: deliveryUpdateError } = await supabaseAdmin
                 .from('deliveries')
-                .update({ 
+                .update({
                     external_order_id: sfData.order_id, // Moved from orders.shadowfax_order_id
                     status: 'searching_rider',
                     courier_request_payload: payload, // Store RAW Request (Audit)
@@ -169,17 +175,17 @@ router.post('/create-order', async (req, res) => {
                 })
                 .eq('order_id', orderId);
 
-             if (deliveryUpdateError) {
-                 console.error('❌ Failed to update deliveries table:', deliveryUpdateError);
-                 // Fallback: Try insert if not exists (unlikely given order flow)
-             }
+            if (deliveryUpdateError) {
+                console.error('❌ Failed to update deliveries table:', deliveryUpdateError);
+                // Fallback: Try insert if not exists (unlikely given order flow)
+            }
 
-             console.log(`✅ Order Created! Shadowfax ID: ${sfData.order_id}`);
+            console.log(`✅ Order Created! Shadowfax ID: ${sfData.order_id}`);
 
-             return res.json({ success: true, shadowfax_order_id: sfData.order_id });
+            return res.json({ success: true, shadowfax_order_id: sfData.order_id });
         } else {
-             console.error('Shadowfax Error:', sfData);
-             return res.status(400).json({ error: 'Failed to create Shadowfax order', details: sfData });
+            console.error('Shadowfax Error:', sfData);
+            return res.status(400).json({ error: 'Failed to create Shadowfax order', details: sfData });
         }
 
     } catch (err) {
@@ -200,11 +206,11 @@ router.post('/webhook', async (req, res) => {
         // ADAPTIVE PAYLOAD PARSING
         // OFFICIAL PAYLOAD PARSING (OrderCallbackRequest)
         // Spec: coid, status, action_time, rider_id, rider_contact_number, rider_latitude, rider_longitude, rider_name
-        
-        const clientOrderId = data.coid; 
+
+        const clientOrderId = data.coid;
         const sfOrderId = data.sfx_order_id; // Keeping just in case, but relying on coid
-        const status = data.status; 
-        
+        const status = data.status;
+
         if (!clientOrderId && !sfOrderId) return res.status(200).send('OK (No ID detected)');
 
         console.log(`📥 Webhook: ${status} for ${clientOrderId || 'Unknown'}`);
@@ -224,10 +230,10 @@ router.post('/webhook', async (req, res) => {
 
         // Sync Major Milestones to ORDERS status
         if (status === 'DELIVERED') {
-             orderPayload.status = 'completed'; 
+            orderPayload.status = 'completed';
         } else if (status === 'COLLECTED') {
-             // Order is now officially ON THE WAY
-             orderPayload.status = 'on_way'; 
+            // Order is now officially ON THE WAY
+            orderPayload.status = 'on_way';
         }
 
         // Full payload for DELIVERIES table
@@ -240,11 +246,11 @@ router.post('/webhook', async (req, res) => {
                 latitude: data.rider_latitude,
                 longitude: data.rider_longitude
             } : null,
-            
+
             cancellation_reason: data.cancel_reason || data.rts_reason,
             cancelled_by: data.cancelled_by,
             courier_response_payload: data, // Store RAW payload
-            
+
             updated_at: data.action_time || new Date().toISOString()
         };
 
@@ -263,7 +269,7 @@ router.post('/webhook', async (req, res) => {
             // If nothing to update on orders, just select to find the ID
             query = query.select('*, vendor:vendors(*)');
         }
-        
+
         console.log(`🔍 Webhook Looking up Order via: ${clientOrderId ? 'Client ID: ' + clientOrderId : 'SF ID: ' + sfOrderId}`);
 
         if (clientOrderId) {
@@ -276,15 +282,15 @@ router.post('/webhook', async (req, res) => {
             .single();
 
         if (updateError || !updatedOrder) {
-             console.error("❌ Webhook Order Update Failed/Not Found:", updateError?.message || "No order matched ID");
+            console.error("❌ Webhook Order Update Failed/Not Found:", updateError?.message || "No order matched ID");
         } else {
-             console.log(`✅ FOUND Order ID: ${updatedOrder.id} (Ref: ${updatedOrder.order_number})`);
+            console.log(`✅ FOUND Order ID: ${updatedOrder.id} (Ref: ${updatedOrder.order_number})`);
         }
 
         // Also Update DELIVERIES table
         if (updatedOrder) {
             console.log(`🔄 Updating DELIVERY table for OrderUUID: ${updatedOrder.id}...`);
-            
+
             // Fetch current history first to append
             const { data: currentDelivery } = await supabaseAdmin
                 .from('deliveries')
@@ -298,62 +304,62 @@ router.post('/webhook', async (req, res) => {
                 note: `Webhook Update: ${status} -> ${internalStatus}`
             };
 
-            const updatedHistory = currentDelivery?.history 
-                ? [...currentDelivery.history, newHistoryItem] 
+            const updatedHistory = currentDelivery?.history
+                ? [...currentDelivery.history, newHistoryItem]
                 : [newHistoryItem];
 
             deliveryPayload.history = updatedHistory;
 
             const { error: delError } = await supabaseAdmin.from('deliveries')
                 .update(deliveryPayload)
-                .eq('order_id', updatedOrder.id); 
-            
+                .eq('order_id', updatedOrder.id);
+
             if (delError) console.error("❌ Delivery Table Update Failed:", delError.message);
             else console.log("✅ Delivery Table Updated Successfully via Schema v2.");
         }
 
         // NOTIFY VENDOR ON RIDER ALLOCATION
         if (status === 'ALLOTTED' && updatedOrder) {
-             console.log(`[Shadowfax Webhook] Rider Allocated for ${updatedOrder.order_number}. Releasing to Vendor...`);
-             
-             // 1. UPDATE ORDER STATUS TO 'PLACED' (Visible to Vendor)
-             const { error: releaseError } = await supabaseAdmin
+            console.log(`[Shadowfax Webhook] Rider Allocated for ${updatedOrder.order_number}. Releasing to Vendor...`);
+
+            // 1. UPDATE ORDER STATUS TO 'PLACED' (Visible to Vendor)
+            const { error: releaseError } = await supabaseAdmin
                 .from('orders')
-                .update({ 
+                .update({
                     status: 'placed',
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', updatedOrder.id);
 
-             if (releaseError) {
-                 console.error("❌ Failed to set order status to PLACED:", releaseError);
-             } else {
-                 console.log("✅ Order released to Vendor (Status: PLACED)");
-             }
+            if (releaseError) {
+                console.error("❌ Failed to set order status to PLACED:", releaseError);
+            } else {
+                console.log("✅ Order released to Vendor (Status: PLACED)");
+            }
 
-             // 2. Notify Vendor (Push & Email)
-             if (updatedOrder.vendor) {
-                 // Send Email
-                 import('../utils/emailService.js').then(({ sendVendorOrderNotification }) => {
-                     // We fetch the latest order state to ensure consistency if needed, but updatedOrder has vendor info
-                     // The vendor notification function usually expects the full order object with items.
-                     // Let's refetch deeply to be safe or assuming updatedOrder has what we need if we fetched it above.
-                     // The query above was: .select('*, vendor:vendors(*)') which lacks items.
-                     // Let's rely on sendVendorOrderNotification handling fetching if it needs items, or safe inspect.
-                     
-                     // Re-fetch full order with items for the email
-                     supabaseAdmin.from('orders').select('*, items:order_items(*), vendor:vendors(*)').eq('id', updatedOrder.id).single()
-                     .then(({ data: fullOrder }) => {
-                         if (fullOrder) sendVendorOrderNotification(fullOrder.vendor.email, fullOrder);
-                     });
-                 });
+            // 2. Notify Vendor (Push & Email)
+            if (updatedOrder.vendor) {
+                // Send Email
+                import('../utils/emailService.js').then(({ sendVendorOrderNotification }) => {
+                    // We fetch the latest order state to ensure consistency if needed, but updatedOrder has vendor info
+                    // The vendor notification function usually expects the full order object with items.
+                    // Let's refetch deeply to be safe or assuming updatedOrder has what we need if we fetched it above.
+                    // The query above was: .select('*, vendor:vendors(*)') which lacks items.
+                    // Let's rely on sendVendorOrderNotification handling fetching if it needs items, or safe inspect.
 
-                 // Send Push
-                 import('../utils/pushService.js').then(({ sendVendorPush }) => {
-                     const msg = `New Order #${updatedOrder.order_number}! Delivery Partner Assigned.`;
-                     sendVendorPush(updatedOrder.vendor.id, 'New Order Received 🔔', msg);
-                 });
-             }
+                    // Re-fetch full order with items for the email
+                    supabaseAdmin.from('orders').select('*, items:order_items(*), vendor:vendors(*)').eq('id', updatedOrder.id).single()
+                        .then(({ data: fullOrder }) => {
+                            if (fullOrder) sendVendorOrderNotification(fullOrder.vendor.email, fullOrder);
+                        });
+                });
+
+                // Send Push
+                import('../utils/pushService.js').then(({ sendVendorPush }) => {
+                    const msg = `New Order #${updatedOrder.order_number}! Delivery Partner Assigned.`;
+                    sendVendorPush(updatedOrder.vendor.id, 'New Order Received 🔔', msg);
+                });
+            }
         }
 
         res.json({ received: true });
@@ -399,7 +405,7 @@ router.post('/mock-create-order', async (req, res) => {
 
         await supabaseAdmin
             .from('deliveries')
-            .upsert({ 
+            .upsert({
                 order_id: orderId,
                 external_order_id: mockSfId,
                 partner_id: 'shadowfax',
@@ -414,7 +420,7 @@ router.post('/mock-create-order', async (req, res) => {
         // 3. Update Orders Table
         await supabaseAdmin
             .from('orders')
-            .update({ 
+            .update({
                 shadowfax_order_id: mockSfId,
                 status: 'searching_rider' // Set status visible to user
             })
@@ -422,8 +428,8 @@ router.post('/mock-create-order', async (req, res) => {
 
         console.log(`✅ [Mock Shadowfax] Created ${mockSfId}`);
 
-        return res.json({ 
-            success: true, 
+        return res.json({
+            success: true,
             shadowfax_order_id: mockSfId,
             message: "Mock Shadowfax order created",
             otps: { pickup: pickupOtp, delivery: deliveryOtp }

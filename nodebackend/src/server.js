@@ -54,12 +54,14 @@ const PORT = process.env.PORT;
 app.use(cors({
   origin: function (origin, callback) {
     const allowedOrigins = [
-      'http://localhost:8000', 
-      'https://192-168-1-36.nip.io', 
+      'http://localhost:8000',
+      'https://192-168-1-36.nip.io',
       'http://localhost:3000',
       'http://localhost:3001',
       'http://192.168.1.36:3000',
       'http://192.168.1.36:3001',
+      'http://10.128.0.3:3000',
+      'http://10.128.0.3:3001',
       'https://gutzo.in',
       'https://www.gutzo.in',
       'https://api.gutzo.in',
@@ -69,13 +71,13 @@ app.use(cors({
     ];
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    
+
     if (allowedOrigins.indexOf(origin) === -1) {
       if (process.env.NODE_ENV === 'development') {
         // console.log('⚠️ CORS Warning: Origin not in allow list but allowed in DEV:', origin);
         return callback(null, true);
       }
-      
+
       console.error('❌ CORS Error: Blocked Origin:', origin);
       const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
       return callback(new Error(msg), false);
@@ -127,8 +129,8 @@ app.use(morgan(process.env.NODE_ENV === 'development' ? 'dev' : 'combined'));
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    success: true, 
+  res.json({
+    success: true,
     message: 'Gutzo API is running',
     timestamp: new Date().toISOString(),
     version: '1.0.0',
