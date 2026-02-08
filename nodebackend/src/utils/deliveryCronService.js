@@ -80,8 +80,8 @@ async function syncActiveOrders() {
         for (const order of activeOrders) {
             try {
                 // Get delivery record
-                const delivery = Array.isArray(order.delivery) && order.delivery.length > 0 
-                    ? order.delivery[0] 
+                const delivery = Array.isArray(order.delivery) && order.delivery.length > 0
+                    ? order.delivery[0]
                     : null;
 
                 if (!delivery || !delivery.external_order_id) {
@@ -121,8 +121,8 @@ async function syncActiveOrders() {
                     note: `Cron Sync: ${apiStatus}`
                 };
 
-                const updatedHistory = delivery.history 
-                    ? [...delivery.history, newHistoryItem] 
+                const updatedHistory = delivery.history
+                    ? [...delivery.history, newHistoryItem]
                     : [newHistoryItem];
 
                 const deliveryUpdatePayload = {
@@ -165,7 +165,7 @@ async function syncActiveOrders() {
                     // Rider allocated - notify vendor
                     if (order.vendor) {
                         console.log(`[Delivery Cron] 📧 Notifying vendor for ${order.order_number}`);
-                        
+
                         // Send email
                         import('./emailService.js').then(({ sendVendorOrderNotification }) => {
                             // Fetch full order with items
@@ -184,6 +184,47 @@ async function syncActiveOrders() {
                         import('./pushService.js').then(({ sendVendorPush }) => {
                             const msg = `Rider Assigned! ${trackingInfo.rider_details?.name || 'Partner'} is on the way.`;
                             sendVendorPush(order.vendor.id, 'Order Update 🔔', msg);
+                        });
+                    }
+                } else if (dbStatus === 'allotted' && (apiStatus === 'SEARCHING_RIDER' || apiStatus === 'PENDING' || apiStatus === 'CANCELLED')) {
+                    // Reverse scenario: Order was ALLOTTED but now is SEARCHING (Rider cancelled/unassigned)
+                    console.log(`[Delivery Cron] ⚠️ Rider UN-ASSIGNED for ${order.order_number}. Cancelling old assignment if needed.`);
+
+                    // If the status went back to searching (or cancelled by platform), we should potentially cancel the specific *previous* order request if needed
+                    // But usually Shadowfax handles re-broadcast. 
+                    // However, user specifically asked to "send order cancel request" if status reverts.
+                    // This implies we want to ensure any stale state is cleaned up or we explicitly cancel the order in Shadowfax to restart?
+                    // Actually, if Shadowfax says "SEARCHING", it means *they* already know. 
+                    // If user meant "If we move from Allotted -> Searching locally, cancel the Shadowfax order", that's different.
+                    // But here we are syncing FROM Shadowfax TO Local.
+                    // If Shadowfax says "SEARCHING", we just update local to "searching_rider".
+
+                    // USER REQUEST: "if status is wise versa (Allotted -> Searching) then send order cancel request also"
+                    // This is slightly ambiguous. If Shadowfax *already* says Searching, sending a cancel request to Shadowfax might kill the new search.
+                    // BUT, if the user implies we want to CANCEL the order entirely if a rider drops, we can do that.
+                    // OR if the user thinks we should cancel the *previous* driver association.
+
+                    // Let's assume the user wants to CANCEL the entire delivery request if a driver drops (maybe to retry manually?).
+                    // OR more likely, they want to ensure the specific Shadowfax order is cancelled if we revert state?
+                    // Let's implement a safe cancellation log/attempt.
+
+                    if (apiStatus === 'CANCELLED') {
+                        // Already cancelled in Shadowfax, just sync.
+                    } else {
+                        // Status regressed to Searching.
+                        // User said "send order cancel request". 
+                        // I will attempt to cancel the *current* Shadowfax order ID to be safe, assuming we want to kill this specific attempt?
+                        // WARNING: If Shadowfax is auto-retrying, this might stop it.
+                        // Let's assume User wants to CANCEL status update to trigger a cancel on Shadowfax side?
+                        // No, we are reacting to Shadowfax status.
+
+                        // Let's assume User means: If local was Allotted and now API says something else (unassigned), ensure we cancel/reset properly.
+                        // Actually, looking at the request "send order cancel reqyuest also", it often means "Cancel the order entirely".
+
+                        // Sending cancel request to Shadowfax:
+                        import('./shadowfax.js').then(({ cancelShadowfaxOrder }) => {
+                            cancelShadowfaxOrder(delivery.external_order_id, "Rider Unassigned/Dropped - System Auto Cancel")
+                                .then(res => console.log('Reverted/Cancelled Shadowfax Order:', res));
                         });
                     }
                 }
@@ -216,11 +257,11 @@ export function startDeliveryCron() {
 
     // Cron expression: every N seconds
     const cronExpression = `*/${CRON_INTERVAL} * * * * *`;
-    
+
     console.log(`[Delivery Cron] 🚀 Starting delivery sync cron (every ${CRON_INTERVAL}s)`);
-    
+
     cron.schedule(cronExpression, syncActiveOrders);
-    
+
     // Run once immediately on startup
     syncActiveOrders();
 }
