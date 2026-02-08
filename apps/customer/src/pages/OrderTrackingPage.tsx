@@ -296,7 +296,7 @@ export function OrderTrackingPage() {
             case 'placed': return 'Waiting for restaurant confirmation';
             case 'preparing': return 'Kitchen Accepted • Preparing Food';
             case 'ready': return 'Food is Ready • Waiting for Pickup';
-            case 'picked_up':
+            case 'picked_up': return 'Order Picked Up';
             case 'driver_assigned': return 'Driver Assigned';
             case 'on_way':
             case 'reached_location': return 'Order on the way';
@@ -357,7 +357,7 @@ export function OrderTrackingPage() {
                         <div className="inline-flex items-center rounded-lg px-3 py-1.5 gap-2" style={{ backgroundColor: '#14885E' }}>
                             <span className="text-white font-semibold text-base">{eta}</span>
                             <span className="w-1 h-1 bg-white rounded-full opacity-50"></span>
-                            <span className="text-green-100 font-medium text-sm">On time</span>
+                            <span className="text-white font-medium text-sm">On time</span>
                         </div>
                     )}
                 </div>

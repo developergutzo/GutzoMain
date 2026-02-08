@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { getGoogleMapsApiKey } from '../utils/googleMapsConfig';
 
 const GOOGLE_MAPS_API_KEY = getGoogleMapsApiKey();
-const BIKE_ICON = "https://cdn-icons-png.flaticon.com/512/3082/3082383.png"; // Scooter Icon
+const BIKE_ICON = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="30">🛵</text></svg>')}`; // Scooter Emoji Icon
 
 interface Coordinates {
   lat: number;
@@ -33,8 +33,11 @@ export function OrderTrackingMap({
   const directionsServiceRef = useRef<google.maps.DirectionsService | null>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
 
+  // Custom Polyline Refs
+  const activePolylineRef = useRef<any | null>(null);
+  const fetchedPathRef = useRef<google.maps.LatLng[]>([]);
+
   // Internal driver location state for animation
-  const [driverPos, setDriverPos] = useState<Coordinates | null>(storeLocation);
   const animationFrameRef = useRef<number>();
 
   // Guard: If critical locations are missing, we still run hooks but render fallback at the end.
@@ -79,11 +82,18 @@ export function OrderTrackingMap({
       directionsRendererRef.current = new google.maps.DirectionsRenderer({
         map: map,
         suppressMarkers: true, // We'll handle markers ourselves
-        polylineOptions: {
-          strokeColor: "#222",
-          strokeOpacity: 0.8,
-          strokeWeight: 4,
-        }
+        suppressPolylines: true, // we handle polylines manually
+        preserveViewport: true, // we handle bounds manually
+      });
+
+      // Initialize Custom Polyline
+      activePolylineRef.current = new (google.maps as any).Polyline({
+        map: map,
+        path: [],
+        strokeColor: "#1BA672",
+        strokeOpacity: 0.8,
+        strokeWeight: 5,
+        geodesic: true,
       });
 
       // Add Markers
@@ -110,18 +120,19 @@ export function OrderTrackingMap({
       });
 
       // Driver Marker
+      // Driver Marker
+      // Driver Marker
       driverMarkerRef.current = new google.maps.Marker({
         position: storeLocation,
         map,
         icon: {
-          path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-          scale: 5,
-          fillColor: "#000",
-          fillOpacity: 1,
-          strokeWeight: 2,
-          rotation: 0,
+          url: BIKE_ICON,
+          scaledSize: new google.maps.Size(46, 46),
+          anchor: new google.maps.Point(23, 23)
         },
-        title: "Driver"
+        title: "Driver",
+        zIndex: 200, // Ensure driver is on top
+        optimized: false // Required for some SVG data URIs
       });
 
       // Fit bounds to show both points
@@ -133,19 +144,127 @@ export function OrderTrackingMap({
   }, [isMapLoaded, storeLocation, userLocation]);
 
   // Update Driver Marker Position
+  // Update Driver Marker Position with Smooth Animation
+  // Internal driver location ref to avoid re-renders during animation
+  const currentDriverPos = useRef<Coordinates | null>(storeLocation);
+  const lastPathIndexRef = useRef<number>(0); // Track progress along the fetched path
+
+  // Update Driver Marker Position with Smooth Animation along the Path
   useEffect(() => {
     if (!mapInstanceRef.current || !driverMarkerRef.current || !driverLocation) return;
 
-    const newPos = driverLocation;
-    console.log('🗺️ Updating driver marker to:', newPos);
-    driverMarkerRef.current.setPosition(newPos);
+    // If this is the first time, set position immediately
+    if (!currentDriverPos.current) {
+      currentDriverPos.current = driverLocation;
+      driverMarkerRef.current.setPosition(driverLocation);
+      return;
+    }
 
-    // Optional: Calculate heading from previous position if we tracked it, 
-    // but for now just pointing it? Or maybe leave rotation alone.
-    // Shadowfax might not provide heading.
+    const startPos = { ...currentDriverPos.current };
+    const endPos = driverLocation;
 
-    // If we have a previous position, we could animate/slide to new one, 
-    // but direct setPosition is fine for v1.
+    // If effectively same position, skip animation
+    if (Math.abs(startPos.lat - endPos.lat) < 0.00001 && Math.abs(startPos.lng - endPos.lng) < 0.00001) {
+      return;
+    }
+
+    // 1. Calculate Waypoints (Path Following)
+    let waypoints: google.maps.LatLng[] = [new (google.maps as any).LatLng(startPos)];
+    let nextPathIndex = -1;
+
+    // Only try to snap to path if we have geometry loaded and a path
+    if (fetchedPathRef.current.length > 0 && (window.google?.maps as any)?.geometry) {
+      const endLatLng = new (google.maps as any).LatLng(endPos);
+
+      // Search forward from the last known index
+      const checkCount = Math.min(fetchedPathRef.current.length, lastPathIndexRef.current + 50);
+      let bestIdx = -1;
+
+      for (let i = lastPathIndexRef.current; i < checkCount; i++) {
+        const dist = (google.maps as any).geometry.spherical.computeDistanceBetween(fetchedPathRef.current[i], endLatLng);
+        if (dist < 50) { // Found a point close to the target
+          bestIdx = i;
+          break;
+        }
+      }
+
+      if (bestIdx !== -1 && bestIdx > lastPathIndexRef.current) {
+        // Add intermediate road points
+        const roadSegment = fetchedPathRef.current.slice(lastPathIndexRef.current + 1, bestIdx + 1);
+        waypoints.push(...roadSegment);
+        nextPathIndex = bestIdx;
+      }
+    }
+
+    // Always add the final actual target
+    waypoints.push(new (google.maps as any).LatLng(endPos));
+
+    console.log(`🗺️ Animating along ${waypoints.length} waypoints. Target Path Index: ${nextPathIndex}`);
+
+    // 2. Prepare Animation Data (Distances)
+    let totalDist = 0;
+    const segmentDists: number[] = [];
+    for (let i = 0; i < waypoints.length - 1; i++) {
+      const d = (google.maps as any).geometry.spherical.computeDistanceBetween(waypoints[i], waypoints[i + 1]);
+      totalDist += d;
+      segmentDists.push(d);
+    }
+
+    const startTime = performance.now();
+    const duration = 2000; // 2 seconds
+
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      if (totalDist > 0) {
+        // Find current position along the multi-segment path
+        const currentDist = totalDist * progress;
+        let covered = 0;
+        let segIndex = 0;
+
+        while (segIndex < segmentDists.length && covered + segmentDists[segIndex] < currentDist) {
+          covered += segmentDists[segIndex];
+          segIndex++;
+        }
+
+        if (segIndex < segmentDists.length) {
+          const segProgress = (currentDist - covered) / segmentDists[segIndex];
+          const p1 = waypoints[segIndex];
+          const p2 = waypoints[segIndex + 1];
+
+          const currentLat = p1.lat() + (p2.lat() - p1.lat()) * segProgress;
+          const currentLng = p1.lng() + (p2.lng() - p1.lng()) * segProgress;
+
+          const newLatLng = { lat: currentLat, lng: currentLng };
+          driverMarkerRef.current?.setPosition(newLatLng);
+
+          // Update Polyline
+          if (activePolylineRef.current) {
+            const remainingWaypoints = waypoints.slice(segIndex + 1);
+            const remainingGlobalPath = (nextPathIndex !== -1) ? fetchedPathRef.current.slice(nextPathIndex + 1) : fetchedPathRef.current.slice(lastPathIndexRef.current);
+
+            const dynamicPath = [newLatLng, ...remainingWaypoints, ...remainingGlobalPath];
+            activePolylineRef.current.setPath(dynamicPath);
+          }
+        }
+      } else {
+        driverMarkerRef.current?.setPosition(endPos);
+      }
+
+      if (progress < 1) {
+        animationFrameRef.current = requestAnimationFrame(animate);
+      } else {
+        currentDriverPos.current = endPos;
+        if (nextPathIndex !== -1) {
+          lastPathIndexRef.current = nextPathIndex;
+        }
+      }
+    };
+
+    if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+    animationFrameRef.current = requestAnimationFrame(animate);
+
   }, [driverLocation]);
 
   // Handle status-based visibility or simulation (Optional: Removed pure simulation to rely on real data)
@@ -204,6 +323,29 @@ export function OrderTrackingMap({
     }
 
     if (origin && destination) {
+      // Update Bounds to focus on the active segment
+      if (mapInstanceRef.current) {
+        const bounds = new google.maps.LatLngBounds();
+        // If points are distinct (e.g. we have a driver loc), fit to them.
+        // Otherwise (e.g. driver loc same as store or missing), fit entire context (Store -> User)
+        const isdistinct = Math.abs(origin.lat - destination.lat) > 0.0001 || Math.abs(origin.lng - destination.lng) > 0.0001;
+
+        if (isdistinct) {
+          bounds.extend(origin);
+          bounds.extend(destination);
+        } else {
+          bounds.extend(storeLocation);
+          bounds.extend(userLocation);
+        }
+        // Use asymmetric padding to account for the bottom sheet overlay
+        mapInstanceRef.current.fitBounds(bounds, {
+          top: 100,
+          right: 50,
+          left: 50,
+          bottom: 400 // Large space for bottom sheet
+        });
+      }
+
       console.log(`🛫 Calculating route from (${origin.lat}, ${origin.lng}) → (${destination.lat}, ${destination.lng})`);
       directionsServiceRef.current.route({
         origin,
@@ -212,6 +354,12 @@ export function OrderTrackingMap({
       }, (result: any, status: any) => {
         if (status === 'OK' && result) {
           directionsRendererRef.current?.setDirections(result);
+
+          // Store and render the polyline
+          const path = result.routes[0]?.overview_path || [];
+          fetchedPathRef.current = path;
+          activePolylineRef.current?.setPath(path);
+
           // Extract Duration
           const leg = result.routes[0]?.legs[0];
           if (leg && leg.duration && onDurationUpdate) {
