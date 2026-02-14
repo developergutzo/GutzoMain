@@ -457,6 +457,69 @@ app.post('/api/orders/:orderId/update-location', (req, res) => {
 });
 
 // ============================================
+// AUTOMATIC RIDER MOVEMENT LOOP
+// ============================================
+
+// Move riders every 3 seconds
+setInterval(() => {
+    let updatedCount = 0;
+
+    orders.forEach((order) => {
+        // Only move if status is COLLECTED (Picked Up)
+        if (order.status !== 'COLLECTED') return;
+
+        // Ensure we have valid coordinates
+        if (!order.rider_details?.latitude || !order.drop_details?.latitude) return;
+
+        const currentLat = Number(order.rider_details.latitude);
+        const currentLng = Number(order.rider_details.longitude);
+        const targetLat = Number(order.drop_details.latitude);
+        const targetLng = Number(order.drop_details.longitude);
+
+        // Calculate distance to target (roughly)
+        const diffLat = targetLat - currentLat;
+        const diffLng = targetLng - currentLng;
+        const distanceSq = diffLat * diffLat + diffLng * diffLng;
+
+        // If very close (threshold approx 10 meters in degrees), stop or snap
+        if (distanceSq < 0.0000001) {
+            return;
+        }
+
+        // Move 10% of the remaining distance per tick (Eases out as it gets closer)
+        // Minimum step size to ensure arrival
+        const easeFactor = 0.1;
+
+        const newLat = currentLat + (diffLat * easeFactor);
+        const newLng = currentLng + (diffLng * easeFactor);
+
+        // Update Order
+        order.rider_details.latitude = newLat;
+        order.rider_details.longitude = newLng;
+
+        // Also update nested current_location if exists (some schemas use it)
+        if (order.rider_details.current_location) {
+            order.rider_details.current_location = {
+                latitude: newLat,
+                longitude: newLng
+            };
+        }
+
+        order.updated_at = timestamp();
+        updatedCount++;
+
+        // Send Webhook Update
+        sendWebhook(order);
+    });
+
+    if (updatedCount > 0) {
+        saveData(); // Persist changes
+        console.log(`🚚 [AutoMove] Moved ${updatedCount} riders towards destination.`);
+    }
+
+}, 3000);
+
+// ============================================
 // SERVER START
 // ============================================
 

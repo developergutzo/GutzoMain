@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Package, RefreshCw, Calendar, Clock, MapPin, Phone, MessageCircle, AlertCircle, CheckCircle, XCircle, Pause, Play, Edit, Trash2 } from 'lucide-react';
+import { Package, RefreshCw, Calendar, Clock, MapPin, Phone, MessageCircle, AlertCircle, CheckCircle, XCircle, Pause, Play, Edit, Trash2, FileText } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
@@ -98,6 +98,10 @@ export function OrdersPanel({ className = "", onViewOrderDetails, recentOrderDat
       // API returns { success: true, data: [...], pagination: ... }
       // The orders list is in resp.data, not resp.orders
       setOrders(resp.data || []);
+      // Debug: log order statuses
+      if (resp.data && resp.data.length > 0) {
+        console.log('Order statuses:', resp.data.map((o: any) => ({ id: o.id, status: o.status })));
+      }
     } catch (err: any) {
       console.error('Fetch orders error:', err);
       const msg = err?.message || 'Failed to load orders';
@@ -136,12 +140,12 @@ export function OrdersPanel({ className = "", onViewOrderDetails, recentOrderDat
     return (
       <div className={`space-y-6 ${className}`}>
         <div className="text-center py-16 text-red-600">
-           <AlertCircle className="h-12 w-12 mx-auto mb-4" />
-           <h3 className="font-semibold mb-2">Error Loading Orders</h3>
-           <p>{errorMsg}</p>
-           <Button onClick={() => user?.phone && fetchOrders(user.phone)} className="mt-4" variant="outline">
-             Retry
-           </Button>
+          <AlertCircle className="h-12 w-12 mx-auto mb-4" />
+          <h3 className="font-semibold mb-2">Error Loading Orders</h3>
+          <p>{errorMsg}</p>
+          <Button onClick={() => user?.phone && fetchOrders(user.phone)} className="mt-4" variant="outline">
+            Retry
+          </Button>
         </div>
       </div>
     );
@@ -157,7 +161,7 @@ export function OrdersPanel({ className = "", onViewOrderDetails, recentOrderDat
             Your order history will appear here once you place your first order.
           </p>
           <div className="space-y-3">
-            <Button 
+            <Button
               className="w-full bg-gutzo-primary hover:bg-gutzo-primary-hover text-white"
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             >
@@ -183,11 +187,10 @@ export function OrdersPanel({ className = "", onViewOrderDetails, recentOrderDat
             return (
               <div
                 key={order.id}
-                className={`border rounded-xl p-4 bg-white shadow transition-all duration-200 cursor-pointer select-none ${
-                  order.status === 'delivered'
-                    ? 'border-gutzo-primary bg-gutzo-primary/5'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
+                className={`border rounded-xl p-4 bg-white shadow transition-all duration-200 cursor-pointer select-none ${order.status === 'delivered'
+                  ? 'border-gutzo-primary bg-gutzo-primary/5'
+                  : 'border-gray-200 hover:border-gray-300'
+                  }`}
                 onClick={e => {
                   // Prevent toggle if the button is clicked
                   if ((e.target as HTMLElement).closest('button')) return;
@@ -206,34 +209,32 @@ export function OrdersPanel({ className = "", onViewOrderDetails, recentOrderDat
                   {/* Top Section: Icon + Main Info + Status */}
                   <div className="flex items-start gap-4">
                     {/* Icon */}
-                    <div className={`p-3 rounded-xl flex-shrink-0 ${
-                      order.status === 'delivered'
-                        ? 'bg-gutzo-primary/10 text-gutzo-primary'
-                        : 'bg-gray-100 text-gray-500'
-                    }`}>
+                    <div className={`p-3 rounded-xl flex-shrink-0 ${order.status === 'delivered'
+                      ? 'bg-gutzo-primary/10 text-gutzo-primary'
+                      : 'bg-gray-100 text-gray-500'
+                      }`}>
                       <Package className="h-6 w-6" />
                     </div>
-                    
+
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       {/* Flex Row for ID and Status Badge */}
                       <div className="flex items-start justify-between gap-2 mb-1">
-                         <span className="text-sm font-semibold text-gray-900 break-all">
-                           #{order.order_number || order.id.slice(0, 8)}
-                         </span>
-                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium uppercase tracking-wide whitespace-nowrap ${
-                          order.status === 'delivered' || order.status === 'confirmed'
-                            ? 'bg-green-100 text-green-700'
-                            : order.status === 'cancelled' || order.status === 'rejected'
+                        <span className="text-sm font-semibold text-gray-900 break-all">
+                          #{order.order_number || order.id.slice(0, 8)}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium uppercase tracking-wide whitespace-nowrap ${order.status === 'delivered' || order.status === 'confirmed'
+                          ? 'bg-green-100 text-green-700'
+                          : order.status === 'cancelled' || order.status === 'rejected'
                             ? 'bg-red-100 text-red-700'
                             : order.status === 'preparing' || order.status === 'arrived_at_drop' || order.status === 'on_way'
-                            ? 'bg-blue-50 text-blue-600'
-                            : 'bg-gray-100 text-gray-600'
-                        }`}>
-						  {order.status === 'confirmed' ? 'Waiting for acceptance' : 
-                           order.status === 'arrived_at_drop' ? 'Valet at Doorstep' :
-                           order.status === 'reached_location' ? 'Rider at Restaurant' :
-                           order.status.replace(/_/g, ' ')}
+                              ? 'bg-blue-50 text-blue-600'
+                              : 'bg-gray-100 text-gray-600'
+                          }`}>
+                          {order.status === 'confirmed' ? 'Waiting for acceptance' :
+                            order.status === 'arrived_at_drop' ? 'Valet at Doorstep' :
+                              order.status === 'reached_location' ? 'Rider at Restaurant' :
+                                order.status.replace(/_/g, ' ')}
                         </span>
                       </div>
 
@@ -245,11 +246,11 @@ export function OrdersPanel({ className = "", onViewOrderDetails, recentOrderDat
                       {/* Meta Details */}
                       <div className="text-sm text-gray-500 space-y-0.5 mb-2">
                         <div className="flex items-center gap-2">
-                            <Clock className="w-3 h-3" />
-                            <span>{new Date(order.created_at).toLocaleDateString()} • {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                          <Clock className="w-3 h-3" />
+                          <span>{new Date(order.created_at).toLocaleDateString()} • {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
                         <div className="font-semibold text-gray-900 text-base mt-2">
-                           ₹{order.total_amount !== undefined && order.total_amount !== null ? Number(order.total_amount).toFixed(2) : '0.00'}
+                          ₹{order.total_amount !== undefined && order.total_amount !== null ? Number(order.total_amount).toFixed(2) : '0.00'}
                         </div>
                       </div>
                     </div>
@@ -258,42 +259,42 @@ export function OrdersPanel({ className = "", onViewOrderDetails, recentOrderDat
                   {/* Expanded Content */}
                   {expanded && (
                     <div className="border-t border-dashed pt-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                        {/* Items List */}
-                        <div className="space-y-2 mb-3">
-                          {order.items?.map((item: any) => (
-                            <div key={item.id} className="flex justify-between text-sm">
-                                <span className="text-gray-700 font-medium">
-                                  <span className="text-xs text-gray-500 mr-2">{item.quantity}x</span>
-                                  {item.product_name}
-                                </span>
-                                <span className="text-gray-900">₹{item.total_price}</span>
-                            </div>
-                          ))}
+                      {/* Items List */}
+                      <div className="space-y-2 mb-3">
+                        {order.items?.map((item: any) => (
+                          <div key={item.id} className="flex justify-between text-sm">
+                            <span className="text-gray-700 font-medium">
+                              <span className="text-xs text-gray-500 mr-2">{item.quantity}x</span>
+                              {item.product_name}
+                            </span>
+                            <span className="text-gray-900">₹{item.total_price}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Breakdown */}
+                      <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-600 space-y-1.5">
+                        <div className="flex justify-between">
+                          <span>Subtotal</span>
+                          <span>₹{Number(order.subtotal || 0).toFixed(2)}</span>
                         </div>
-                        
-                        {/* Breakdown */}
-                        <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-600 space-y-1.5">
+                        {order.delivery_fee > 0 && (
                           <div className="flex justify-between">
-                            <span>Subtotal</span>
-                            <span>₹{Number(order.subtotal || 0).toFixed(2)}</span>
+                            <span>Delivery</span>
+                            <span>₹{Number(order.delivery_fee).toFixed(2)}</span>
                           </div>
-                          {order.delivery_fee > 0 && (
-                            <div className="flex justify-between">
-                              <span>Delivery</span>
-                              <span>₹{Number(order.delivery_fee).toFixed(2)}</span>
-                            </div>
-                          )}
-                          {order.platform_fee > 0 && (
-                            <div className="flex justify-between">
-                              <span>Platform Fee</span>
-                              <span>₹{Number(order.platform_fee).toFixed(2)}</span>
-                            </div>
-                          )}
-                          <div className="flex justify-between border-t pt-1.5 mt-1.5 font-bold text-gray-900 text-sm">
-                            <span>Grand Total</span>
-                            <span>₹{Number(order.total_amount || 0).toFixed(2)}</span>
+                        )}
+                        {order.platform_fee > 0 && (
+                          <div className="flex justify-between">
+                            <span>Platform Fee</span>
+                            <span>₹{Number(order.platform_fee).toFixed(2)}</span>
                           </div>
+                        )}
+                        <div className="flex justify-between border-t pt-1.5 mt-1.5 font-bold text-gray-900 text-sm">
+                          <span>Grand Total</span>
+                          <span>₹{Number(order.total_amount || 0).toFixed(2)}</span>
                         </div>
+                      </div>
                     </div>
                   )}
 
@@ -302,14 +303,13 @@ export function OrdersPanel({ className = "", onViewOrderDetails, recentOrderDat
                     <Button
                       variant={expanded ? "ghost" : "outline"}
                       size="sm"
-                      className={`flex-1 h-10 text-sm font-medium transition-colors ${
-                        expanded 
-                          ? 'bg-gray-100 hover:bg-gray-200 text-gray-700' 
-                          : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                      }`}
+                      className={`flex-1 h-10 text-sm font-medium transition-colors ${expanded
+                        ? 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                        : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                        }`}
                       onClick={(e) => {
-                         e.stopPropagation(); 
-                         setExpandedOrderIds(prev => {
+                        e.stopPropagation();
+                        setExpandedOrderIds(prev => {
                           const next = new Set(prev);
                           if (expanded) next.delete(order.id);
                           else next.add(order.id);
@@ -321,20 +321,66 @@ export function OrdersPanel({ className = "", onViewOrderDetails, recentOrderDat
                     </Button>
 
                     <Button
-                      variant="default" 
+                      variant="outline"
                       size="sm"
-                      className="flex-1 h-10 bg-gutzo-primary hover:bg-gutzo-primary-hover text-white font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                      disabled={['cancelled', 'rejected', 'delivered', 'completed'].includes(order.status)}
-                      onClick={(e) => {
-                          e.stopPropagation();
-                          if (onViewOrderDetails) {
-                             onViewOrderDetails(order); // Keep existing hook just in case
+                      className="h-10 border-gray-200 text-gray-600 hover:bg-gray-50 flex items-center justify-center gap-1.5"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        try {
+                          // Fetch invoice with proper auth headers
+                          const url = `${apiService.baseUrl}/api/orders/${order.id}/invoice`;
+                          const { data: { session } } = await (await import('../utils/supabase/client')).supabase.auth.getSession();
+
+                          const headers: any = {
+                            'x-user-phone': user?.phone || '',
+                          };
+                          if (session?.access_token) {
+                            headers['Authorization'] = `Bearer ${session.access_token}`;
                           }
-                          // Navigate to tracking
-                          window.location.href = `/tracking/${order.order_number}`;
+
+                          const response = await fetch(url, { headers });
+                          if (!response.ok) throw new Error('Failed to fetch invoice');
+
+                          const html = await response.text();
+                          const blob = new Blob([html], { type: 'text/html' });
+                          const blobUrl = URL.createObjectURL(blob);
+                          window.open(blobUrl, '_blank');
+
+                          // Clean up blob URL after a short delay
+                          setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+                        } catch (err) {
+                          console.error('Invoice error:', err);
+                          toast.error('Failed to open invoice');
+                        }
                       }}
                     >
-                      Track Order
+                      <FileText className="w-4 h-4" />
+                      Invoice
+                    </Button>
+
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className={`flex-1 h-10 font-medium shadow-sm ${order.status === 'cancelled' || order.status === 'rejected'
+                        ? 'bg-red-600 hover:bg-red-700 text-white cursor-default'
+                        : order.status === 'delivered' || order.status === 'completed'
+                          ? 'bg-green-600 hover:bg-green-700 text-white cursor-default'
+                          : 'bg-gutzo-primary hover:bg-gutzo-primary-hover text-white cursor-pointer'
+                        }`}
+                      disabled={['cancelled', 'rejected', 'delivered', 'completed'].includes(order.status)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onViewOrderDetails) {
+                          onViewOrderDetails(order); // Keep existing hook just in case
+                        }
+                        // Navigate to tracking
+                        window.location.href = `/tracking/${order.order_number}`;
+                      }}
+                    >
+                      {order.status === 'cancelled' ? 'Cancelled' :
+                        order.status === 'rejected' ? 'Rejected' :
+                          order.status === 'delivered' ? 'Delivered' :
+                            order.status === 'completed' ? 'Completed' : 'Track Order'}
                     </Button>
                   </div>
                 </div>
@@ -347,12 +393,12 @@ export function OrdersPanel({ className = "", onViewOrderDetails, recentOrderDat
   );
 }
 
-                  // <Button
-                  //   variant="outline"
-                  //   size="sm"
-                  //   className="border-gutzo-primary text-gutzo-primary hover:bg-gutzo-primary/10"
-                  //   onClick={() => {/* TODO: Contact vendor logic */}}
-                  // >
-                  //   <MessageCircle className="h-4 w-4 mr-1" />
-                  //   <span className="text-xs">Contact Vendor</span>
-                  // </Button>
+// <Button
+//   variant="outline"
+//   size="sm"
+//   className="border-gutzo-primary text-gutzo-primary hover:bg-gutzo-primary/10"
+//   onClick={() => {/* TODO: Contact vendor logic */}}
+// >
+//   <MessageCircle className="h-4 w-4 mr-1" />
+//   <span className="text-xs">Contact Vendor</span>
+// </Button>

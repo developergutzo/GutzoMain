@@ -35,16 +35,41 @@ export const generateCustomerInvoiceHtml = (order) => {
     // Vendor Info
     const vendorName = order.vendor?.name || 'Restaurant Partner';
     const vendorAddress = order.vendor?.address || '';
-    const vendorGst = order.vendor?.gstin || 'N/A'; // Assuming 'gstin' might be added later, or fallback
+    const vendorGst = order.vendor?.gstin || 'N/A';
+
+    // Parse delivery address if it's a JSON string
+    let deliveryAddress = order.delivery_address;
+    if (typeof deliveryAddress === 'string') {
+        try {
+            deliveryAddress = JSON.parse(deliveryAddress);
+        } catch (e) {
+            // If parsing fails, treat entire string as address
+            deliveryAddress = { address: deliveryAddress };
+        }
+    }
+
+    // Ensure deliveryAddress is an object with fallback values
+    if (!deliveryAddress || typeof deliveryAddress !== 'object') {
+        deliveryAddress = {};
+    }
+
+    const customerName = deliveryAddress.name || 'Customer';
+    const customerAddress = deliveryAddress.address || deliveryAddress.full_address || 'Address not provided';
 
     // Calculation Breakdown
     const subtotal = Number(order.subtotal || 0).toFixed(2);
-    const itemTax = Number(order.gst_items || 0).toFixed(2); // Restaurant GST (5%)
     const packaging = Number(order.packaging_fee || 0).toFixed(2);
+
+    // Calculate restaurant GST (5%) if not already stored
+    const itemBase = Number(order.subtotal || 0) + Number(order.packaging_fee || 0);
+    const itemTax = Number(order.gst_items || (itemBase * 5 / 105)).toFixed(2);
 
     const deliveryFee = Number(order.delivery_fee || 0).toFixed(2);
     const platformFee = Number(order.platform_fee || 0).toFixed(2);
-    const feeTax = Number(order.gst_fees || 0).toFixed(2); // Platform GST (18%)
+
+    // Calculate platform GST (18%) if not already stored
+    const feeBase = Number(order.delivery_fee || 0) + Number(order.platform_fee || 0);
+    const feeTax = Number(order.gst_fees || (feeBase * 18 / 118)).toFixed(2);
 
     const total = Number(order.total_amount || 0).toFixed(2);
     const discount = Number(order.discount_amount || 0).toFixed(2);
@@ -68,6 +93,7 @@ export const generateCustomerInvoiceHtml = (order) => {
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>Invoice #${order.order_number}</title>
     ${invoiceStyles}
 </head>
@@ -96,8 +122,8 @@ export const generateCustomerInvoiceHtml = (order) => {
             </div>
             <div style="flex:1">
                 <div class="small" style="text-transform:uppercase; margin-bottom:5px; font-weight:bold;">Delivered To</div>
-                <div style="font-weight:600">${JSON.parse(JSON.stringify(order.delivery_address))?.name || 'Customer'}</div>
-                <div class="small">${JSON.parse(JSON.stringify(order.delivery_address))?.address || order.delivery_address}</div>
+                <div style="font-weight:600">${customerName}</div>
+                <div class="small">${customerAddress}</div>
                 <div class="small">Phone: ${order.delivery_phone}</div>
             </div>
         </div>

@@ -103,6 +103,14 @@ function renderOrders() {
                     <span class="detail-value">${order.rider_details.name}</span>
                 </div>
                 ` : ''}
+                ${order.rider_details && order.rider_details.latitude ? `
+                <div class="detail-row">
+                    <span class="detail-label">Location</span>
+                    <span class="detail-value" style="font-family:monospace; font-size:11px;">
+                        ${parseFloat(order.rider_details.latitude).toFixed(4)}, ${parseFloat(order.rider_details.longitude).toFixed(4)}
+                    </span>
+                </div>
+                ` : ''}
             </div>
 
             <div class="order-actions" onclick="event.stopPropagation()">
