@@ -24,7 +24,9 @@
     "multer": "^2.0.2",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.12",
-    "uuid": "^9.0.1"
+    "puppeteer": "^24.37.3",
+    "uuid": "^9.0.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

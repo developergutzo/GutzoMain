@@ -309,6 +309,11 @@ class NodeApiService {
         });
     }
 
+    async getVendorGSTReport(vendorId: string, from: string, to: string) {
+        return this.request(`/vendor-auth/${vendorId}/gst-report?from=${from}&to=${to}`);
+    }
+
+
     // --- Vendors ---
     async getVendors() {
         console.log("NodeApiService: Fetching vendors...");

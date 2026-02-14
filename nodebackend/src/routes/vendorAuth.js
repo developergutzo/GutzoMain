@@ -490,5 +490,230 @@ router.patch('/:id/orders/:orderId/status', asyncHandler(async (req, res) => {
   successResponse(res, { order });
 }));
 
+// ============================================
+// GET VENDOR GST REPORT
+// GET /api/vendor-auth/:vendorId/gst-report
+// ============================================
+router.get('/:vendorId/gst-report', asyncHandler(async (req, res) => {
+  const { vendorId } = req.params;
+  const { from, to, format = 'json' } = req.query;
+
+  // Default date range: current month
+  const today = new Date();
+  const defaultFrom = from || new Date(today.getFullYear(), today.getMonth(), 1).toISOString();
+  const defaultTo = to || new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59).toISOString();
+
+  // Fetch vendor details
+  const { data: vendor, error: vendorError } = await supabaseAdmin
+    .from('vendors')
+    .select('id, name, address')
+    .eq('id', vendorId)
+    .single();
+
+  console.log('GST Report - Vendor ID:', vendorId);
+  console.log('GST Report - Vendor lookup result:', { vendor, vendorError });
+
+  if (vendorError || !vendor) {
+    throw new ApiError(404, `Vendor not found: ${vendorId}, Error: ${vendorError?.message || 'No error message'}`);
+  }
+
+  // Add placeholder GSTIN (vendors table doesn't have this field)
+  vendor.gstin = 'N/A';
+
+  // Fetch orders for the period
+  const { data: orders, error: ordersError } = await supabaseAdmin
+    .from('orders')
+    .select(`
+      id,
+      order_number,
+      created_at,
+      subtotal,
+      gst_items,
+      packaging_fee,
+      delivery_fee,
+      platform_fee,
+      gst_fees,
+      delivery_address,
+      status
+    `)
+    .eq('vendor_id', vendorId)
+    .gte('created_at', defaultFrom)
+    .lte('created_at', defaultTo)
+    .in('status', ['delivered', 'completed'])
+    .order('created_at', { ascending: false });
+
+  console.log('Fetching orders for vendor:', vendorId, 'from', defaultFrom, 'to', defaultTo);
+
+  if (ordersError) {
+    console.error('Orders Error:', ordersError);
+    throw new ApiError(500, `Failed to fetch orders: ${ordersError.message || 'Unknown error'}`);
+  }
+
+  console.log('Found orders:', orders?.length || 0);
+
+  // Process orders and calculate GST
+  const processedOrders = [];
+  const stateWiseBreakup = {};
+  let totalSalesValue = 0;
+  let totalGST5Percent = 0;
+  let totalPlatformFees = 0;
+  let totalGST18Percent = 0;
+  let totalGross = 0;
+  let totalCommission = 0;
+  let totalTDSTCS = 0;
+  let totalNetSettlement = 0;
+
+  try {
+    orders.forEach(order => {
+      const itemTotal = Number(order.subtotal || 0) + Number(order.packaging_fee || 0);
+      const gstOnItems = Number(order.gst_items || 0) || (itemTotal * 5 / 105);
+      const platformFee = Number(order.platform_fee || 0);
+      const gstOnFees = Number(order.gst_fees || 0) || (platformFee * 18 / 118);
+      const deliveryFee = Number(order.delivery_fee || 0);
+
+      // Calculate total since it's not in the database
+      const grossAmount = itemTotal + gstOnItems + platformFee + gstOnFees + deliveryFee;
+
+      // Calculate commission (example: 15% of item total)
+      const commission = itemTotal * 0.15;
+
+      // Calculate TDS/TCS (example: 0.3% of gross)
+      const tdsTcs = grossAmount * 0.003;
+
+      // Net settlement
+      const netSettlement = grossAmount - commission - tdsTcs;
+
+      // Extract customer state from delivery address
+      let customerState = 'Unknown';
+      if (order.delivery_address) {
+        try {
+          const address = typeof order.delivery_address === 'string'
+            ? JSON.parse(order.delivery_address)
+            : order.delivery_address;
+          customerState = address.state || address.city || 'Unknown';
+        } catch (e) {
+          customerState = 'Unknown';
+        }
+      }
+
+      // Add to state-wise breakup
+      if (!stateWiseBreakup[customerState]) {
+        stateWiseBreakup[customerState] = { orders: 0, value: 0, gst: 0 };
+      }
+      stateWiseBreakup[customerState].orders += 1;
+      stateWiseBreakup[customerState].value += itemTotal;
+      stateWiseBreakup[customerState].gst += gstOnItems;
+
+      // Add to totals
+      totalSalesValue += itemTotal;
+      totalGST5Percent += gstOnItems;
+      totalPlatformFees += platformFee;
+      totalGST18Percent += gstOnFees;
+      totalGross += grossAmount;
+      totalCommission += commission;
+      totalTDSTCS += tdsTcs;
+      totalNetSettlement += netSettlement;
+
+      processedOrders.push({
+        order_number: order.order_number,
+        date: order.created_at,
+        customer_state: customerState,
+        item_total: itemTotal,
+        gst_on_items: gstOnItems,
+        delivery_charges: Number(order.delivery_fee || 0),
+        platform_fee: platformFee,
+        gst_on_fees: gstOnFees,
+        gross_amount: grossAmount,
+        commission,
+        tds_tcs: tdsTcs,
+        net_settlement: netSettlement
+      });
+    });
+  } catch (error) {
+    console.error('Error processing orders:', error);
+    throw new ApiError(500, `Error processing orders: ${error.message}`);
+  }
+
+  // Prepare report data
+  const reportData = {
+    vendor: {
+      id: vendor.id,
+      name: vendor.name,
+      gstin: vendor.gstin,
+      address: vendor.address
+    },
+    period: {
+      from: defaultFrom,
+      to: defaultTo,
+      month: new Date(defaultFrom).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    },
+    orders: processedOrders,
+    summary: {
+      total_orders: orders.length,
+      total_sales_value: totalSalesValue,
+      total_gst_collected_5_percent: totalGST5Percent,
+      total_platform_fees: totalPlatformFees,
+      total_gst_on_fees_18_percent: totalGST18Percent,
+      gross_revenue: totalGross,
+      total_commission: totalCommission,
+      total_tds_tcs: totalTDSTCS,
+      net_settlement_amount: totalNetSettlement,
+      state_wise_breakup: stateWiseBreakup
+    },
+    gst_filing_summary: {
+      table_8_gstr1: {
+        description: 'Supplies through ECO (Gutzo)',
+        taxable_value: totalSalesValue,
+        tax_paid_by_eco: totalGST5Percent
+      },
+      table_3_1_1_ii_gstr3b: {
+        description: 'Supplies through ECO',
+        taxable_value: totalSalesValue,
+        note: 'No tax liability - GST paid by ECO'
+      }
+    }
+  };
+
+  // Handle different formats
+  if (format === 'pdf') {
+    console.log('Generating PDF report...');
+    const { generateGSTReportPDF } = await import('../utils/gstReportGenerator.js');
+    const pdfBuffer = await generateGSTReportPDF(reportData);
+
+    console.log('PDF generated, buffer size:', pdfBuffer.length);
+
+    const filename = `GST_Report_${vendor.name.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    res.setHeader('Cache-Control', 'no-cache');
+
+    return res.end(Buffer.from(pdfBuffer));
+  }
+
+  if (format === 'excel') {
+    const { generateGSTReportExcel } = await import('../utils/gstReportGenerator.js');
+    const excelBuffer = await generateGSTReportExcel(reportData);
+
+    const filename = `GST_Report_${vendor.name.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    return res.send(excelBuffer);
+  }
+
+  if (format === 'html') {
+    const { generateGSTReportHTML } = await import('../utils/gstReportGenerator.js');
+    const htmlContent = generateGSTReportHTML(reportData);
+
+    res.setHeader('Content-Type', 'text/html');
+    return res.send(htmlContent);
+  }
+
+  // Return JSON by default
+  successResponse(res, reportData);
+}));
+
 
 export default router;
