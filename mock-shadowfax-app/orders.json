@@ -1852,5 +1852,333 @@
       "cancelled_by": "sfx",
       "cancellation_reason": "Cancelled by Customer"
     }
+  ],
+  [
+    "SFX_MOCK_1771085748846_69wh1tvo3",
+    {
+      "shadowfax_id": "SFX_MOCK_1771085748846_69wh1tvo3",
+      "client_order_id": "GZ20260214161500P1",
+      "status": "CANCELLED",
+      "awb_number": "SFX_MOCK_1771085748846_69wh1tvo3",
+      "created_at": "2026-02-14T16:15:48.846Z",
+      "updated_at": "2026-02-14T16:17:25.819Z",
+      "pickup_details": {
+        "name": "Coimbatore Cafe, Nava India",
+        "contact_number": "9790312308",
+        "address": "164/165, Avinashi Rd, Coimbatore, Tamil Nadu 641004",
+        "latitude": 11.0206723067603,
+        "longitude": 76.9927615925775
+      },
+      "drop_details": {
+        "contact_number": "+919944751745",
+        "address": "3328+XVJ, Teachers Colony, Chinniyampalayam, Coimbatore, Tamil Nadu 641062, India",
+        "city": "Coimbatore",
+        "state": "Tamil Nadu",
+        "latitude": 11.0525207,
+        "longitude": 77.0671894
+      },
+      "order_details": {
+        "order_id": "GZ20260214161500P1",
+        "actual_order_value": 285.65,
+        "paid": true,
+        "is_prepaid": true,
+        "cash_to_be_collected": 0,
+        "payment_mode": "prepaid",
+        "delivery_charge_to_be_collected_from_customer": 0
+      },
+      "validations": {
+        "pickup": {
+          "is_otp_required": true,
+          "otp": "8528"
+        },
+        "drop": {
+          "is_otp_required": true,
+          "otp": "3162"
+        }
+      },
+      "rider_details": {
+        "latitude": 11.019047485974939,
+        "longitude": 76.98866844177248,
+        "current_location": {
+          "latitude": 11.019047485974939,
+          "longitude": 76.98866844177248
+        }
+      },
+      "history": [
+        {
+          "status": "CREATED",
+          "timestamp": "2026-02-14T16:15:48.846Z",
+          "note": "Order created via Mock API"
+        },
+        {
+          "status": "ALLOTTED",
+          "timestamp": "2026-02-14T16:16:44.150Z",
+          "note": "Status updated via UI to ALLOTTED"
+        },
+        {
+          "status": "CANCELLED",
+          "timestamp": "2026-02-14T16:17:25.819Z",
+          "note": "Cancelled by Customer",
+          "meta": {
+            "cancelled_by": "sfx"
+          }
+        }
+      ],
+      "cancelled_by": "sfx",
+      "cancellation_reason": "Cancelled by Customer"
+    }
+  ],
+  [
+    "SFX_MOCK_1771085864901_2hkg2kfic",
+    {
+      "shadowfax_id": "SFX_MOCK_1771085864901_2hkg2kfic",
+      "client_order_id": "GZ202602141617WM5U",
+      "status": "DELIVERED",
+      "awb_number": "SFX_MOCK_1771085864901_2hkg2kfic",
+      "created_at": "2026-02-14T16:17:44.901Z",
+      "updated_at": "2026-02-14T17:23:50.286Z",
+      "pickup_details": {
+        "name": "Coimbatore Cafe, Nava India",
+        "contact_number": "9790312308",
+        "address": "164/165, Avinashi Rd, Coimbatore, Tamil Nadu 641004",
+        "latitude": 11.0206723067603,
+        "longitude": 76.9927615925775
+      },
+      "drop_details": {
+        "contact_number": "+919944751745",
+        "address": "3328+XVJ, Teachers Colony, Chinniyampalayam, Coimbatore, Tamil Nadu 641062, India",
+        "city": "Coimbatore",
+        "state": "Tamil Nadu",
+        "latitude": 11.0525207,
+        "longitude": 77.0671894
+      },
+      "order_details": {
+        "order_id": "GZ202602141617WM5U",
+        "actual_order_value": 285.65,
+        "paid": true,
+        "is_prepaid": true,
+        "cash_to_be_collected": 0,
+        "payment_mode": "prepaid",
+        "delivery_charge_to_be_collected_from_customer": 0
+      },
+      "validations": {
+        "pickup": {
+          "is_otp_required": true,
+          "otp": "2868"
+        },
+        "drop": {
+          "is_otp_required": true,
+          "otp": "9104"
+        }
+      },
+      "rider_details": {
+        "latitude": 11.0525207,
+        "longitude": 77.0671894,
+        "current_location": {
+          "latitude": 11.022080408704667,
+          "longitude": 76.99313163757326
+        }
+      },
+      "history": [
+        {
+          "status": "CREATED",
+          "timestamp": "2026-02-14T16:17:44.901Z",
+          "note": "Order created via Mock API"
+        },
+        {
+          "status": "ALLOTTED",
+          "timestamp": "2026-02-14T16:18:38.447Z",
+          "note": "Status updated via UI to ALLOTTED"
+        },
+        {
+          "status": "ACCEPTED",
+          "timestamp": "2026-02-14T17:23:30.006Z",
+          "note": "Status updated via UI to ACCEPTED"
+        },
+        {
+          "status": "ARRIVED",
+          "timestamp": "2026-02-14T17:23:35.567Z",
+          "note": "Status updated via UI to ARRIVED"
+        },
+        {
+          "status": "COLLECTED",
+          "timestamp": "2026-02-14T17:23:40.125Z",
+          "note": "Status updated via UI to COLLECTED"
+        },
+        {
+          "status": "CUSTOMER_DOOR_STEP",
+          "timestamp": "2026-02-14T17:23:46.711Z",
+          "note": "Status updated via UI to CUSTOMER_DOOR_STEP"
+        },
+        {
+          "status": "DELIVERED",
+          "timestamp": "2026-02-14T17:23:50.286Z",
+          "note": "Status updated via UI to DELIVERED"
+        }
+      ]
+    }
+  ],
+  [
+    "SFX_MOCK_1771089856660_eqx1mcswa",
+    {
+      "shadowfax_id": "SFX_MOCK_1771089856660_eqx1mcswa",
+      "client_order_id": "GZ202602141724X04B",
+      "status": "DELIVERED",
+      "awb_number": "SFX_MOCK_1771089856660_eqx1mcswa",
+      "created_at": "2026-02-14T17:24:16.660Z",
+      "updated_at": "2026-02-14T17:39:07.712Z",
+      "pickup_details": {
+        "name": "Coimbatore Cafe, SITRA",
+        "contact_number": "9790312308",
+        "address": "164/165, Avinashi Rd, Coimbatore, Tamil Nadu 641004",
+        "latitude": 11.0383350227169,
+        "longitude": 77.0381654512353
+      },
+      "drop_details": {
+        "contact_number": "+919944751745",
+        "address": "3328+XVJ, Teachers Colony, Chinniyampalayam, Coimbatore, Tamil Nadu 641062, India",
+        "city": "Coimbatore",
+        "state": "Tamil Nadu",
+        "latitude": 11.0525207,
+        "longitude": 77.0671894
+      },
+      "order_details": {
+        "order_id": "GZ202602141724X04B",
+        "actual_order_value": 223.22,
+        "paid": true,
+        "is_prepaid": true,
+        "cash_to_be_collected": 0,
+        "payment_mode": "prepaid",
+        "delivery_charge_to_be_collected_from_customer": 0
+      },
+      "validations": {
+        "pickup": {
+          "is_otp_required": true,
+          "otp": "1294"
+        },
+        "drop": {
+          "is_otp_required": true,
+          "otp": "5618"
+        }
+      },
+      "rider_details": null,
+      "history": [
+        {
+          "status": "CREATED",
+          "timestamp": "2026-02-14T17:24:16.660Z",
+          "note": "Order created via Mock API"
+        },
+        {
+          "status": "ALLOTTED",
+          "timestamp": "2026-02-14T17:24:33.151Z",
+          "note": "Status updated via UI to ALLOTTED"
+        },
+        {
+          "status": "ACCEPTED",
+          "timestamp": "2026-02-14T17:24:35.663Z",
+          "note": "Status updated via UI to ACCEPTED"
+        },
+        {
+          "status": "ARRIVED",
+          "timestamp": "2026-02-14T17:24:42.878Z",
+          "note": "Status updated via UI to ARRIVED"
+        },
+        {
+          "status": "COLLECTED",
+          "timestamp": "2026-02-14T17:24:49.566Z",
+          "note": "Status updated via UI to COLLECTED"
+        },
+        {
+          "status": "CUSTOMER_DOOR_STEP",
+          "timestamp": "2026-02-14T17:34:33.100Z",
+          "note": "Status updated via UI to CUSTOMER_DOOR_STEP"
+        },
+        {
+          "status": "DELIVERED",
+          "timestamp": "2026-02-14T17:39:07.712Z",
+          "note": "Status updated via UI to DELIVERED"
+        }
+      ]
+    }
+  ],
+  [
+    "SFX_MOCK_1771091007879_oubl4luie",
+    {
+      "shadowfax_id": "SFX_MOCK_1771091007879_oubl4luie",
+      "client_order_id": "GZ202602141743QN5B",
+      "status": "COLLECTED",
+      "awb_number": "SFX_MOCK_1771091007879_oubl4luie",
+      "created_at": "2026-02-14T17:43:27.879Z",
+      "updated_at": "2026-02-14T17:45:09.670Z",
+      "pickup_details": {
+        "name": "Coimbatore Cafe, GK Nagar",
+        "contact_number": "9790312308",
+        "address": "164/165, Avinashi Rd, Coimbatore, Tamil Nadu 641004",
+        "latitude": 11.0469961850896,
+        "longitude": 77.0557655766639
+      },
+      "drop_details": {
+        "contact_number": "+919944751745",
+        "address": "3328+XVJ, Teachers Colony, Chinniyampalayam, Coimbatore, Tamil Nadu 641062, India",
+        "city": "Coimbatore",
+        "state": "Tamil Nadu",
+        "latitude": 11.0525207,
+        "longitude": 77.0671894
+      },
+      "order_details": {
+        "order_id": "GZ202602141743QN5B",
+        "actual_order_value": 110,
+        "paid": true,
+        "is_prepaid": true,
+        "cash_to_be_collected": 0,
+        "payment_mode": "prepaid",
+        "delivery_charge_to_be_collected_from_customer": 0
+      },
+      "validations": {
+        "pickup": {
+          "is_otp_required": true,
+          "otp": "2906"
+        },
+        "drop": {
+          "is_otp_required": true,
+          "otp": "7022"
+        }
+      },
+      "rider_details": {
+        "latitude": 11.0469961850896,
+        "longitude": 77.0557655766639,
+        "current_location": {
+          "latitude": 11.047011322016035,
+          "longitude": 77.05584168434144
+        }
+      },
+      "history": [
+        {
+          "status": "CREATED",
+          "timestamp": "2026-02-14T17:43:27.879Z",
+          "note": "Order created via Mock API"
+        },
+        {
+          "status": "ALLOTTED",
+          "timestamp": "2026-02-14T17:43:45.277Z",
+          "note": "Status updated via UI to ALLOTTED"
+        },
+        {
+          "status": "ACCEPTED",
+          "timestamp": "2026-02-14T17:43:51.091Z",
+          "note": "Status updated via UI to ACCEPTED"
+        },
+        {
+          "status": "ARRIVED",
+          "timestamp": "2026-02-14T17:45:05.694Z",
+          "note": "Status updated via UI to ARRIVED"
+        },
+        {
+          "status": "COLLECTED",
+          "timestamp": "2026-02-14T17:45:09.670Z",
+          "note": "Status updated via UI to COLLECTED"
+        }
+      ]
+    }
   ]
 ]

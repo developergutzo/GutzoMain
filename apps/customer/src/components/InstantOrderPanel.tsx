@@ -148,67 +148,67 @@ export function InstantOrderPanel({
         setCartItems(initialCartItems);
         // Get vendor from first cart item
         const firstItem = initialCartItems[0];
-        
+
         // If vendor details are incomplete (e.g. missing location), fetch full details
         // Cast to any to access potential extra properties not in rigid type
         const vendorData = firstItem.vendor as any;
-        
+
         if (!vendorData.location && firstItem.vendorId) {
-             apiService.getVendor(firstItem.vendorId).then(res => {
-                if (res.success && res.data) {
-                    console.log('✅ [InstantOrderPanel] Fetched full vendor details:', res.data);
-                    setCurrentVendor(res.data);
-                } else {
-                    // Fallback to partial data if fetch fails
-                    setCurrentVendor({
-                      id: firstItem.vendorId,
-                      name: firstItem.vendor.name,
-                      image: firstItem.vendor.image,
-                      // placeholders
-                      location: '',
-                      rating: 0,
-                      deliveryTime: '',
-                      minimumOrder: 0,
-                      deliveryFee: 0,
-                      cuisineType: '',
-                      phone: '',
-                      description: '', // Added missing field
-                      isActive: true,
-                      isFeatured: false,
-                      created_at: new Date().toISOString(),
-                      tags: []
-                    } as Vendor);
-                }
-             }).catch(err => {
-                 console.error('❌ [InstantOrderPanel] Failed to fetch vendor:', err);
-             });
+          apiService.getVendor(firstItem.vendorId).then(res => {
+            if (res.success && res.data) {
+              console.log('✅ [InstantOrderPanel] Fetched full vendor details:', res.data);
+              setCurrentVendor(res.data);
+            } else {
+              // Fallback to partial data if fetch fails
+              setCurrentVendor({
+                id: firstItem.vendorId,
+                name: firstItem.vendor.name,
+                image: firstItem.vendor.image,
+                // placeholders
+                location: '',
+                rating: 0,
+                deliveryTime: '',
+                minimumOrder: 0,
+                deliveryFee: 0,
+                cuisineType: '',
+                phone: '',
+                description: '', // Added missing field
+                isActive: true,
+                isFeatured: false,
+                created_at: new Date().toISOString(),
+                tags: []
+              } as Vendor);
+            }
+          }).catch(err => {
+            console.error('❌ [InstantOrderPanel] Failed to fetch vendor:', err);
+          });
         } else {
-             // Use existing data
-             setCurrentVendor({
-               id: firstItem.vendorId,
-               name: firstItem.vendor.name,
-               image: firstItem.vendor.image,
-               location: vendorData.location || '',
-               latitude: vendorData.latitude,
-               longitude: vendorData.longitude,
-               description: '', // Default if missing
-               rating: vendorData.rating || 0,
-               deliveryTime: vendorData.deliveryTime || '',
-               minimumOrder: vendorData.minimumOrder || 0,
-               deliveryFee: vendorData.deliveryFee || 0,
-               cuisineType: vendorData.cuisineType || '',
-               phone: vendorData.phone || '',
-               isActive: true,
-               isFeatured: false,
-               created_at: new Date().toISOString(),
-               tags: [],
-               ...(firstItem.vendor as any) // Spread to catch others, cast to avoid type conflicts
-             } as Vendor);
+          // Use existing data
+          setCurrentVendor({
+            id: firstItem.vendorId,
+            name: firstItem.vendor.name,
+            image: firstItem.vendor.image,
+            location: vendorData.location || '',
+            latitude: vendorData.latitude,
+            longitude: vendorData.longitude,
+            description: '', // Default if missing
+            rating: vendorData.rating || 0,
+            deliveryTime: vendorData.deliveryTime || '',
+            minimumOrder: vendorData.minimumOrder || 0,
+            deliveryFee: vendorData.deliveryFee || 0,
+            cuisineType: vendorData.cuisineType || '',
+            phone: vendorData.phone || '',
+            isActive: true,
+            isFeatured: false,
+            created_at: new Date().toISOString(),
+            tags: [],
+            ...(firstItem.vendor as any) // Spread to catch others, cast to avoid type conflicts
+          } as Vendor);
         }
 
       } else if (product && vendor) {
         // Single product order - vendor object passed in usually full
-        setCartItems([{ 
+        setCartItems([{
           id: product.id,
           productId: product.id,
           vendorId: vendor.id,
@@ -241,31 +241,31 @@ export function InstantOrderPanel({
   const { user, isAuthenticated } = useAuth(); // Use auth context for reliable user data
 
   useEffect(() => {
-    console.log('🔄 [InstantOrderPanel] sync initiated', { 
-      isOpen, 
+    console.log('🔄 [InstantOrderPanel] sync initiated', {
+      isOpen,
       refreshTrigger,
-      userPhone: user?.phone 
+      userPhone: user?.phone
     });
 
     if (user?.phone) {
-      const formatted = user.phone.startsWith('+91') 
-        ? user.phone 
+      const formatted = user.phone.startsWith('+91')
+        ? user.phone
         : `+91${user.phone}`;
-      
+
       setUserPhone(formatted);
-      
+
       console.log('📡 [InstantOrderPanel] Fetching addresses for:', formatted);
-      
+
       import('../utils/addressApi').then(({ AddressApi }) => {
         AddressApi.getUserAddresses(formatted).then(res => {
           console.log('📥 [InstantOrderPanel] Address API Response:', res);
-          
+
           if (res.success && Array.isArray(res.data)) {
             setAddresses(res.data);
-            
+
             // LOGIC: Auto-select newly added address OR default
             let addressToSelect = null;
-            
+
             if (newAddressId) {
               console.log('🔍 [InstantOrderPanel] Looking for newAddressId:', newAddressId);
               const newAddr = res.data.find(a => a.id === newAddressId);
@@ -273,24 +273,24 @@ export function InstantOrderPanel({
                 console.log('✨ [InstantOrderPanel] Auto-selecting new address:', newAddr);
                 addressToSelect = newAddr;
               } else {
-                 console.warn('⚠️ [InstantOrderPanel] New address ID not found in fetched list:', newAddressId);
-                 // Dump IDs for debugging
-                 console.log('📋 Available IDs:', res.data.map(a => a.id));
+                console.warn('⚠️ [InstantOrderPanel] New address ID not found in fetched list:', newAddressId);
+                // Dump IDs for debugging
+                console.log('📋 Available IDs:', res.data.map(a => a.id));
               }
             }
-            
+
             if (!addressToSelect) {
-               addressToSelect = res.data.find(a => a.is_default) || res.data[0];
+              addressToSelect = res.data.find(a => a.is_default) || res.data[0];
             }
-            
+
             setSelectedAddress(addressToSelect);
             console.log('✅ [InstantOrderPanel] Final Selected address:', addressToSelect);
-            
+
           } else if (res.success && !res.data) {
-             console.log('⚠️ [InstantOrderPanel] No addresses found in response data');
-             setAddresses([]);
+            console.log('⚠️ [InstantOrderPanel] No addresses found in response data');
+            setAddresses([]);
           } else {
-             console.error('❌ [InstantOrderPanel] Address fetch failed or invalid format');
+            console.error('❌ [InstantOrderPanel] Address fetch failed or invalid format');
           }
         }).catch(err => {
           console.error('❌ [InstantOrderPanel] Address fetch error:', err);
@@ -300,22 +300,22 @@ export function InstantOrderPanel({
       console.log('ℹ️ [InstantOrderPanel] No user phone available, skipping fetch');
       // Fallback to device location if available and no user logged in
       if (location && location.coordinates) {
-         console.log('📍 [InstantOrderPanel] Using device location as fallback');
-         setSelectedAddress({
-           id: 'device_location',
-           type: 'Current Location',
-           full_address: locationDisplay,
-           street: '',
-           area: '',
-           latitude: location.coordinates.latitude,
-           longitude: location.coordinates.longitude,
-           is_default: false,
-           // Add missing required properties for type compatibility if needed
-           label: 'Current Location',
-           zip: '',
-           city: location.city,
-           state: location.state
-         });
+        console.log('📍 [InstantOrderPanel] Using device location as fallback');
+        setSelectedAddress({
+          id: 'device_location',
+          type: 'Current Location',
+          full_address: locationDisplay,
+          street: '',
+          area: '',
+          latitude: location.coordinates.latitude,
+          longitude: location.coordinates.longitude,
+          is_default: false,
+          // Add missing required properties for type compatibility if needed
+          label: 'Current Location',
+          zip: '',
+          city: location.city,
+          state: location.state
+        });
       }
     }
   }, [isOpen, refreshTrigger, user?.phone, newAddressId, location, locationDisplay]);
@@ -323,68 +323,68 @@ export function InstantOrderPanel({
   // Calculate Delivery Fee
   useEffect(() => {
     async function fetchDeliveryFee() {
-        if (!isOpen || !selectedAddress || !currentVendor) {
-            return;
+      if (!isOpen || !selectedAddress || !currentVendor) {
+        return;
+      }
+
+      // We need vendor location to calculate fee
+      if (!currentVendor.location && !currentVendor.latitude) {
+        console.warn('⚠️ [InstantOrderPanel] Vendor location missing, skipping fee calculation');
+        return;
+      }
+
+      setLoadingFee(true);
+      setServiceabilityError(null);
+
+      try {
+        const pickup = {
+          address: currentVendor.location || "Vendor Location",
+          latitude: currentVendor.latitude,
+          longitude: currentVendor.longitude
+        };
+
+        // selectedAddress usually has these, but good to ensure
+        const drop = {
+          address: selectedAddress.full_address || selectedAddress.street,
+          latitude: selectedAddress.latitude,
+          longitude: selectedAddress.longitude
+        };
+
+        if (!pickup.latitude || !drop.latitude) {
+          console.warn('⚠️ [InstantOrderPanel] Missing coordinates for pickup/drop', { pickup, drop });
+          // Can't calculate without coords usually
         }
 
-        // We need vendor location to calculate fee
-        if (!currentVendor.location && !currentVendor.latitude) {
-            console.warn('⚠️ [InstantOrderPanel] Vendor location missing, skipping fee calculation');
-            return;
+        console.log('🛵 [InstantOrderPanel] Checking serviceability...', { pickup, drop });
+        const res = await apiService.getDeliveryServiceability(pickup, drop);
+
+        if (res.success && res.data) {
+          // Check is_serviceable flag
+          const serviceable = res.data.is_serviceable ?? true; // Default to true if missing? detailed check needed
+          setIsServiceable(serviceable);
+
+          if (serviceable) {
+            // Use total_amount as the delivery fee (cost of task)
+            // Or delivery_fee if explicitly provided
+            const fee = res.data.total_amount || res.data.delivery_fee || 50; // Fallback 50
+            setDeliveryFee(fee);
+          } else {
+            setServiceabilityError(res.data.reason || "Location not serviceable from this vendor.");
+            setDeliveryFee(0);
+          }
+        } else {
+          console.error('❌ [InstantOrderPanel] Serviceability check failed', res);
+          setDeliveryFee(50); // Fallback? Or error?
+          // Let's fallback to standard fee but maybe warn?
         }
-
-        setLoadingFee(true);
-        setServiceabilityError(null);
-        
-        try {
-            const pickup = {
-                address: currentVendor.location || "Vendor Location",
-                latitude: currentVendor.latitude,
-                longitude: currentVendor.longitude
-            };
-            
-            // selectedAddress usually has these, but good to ensure
-            const drop = {
-                address: selectedAddress.full_address || selectedAddress.street,
-                latitude: selectedAddress.latitude,
-                longitude: selectedAddress.longitude
-            };
-
-            if (!pickup.latitude || !drop.latitude) {
-                 console.warn('⚠️ [InstantOrderPanel] Missing coordinates for pickup/drop', { pickup, drop });
-                 // Can't calculate without coords usually
-            }
-
-            console.log('🛵 [InstantOrderPanel] Checking serviceability...', { pickup, drop });
-            const res = await apiService.getDeliveryServiceability(pickup, drop);
-            
-            if (res.success && res.data) {
-                // Check is_serviceable flag
-                const serviceable = res.data.is_serviceable ?? true; // Default to true if missing? detailed check needed
-                setIsServiceable(serviceable);
-                
-                if (serviceable) {
-                    // Use total_amount as the delivery fee (cost of task)
-                    // Or delivery_fee if explicitly provided
-                    const fee = res.data.total_amount || res.data.delivery_fee || 50; // Fallback 50
-                    setDeliveryFee(fee);
-                } else {
-                    setServiceabilityError(res.data.reason || "Location not serviceable from this vendor.");
-                    setDeliveryFee(0);
-                }
-            } else {
-                 console.error('❌ [InstantOrderPanel] Serviceability check failed', res);
-                 setDeliveryFee(50); // Fallback? Or error?
-                 // Let's fallback to standard fee but maybe warn?
-            }
-        } catch (err: any) {
-            console.error('❌ [InstantOrderPanel] Error fetching delivery fee:', err);
-            // On error within serviceability check, maybe set default but don't block?
-            // Or block if strict. For now, constant fee fallback.
-            setDeliveryFee(50);
-        } finally {
-            setLoadingFee(false);
-        }
+      } catch (err: any) {
+        console.error('❌ [InstantOrderPanel] Error fetching delivery fee:', err);
+        // On error within serviceability check, maybe set default but don't block?
+        // Or block if strict. For now, constant fee fallback.
+        setDeliveryFee(50);
+      } finally {
+        setLoadingFee(false);
+      }
     }
 
     fetchDeliveryFee();
@@ -408,7 +408,7 @@ export function InstantOrderPanel({
   const totalAmount = totalPrice + deliveryFee + platformFee; // All GST-inclusive
 
   const handleQuantityChange = (productId: string, delta: number) => {
-    setCartItems(prevItems => 
+    setCartItems(prevItems =>
       prevItems.map(item => {
         if (item.productId === productId || item.id === productId) {
           const newQuantity = Math.max(1, Math.min(10, item.quantity + delta));
@@ -502,9 +502,9 @@ export function InstantOrderPanel({
             <p className="text-sm text-gray-600">Confirm your items before payment</p>
           </div>
         </div>
-        <Button 
-          variant="ghost" 
-          size="sm" 
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={onClose}
           className="hover:bg-gray-100 rounded-full"
         >
@@ -514,7 +514,7 @@ export function InstantOrderPanel({
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        
+
         {/* Delivery Address */}
         <div className="bg-gradient-to-r from-gutzo-primary/10 to-gutzo-highlight/15 rounded-xl p-4 border border-gutzo-primary/20">
           <div className="flex items-start gap-3">
@@ -526,9 +526,9 @@ export function InstantOrderPanel({
               {selectedAddress ? (
                 <div className="text-sm text-gray-700">
                   <p className="font-medium">
-                    {selectedAddress.type.toLowerCase() === 'home' ? 'Home' : 
-                     selectedAddress.type.toLowerCase() === 'work' ? 'Work' : 
-                     (selectedAddress.custom_label || selectedAddress.label || selectedAddress.type)}
+                    {selectedAddress.type.toLowerCase() === 'home' ? 'Home' :
+                      selectedAddress.type.toLowerCase() === 'work' ? 'Work' :
+                        (selectedAddress.custom_label || selectedAddress.label || selectedAddress.type)}
                   </p>
                   <p>{selectedAddress.street}{selectedAddress.area ? `, ${selectedAddress.area}` : ""}</p>
                   <p>{selectedAddress.full_address}</p>
@@ -536,16 +536,16 @@ export function InstantOrderPanel({
                 </div>
               ) : (
                 <div className="flex flex-col items-start">
-                   <p className="text-gray-500 mb-2 text-sm">No address found.</p>
-                   <Button 
-                     size="sm" 
-                     className="bg-gutzo-primary text-white h-8 text-xs"
-                     onClick={() => {
-                       if (onAddAddress) onAddAddress();
-                     }}
-                   >
-                     + Add Address
-                   </Button>
+                  <p className="text-gray-500 mb-2 text-sm">No address found.</p>
+                  <Button
+                    size="sm"
+                    className="bg-gutzo-primary text-white h-8 text-xs"
+                    onClick={() => {
+                      if (onAddAddress) onAddAddress();
+                    }}
+                  >
+                    + Add Address
+                  </Button>
                 </div>
               )}
             </div>
@@ -586,9 +586,9 @@ export function InstantOrderPanel({
                         <MapPin className="h-4 w-4 text-gutzo-primary" />
                         <div className="flex-1">
                           <p className="font-medium">
-                            {address.type.toLowerCase() === 'home' ? 'Home' : 
-                             address.type.toLowerCase() === 'work' ? 'Work' : 
-                             (address.custom_label || address.label || address.type)}
+                            {address.type.toLowerCase() === 'home' ? 'Home' :
+                              address.type.toLowerCase() === 'work' ? 'Work' :
+                                (address.custom_label || address.label || address.type)}
                           </p>
                           <p className="text-sm">{address.street}{address.area ? `, ${address.area}` : ""}</p>
                           <p className="text-xs text-gray-600">{address.full_address}</p>
@@ -661,9 +661,9 @@ export function InstantOrderPanel({
                         {getDietTags(item).length > 0 && (
                           <div className="flex flex-wrap gap-1 mb-2">
                             {getDietTags(item).slice(0, 2).map((tag, index) => (
-                              <Badge 
-                                key={index} 
-                                variant="secondary" 
+                              <Badge
+                                key={index}
+                                variant="secondary"
                                 className="text-xs bg-gutzo-highlight/20 text-gutzo-selected"
                               >
                                 {tag}
@@ -743,7 +743,7 @@ export function InstantOrderPanel({
         {/* Order Summary */}
         <div className="bg-gradient-to-br from-gutzo-highlight/15 to-gutzo-primary/10 rounded-xl p-5 border border-gutzo-primary/20">
           <h4 className="font-medium text-gray-900 mb-4">Order Summary</h4>
-          
+
           <div className="space-y-3 text-sm">
             {(syncedItems.length > 0 ? syncedItems : cartItems).map((item) => (
               <div key={item.id || item.productId} className="flex justify-between">
@@ -753,13 +753,13 @@ export function InstantOrderPanel({
             ))}
             <div className="flex justify-between">
               <span className="text-gray-600">
-                  Delivery fee (incl. 18% GST)
-                  {loadingFee && <span className="ml-2 inline-block animate-spin">⌛</span>}
+                Delivery fee (incl. 18% GST)
+                {loadingFee && <span className="ml-2 inline-block animate-spin">⌛</span>}
               </span>
               <span className={`font-medium ${!isServiceable ? 'text-red-500' : 'text-gray-900'}`}>
-                  {loadingFee ? '...' : 
-                   !isServiceable ? 'Not serviceable' : 
-                   `₹${deliveryFee.toFixed(2)}`}
+                {loadingFee ? '...' :
+                  !isServiceable ? 'Not serviceable' :
+                    `₹${deliveryFee.toFixed(2)}`}
               </span>
             </div>
             <div className="flex justify-between">
@@ -777,11 +777,11 @@ export function InstantOrderPanel({
               <span>GST included in fees @18%</span>
               <span>₹{includedGstFees.toFixed(2)}</span>
             </div>
-            
+
             {!isServiceable && serviceabilityError && (
-                <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-red-600 text-xs font-medium">
-                    {serviceabilityError}
-                </div>
+              <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-red-600 text-xs font-medium">
+                {serviceabilityError}
+              </div>
             )}
 
             <div className="flex justify-between items-center pt-2">
@@ -812,7 +812,7 @@ export function InstantOrderPanel({
             }
 
             if (cartItems.length === 0 || isProcessing || !isServiceable) return;
-            
+
             if (!selectedAddress) {
               toast.error('Please select a delivery address');
               return;
@@ -841,9 +841,9 @@ export function InstantOrderPanel({
 
               console.log('📝 Creating order with payload:', orderPayload);
               const orderRes = await apiService.createOrder(userPhone, orderPayload);
-              
+
               if (!orderRes.success || !orderRes.data || !orderRes.data.order) {
-                 throw new Error(orderRes.message || 'Failed to create order');
+                throw new Error(orderRes.message || 'Failed to create order');
               }
 
               const order = orderRes.data.order;
@@ -854,11 +854,11 @@ export function InstantOrderPanel({
 
               // 2. Initiate Payment with Real Order ID
               const data = await apiService.initiatePaytmPayment(userPhone, orderId, amount, user?.id || userPhone);
-              
+
               // Check for success - the backend might return paytmResponse (new) or initiateTransactionResponse (old)
               // The data object from apiService return might be nested in data.data or root depending on wrapper
               // Based on logs: { success: true, data: { paytmResponse: ... } }
-              const responseData = data.data || data; 
+              const responseData = data.data || data;
               const paytmResp = responseData.paytmResponse || responseData.initiateTransactionResponse;
               const token = responseData.txnToken || paytmResp?.body?.txnToken;
 
@@ -868,100 +868,100 @@ export function InstantOrderPanel({
 
                 // Load Paytm JS Checkout and invoke payment
                 const PAYTM_ENV = import.meta.env.VITE_PAYTM_ENV || 'staging';
-                const PAYTM_BASE_URL = PAYTM_ENV === 'production' 
-                    ? 'https://secure.paytmpayments.com' 
-                    : 'https://securestage.paytmpayments.com';
-                
+                const PAYTM_BASE_URL = PAYTM_ENV === 'production'
+                  ? 'https://secure.paytmpayments.com'
+                  : 'https://securestage.paytmpayments.com';
+
                 const script = document.createElement('script');
                 script.src = `${PAYTM_BASE_URL}/merchantpgpui/checkoutjs/merchants/${mid}.js`;
                 script.async = true;
                 script.crossOrigin = "anonymous"; // Added as per docs
                 script.onload = () => {
                   console.log('Paytm script loaded. Checking window.Paytm...');
-                  
+
                   // @ts-ignore
                   if (window.Paytm && window.Paytm.CheckoutJS) {
-                     // @ts-ignore
-                     const checkoutJs = window.Paytm.CheckoutJS;
-                     console.log('Hooking into checkoutJs.onLoad...');
+                    // @ts-ignore
+                    const checkoutJs = window.Paytm.CheckoutJS;
+                    console.log('Hooking into checkoutJs.onLoad...');
 
-                        // Strict adherence to docs: Wrap init in onLoad
-                     checkoutJs.onLoad(() => {
-                        console.log('Paytm CheckoutJS.onLoad callback fired. Initializing...');
-                        const config = {
-                          merchant: {
-                            mid: mid,
-                            name: "Gutzo", // Optional but good for UI
-                            redirect: false
+                    // Strict adherence to docs: Wrap init in onLoad
+                    checkoutJs.onLoad(() => {
+                      console.log('Paytm CheckoutJS.onLoad callback fired. Initializing...');
+                      const config = {
+                        merchant: {
+                          mid: mid,
+                          name: "Gutzo", // Optional but good for UI
+                          redirect: false
+                        },
+                        flow: "DEFAULT",
+                        data: {
+                          orderId: order.order_number, // Use GZ... order number to match backend token generation
+                          token: token,
+                          tokenType: "TXN_TOKEN",
+                          amount: String(amount) // Ensure string
+                        },
+                        handler: {
+                          notifyMerchant: function (eventName: string, eventData: any) {
+                            console.log('Paytm Event:', eventName, eventData);
                           },
-                          flow: "DEFAULT",
-                          data: {
-                            orderId: order.order_number, // Use GZ... order number to match backend token generation
-                            token: token,
-                            tokenType: "TXN_TOKEN",
-                            amount: String(amount) // Ensure string
-                          },
-                            handler: {
-                            notifyMerchant: function(eventName: string, eventData: any) {
-                              console.log('Paytm Event:', eventName, eventData);
-                            },
-                            transactionStatus: function(paymentStatus: any) {
-                              console.log('Payment Status:', paymentStatus);
-                              window.Paytm.CheckoutJS.close();
-                              
-                              // For localhost/verification: Submit data to backend callback to update DB and redirect
-                              if (paymentStatus.STATUS === 'TXN_SUCCESS' || paymentStatus.resultInfo?.resultStatus === 'S') {
-                                 const form = document.createElement('form');
-                                 form.method = 'POST';
-                                 form.action = `${apiService.baseUrl}/api/payments/callback`; // Configured callback URL
-                                 
-                                 // Flatten object and add fields
-                                 Object.keys(paymentStatus).forEach(key => {
-                                    const value = paymentStatus[key];
-                                    if (typeof value === 'object') return; // skip nested mostly
-                                    const input = document.createElement('input');
-                                    input.type = 'hidden';
-                                    input.name = key;
-                                    input.value = String(value);
-                                    form.appendChild(input);
-                                 });
-                                 
-                                 document.body.appendChild(form);
-                                 form.submit();
-                               } else {
-                                 // Handle failure via callback redirect too? Or just toast
-                                 // Ideally redirect to retain robust flow
-                                 const form = document.createElement('form');
-                                 form.method = 'POST';
-                                 form.action = `${apiService.baseUrl}/api/payments/callback`;
-                                 Object.keys(paymentStatus).forEach(key => {
-                                    const value = paymentStatus[key];
-                                    if (typeof value === 'object') return;
-                                    const input = document.createElement('input');
-                                    input.type = 'hidden';
-                                    input.name = key;
-                                    input.value = String(value);
-                                    form.appendChild(input);
-                                 });
-                                 document.body.appendChild(form);
-                                 form.submit();
-                              }
+                          transactionStatus: function (paymentStatus: any) {
+                            console.log('Payment Status:', paymentStatus);
+                            window.Paytm.CheckoutJS.close();
+
+                            // For localhost/verification: Submit data to backend callback to update DB and redirect
+                            if (paymentStatus.STATUS === 'TXN_SUCCESS' || paymentStatus.resultInfo?.resultStatus === 'S') {
+                              const form = document.createElement('form');
+                              form.method = 'POST';
+                              form.action = `${apiService.baseUrl}/api/payments/callback`; // Configured callback URL
+
+                              // Flatten object and add fields
+                              Object.keys(paymentStatus).forEach(key => {
+                                const value = paymentStatus[key];
+                                if (typeof value === 'object') return; // skip nested mostly
+                                const input = document.createElement('input');
+                                input.type = 'hidden';
+                                input.name = key;
+                                input.value = String(value);
+                                form.appendChild(input);
+                              });
+
+                              document.body.appendChild(form);
+                              form.submit();
+                            } else {
+                              // Handle failure via callback redirect too? Or just toast
+                              // Ideally redirect to retain robust flow
+                              const form = document.createElement('form');
+                              form.method = 'POST';
+                              form.action = `${apiService.baseUrl}/api/payments/callback`;
+                              Object.keys(paymentStatus).forEach(key => {
+                                const value = paymentStatus[key];
+                                if (typeof value === 'object') return;
+                                const input = document.createElement('input');
+                                input.type = 'hidden';
+                                input.name = key;
+                                input.value = String(value);
+                                form.appendChild(input);
+                              });
+                              document.body.appendChild(form);
+                              form.submit();
                             }
                           }
-                        };
+                        }
+                      };
 
-                        checkoutJs.init(config).then(() => {
-                            console.log('Paytm init successful. Invoking...');
-                            checkoutJs.invoke();
-                        }).catch((err: any) => {
-                            console.error('Paytm init error:', err);
-                            toast.error('Paytm initialization error: ' + (err?.message || String(err)));
-                        });
-                     });
+                      checkoutJs.init(config).then(() => {
+                        console.log('Paytm init successful. Invoking...');
+                        checkoutJs.invoke();
+                      }).catch((err: any) => {
+                        console.error('Paytm init error:', err);
+                        toast.error('Paytm initialization error: ' + (err?.message || String(err)));
+                      });
+                    });
                   } else {
-                     console.error('window.Paytm.CheckoutJS not found on script load');
+                    console.error('window.Paytm.CheckoutJS not found on script load');
 
-                     toast.error('Payment gateway unavailable');
+                    toast.error('Payment gateway unavailable');
                   }
                 };
                 document.body.appendChild(script);
@@ -1011,7 +1011,7 @@ export function InstantOrderPanel({
             className="p-0 w-full max-w-full left-0 right-0 transition-transform duration-300 ease-in-out"
             style={{ top: '104px', bottom: 0, height: 'calc(100vh - 104px)' }}
           >
-             <style>{`
+            <style>{`
               [data-slot="sheet-content"] > button[class*="absolute"] {
                 display: none !important;
               }
@@ -1021,9 +1021,9 @@ export function InstantOrderPanel({
         </Sheet>
       ) : (
         /* DESKTOP: Right Panel */
-        <div 
+        <div
           className="fixed top-0 right-0 h-full w-[95%] bg-white shadow-2xl z-[60] transform transition-transform duration-300 product-details-panel"
-          style={{ 
+          style={{
             maxWidth: '600px',
             transform: isOpen ? 'translateX(0)' : 'translateX(100%)'
           }}

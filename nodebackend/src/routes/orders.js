@@ -4,6 +4,7 @@ import { asyncHandler, successResponse, paginatedResponse, ApiError } from '../m
 import { authenticate } from '../middleware/auth.js';
 import { validate, schemas } from '../middleware/validate.js';
 import { v4 as uuidv4 } from 'uuid';
+import { generateCustomerInvoiceHtml, generateVendorKOTHtml } from '../utils/invoiceGenerator.js';
 
 const router = express.Router();
 
@@ -60,21 +61,21 @@ const calculateOrderTotal = async (items, vendorId, couponCode = null, feeOverri
 
   // Use overrides if provided, otherwise defaults
   // Note: feeOverrides might contain explicit 0, so check !== undefined
-  const deliveryFee = feeOverrides.delivery_fee !== undefined 
-      ? Number(feeOverrides.delivery_fee) 
-      : (vendor?.delivery_fee || 1);
-  
+  const deliveryFee = feeOverrides.delivery_fee !== undefined
+    ? Number(feeOverrides.delivery_fee)
+    : (vendor?.delivery_fee || 1);
+
   const packagingFee = feeOverrides.packaging_fee !== undefined
-      ? Number(feeOverrides.packaging_fee)
-      : 0;
+    ? Number(feeOverrides.packaging_fee)
+    : 0;
 
   const platformFee = feeOverrides.platform_fee !== undefined
-      ? Number(feeOverrides.platform_fee)
-      : 1;
+    ? Number(feeOverrides.platform_fee)
+    : 1;
 
   let discount = feeOverrides.discount_amount !== undefined
-      ? Number(feeOverrides.discount_amount)
-      : 0;
+    ? Number(feeOverrides.discount_amount)
+    : 0;
 
   // Apply coupon only if discount override NOT provided (or if we want to re-validate)
   // For safety, if frontend provides discount, we use it, but ideal validaton should check coupon validity again.
@@ -104,12 +105,24 @@ const calculateOrderTotal = async (items, vendorId, couponCode = null, feeOverri
   // Calculate taxes
   // If override provided, use it. Otherwise calculate default logic.
   let totalTax;
+  let gstItems = 0;
+  let gstFees = 0;
+
   if (feeOverrides.taxes !== undefined) {
-      totalTax = Number(feeOverrides.taxes);
+    totalTax = Number(feeOverrides.taxes);
+    // Rough estimation for back-filling if needed, or leave 0
+    gstItems = totalTax * 0.7; // Approx
+    gstFees = totalTax * 0.3;
   } else {
-    const itemTax = subtotal - (subtotal / 1.05);
-    const feeTax = (deliveryFee + platformFee) - ((deliveryFee + platformFee) / 1.18);
-    totalTax = Math.round(itemTax + feeTax);
+    // Restaurant Level GST (5%) on Subtotal + Packaging
+    const restaurantBill = subtotal + packagingFee;
+    gstItems = restaurantBill - (restaurantBill / 1.05);
+
+    // Platform Level GST (18%) on Delivery + Platform Fee
+    const platformBill = deliveryFee + platformFee;
+    gstFees = platformBill - (platformBill / 1.18);
+
+    totalTax = Math.round(gstItems + gstFees);
   }
 
   // Total
@@ -123,7 +136,11 @@ const calculateOrderTotal = async (items, vendorId, couponCode = null, feeOverri
     taxes: totalTax, // Use calculated or overridden tax
     discount,
     total,
-    itemDetails
+    itemDetails,
+    gstDetails: {
+      itemTax: Number(gstItems.toFixed(2)),
+      feeTax: Number(gstFees.toFixed(2))
+    }
   };
 };
 
@@ -166,12 +183,12 @@ router.post('/', validate(schemas.createOrder), asyncHandler(async (req, res) =>
       .single();
 
     if (vendorError) {
-        console.error('❌ Vendor Error:', vendorError);
-        throw new ApiError(404, 'Vendor not found');
+      console.error('❌ Vendor Error:', vendorError);
+      throw new ApiError(404, 'Vendor not found');
     }
     if (!vendor) {
-        console.error('❌ Vendor not found');
-        throw new ApiError(404, 'Vendor not found');
+      console.error('❌ Vendor not found');
+      throw new ApiError(404, 'Vendor not found');
     }
     if (!vendor.is_open) throw new ApiError(400, 'Vendor is currently closed');
 
@@ -205,136 +222,138 @@ router.post('/', validate(schemas.createOrder), asyncHandler(async (req, res) =>
         delivery_address: JSON.stringify(delivery_address),
         delivery_phone,
         subtotal: calculation.subtotal,
-      delivery_fee: calculation.deliveryFee,
-      packaging_fee: calculation.packagingFee,
-      platform_fee: calculation.platformFee,
-      taxes: calculation.taxes,
-      discount_amount: calculation.discount,
-      tip_amount,
-      total_amount: calculation.total + tip_amount,
-      status: 'created', // Changed from 'placed' to distinguish initial state
-      payment_method,
-      payment_status: payment_method === 'cod' ? 'pending' : 'pending',
-      special_instructions,
-      order_source,
-      coupon_code,
-      mock_shadowfax // Added for Dev/Mock handling
-    })
-    .select()
-    .single();
-
-  if (orderError) {
-      console.error('❌ DB Error inserting order:', orderError);
-      throw new ApiError(500, `Failed to create order: ${orderError.message}`);
-  }
-
-  // Create initial delivery record (moved from orders table)
-  const { error: deliveryError } = await supabaseAdmin
-    .from('deliveries')
-    .insert({
-      order_id: order.id,
-      delivery_otp: deliveryOtp,
-      partner_id: 'shadowfax', // Default partner
-      status: 'pending' // Initial status
-    });
-
-  if (deliveryError) {
-     console.error('❌ DB Error inserting initial delivery:', deliveryError);
-     // Optional: Should we rollback? For now, logging error.
-  }
-
-  // Create order items
-  const orderItems = calculation.itemDetails.map(item => ({
-    order_id: order.id,
-    product_id: item.product_id,
-    vendor_id: vendor_id, // Added matching schema
-    product_name: item.product_name,
-    quantity: item.quantity,
-    unit_price: item.unit_price,
-    total_price: item.total_price,
-    // variant_id removed
-    customizations: item.addons ? JSON.stringify(item.addons) : null, // Mapped addons to customizations
-    special_instructions: item.special_instructions
-  }));
-
-  const { error: itemsError } = await supabaseAdmin
-    .from('order_items')
-    .insert(orderItems);
-
-  if (itemsError) {
-    console.error('❌ DB Error inserting order items:', itemsError);
-    // Rollback order
-    await supabaseAdmin.from('orders').delete().eq('id', order.id);
-    throw new ApiError(500, `Failed to create order items: ${itemsError.message}`);
-  }
-
-  // Update coupon usage if used
-  if (coupon_code && calculation.discount > 0) {
-    const { data: coupon } = await supabaseAdmin
-      .from('coupons')
-      .select('id, used_count')
-      .eq('code', coupon_code.toUpperCase())
+        delivery_fee: calculation.deliveryFee,
+        packaging_fee: calculation.packagingFee,
+        platform_fee: calculation.platformFee,
+        taxes: calculation.taxes,
+        discount_amount: calculation.discount,
+        tip_amount,
+        total_amount: calculation.total + tip_amount,
+        status: 'created', // Changed from 'placed' to distinguish initial state
+        payment_method,
+        gst_items: calculation.gstDetails.itemTax,
+        gst_fees: calculation.gstDetails.feeTax,
+        payment_status: payment_method === 'cod' ? 'pending' : 'pending',
+        special_instructions,
+        order_source,
+        coupon_code,
+        mock_shadowfax // Added for Dev/Mock handling
+      })
+      .select()
       .single();
 
-    if (coupon) {
-      await supabaseAdmin
-        .from('coupon_usage')
-        .insert({
-          coupon_id: coupon.id,
-          user_id: req.user.id,
-          order_id: order.id,
-          discount_applied: calculation.discount
-        });
+    if (orderError) {
+      console.error('❌ DB Error inserting order:', orderError);
+      throw new ApiError(500, `Failed to create order: ${orderError.message}`);
+    }
 
-      await supabaseAdmin
+    // Create initial delivery record (moved from orders table)
+    const { error: deliveryError } = await supabaseAdmin
+      .from('deliveries')
+      .insert({
+        order_id: order.id,
+        delivery_otp: deliveryOtp,
+        partner_id: 'shadowfax', // Default partner
+        status: 'pending' // Initial status
+      });
+
+    if (deliveryError) {
+      console.error('❌ DB Error inserting initial delivery:', deliveryError);
+      // Optional: Should we rollback? For now, logging error.
+    }
+
+    // Create order items
+    const orderItems = calculation.itemDetails.map(item => ({
+      order_id: order.id,
+      product_id: item.product_id,
+      vendor_id: vendor_id, // Added matching schema
+      product_name: item.product_name,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      total_price: item.total_price,
+      // variant_id removed
+      customizations: item.addons ? JSON.stringify(item.addons) : null, // Mapped addons to customizations
+      special_instructions: item.special_instructions
+    }));
+
+    const { error: itemsError } = await supabaseAdmin
+      .from('order_items')
+      .insert(orderItems);
+
+    if (itemsError) {
+      console.error('❌ DB Error inserting order items:', itemsError);
+      // Rollback order
+      await supabaseAdmin.from('orders').delete().eq('id', order.id);
+      throw new ApiError(500, `Failed to create order items: ${itemsError.message}`);
+    }
+
+    // Update coupon usage if used
+    if (coupon_code && calculation.discount > 0) {
+      const { data: coupon } = await supabaseAdmin
         .from('coupons')
-        .update({ used_count: coupon.used_count + 1 })
-        .eq('id', coupon.id);
+        .select('id, used_count')
+        .eq('code', coupon_code.toUpperCase())
+        .single();
+
+      if (coupon) {
+        await supabaseAdmin
+          .from('coupon_usage')
+          .insert({
+            coupon_id: coupon.id,
+            user_id: req.user.id,
+            order_id: order.id,
+            discount_applied: calculation.discount
+          });
+
+        await supabaseAdmin
+          .from('coupons')
+          .update({ used_count: coupon.used_count + 1 })
+          .eq('id', coupon.id);
+      }
     }
-  }
 
-  // Clear cart for this vendor
-  await supabaseAdmin
-    .from('cart')
-    .delete()
-    .eq('user_phone', req.user.phone)
-    .eq('vendor_id', vendor_id);
+    // Clear cart for this vendor
+    await supabaseAdmin
+      .from('cart')
+      .delete()
+      .eq('user_phone', req.user.phone)
+      .eq('vendor_id', vendor_id);
 
-  // Update user stats
-  await supabaseAdmin
-    .from('users')
-    .update({
-      total_orders: req.user.total_orders + 1,
-      total_spent: (req.user.total_spent || 0) + calculation.total + tip_amount,
-      last_order_at: new Date().toISOString()
-    })
-    .eq('id', req.user.id);
+    // Update user stats
+    await supabaseAdmin
+      .from('users')
+      .update({
+        total_orders: req.user.total_orders + 1,
+        total_spent: (req.user.total_spent || 0) + calculation.total + tip_amount,
+        last_order_at: new Date().toISOString()
+      })
+      .eq('id', req.user.id);
 
-  // Create notification
-  await supabaseAdmin
-    .from('notifications')
-    .insert({
-      user_id: req.user.id,
-      type: 'order_placed',
-      title: 'Order Placed!',
-      message: `Your order #${orderNumber} has been placed successfully.`,
-      data: { order_id: order.id, order_number: orderNumber }
-    });
+    // Create notification
+    await supabaseAdmin
+      .from('notifications')
+      .insert({
+        user_id: req.user.id,
+        type: 'order_placed',
+        title: 'Order Placed!',
+        message: `Your order #${orderNumber} has been placed successfully.`,
+        data: { order_id: order.id, order_number: orderNumber }
+      });
 
-  successResponse(res, {
-    order,
-    items: calculation.itemDetails,
-    calculation: {
-      subtotal: calculation.subtotal,
-      deliveryFee: calculation.deliveryFee,
-      discount: calculation.discount,
-      tip: tip_amount,
-      total: calculation.total + tip_amount
-    }
-  }, 'Order placed successfully', 201);
+    successResponse(res, {
+      order,
+      items: calculation.itemDetails,
+      calculation: {
+        subtotal: calculation.subtotal,
+        deliveryFee: calculation.deliveryFee,
+        discount: calculation.discount,
+        tip: tip_amount,
+        total: calculation.total + tip_amount
+      }
+    }, 'Order placed successfully', 201);
   } catch (error) {
-     console.error('❌ Create Order Unhandled Error:', error);
-     throw error; // Re-throw to be caught by asyncHandler
+    console.error('❌ Create Order Unhandled Error:', error);
+    throw error; // Re-throw to be caught by asyncHandler
   }
 }));
 
@@ -365,9 +384,9 @@ router.get('/', asyncHandler(async (req, res) => {
 
   // console.log(`[DEBUG] GET /orders for User ${req.user.id} (${req.user.phone}) - Found: ${count}`);
   if (orders && orders.length > 0) {
-      // console.log(`[DEBUG] First order ID: ${orders[0].id} Status: ${orders[0].status}`);
+    // console.log(`[DEBUG] First order ID: ${orders[0].id} Status: ${orders[0].status}`);
   } else {
-      // console.log(`[DEBUG] No orders found for query details.`);
+    // console.log(`[DEBUG] No orders found for query details.`);
   }
 
   if (error) throw new ApiError(500, 'Failed to fetch orders');
@@ -401,9 +420,9 @@ router.get('/:id', asyncHandler(async (req, res) => {
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
   if (isUUID) {
-      query = query.eq('id', id);
+    query = query.eq('id', id);
   } else {
-      query = query.eq('order_number', id);
+    query = query.eq('order_number', id);
   }
 
   const { data: order, error } = await query.eq('user_id', req.user.id).single();
@@ -412,10 +431,10 @@ router.get('/:id', asyncHandler(async (req, res) => {
 
   // Verify delivery attachment and Normalize (Supabase 1:1 returns Object, Frontend expects Array)
   if (order.delivery) {
-      if (!Array.isArray(order.delivery)) {
-          order.delivery = [order.delivery];
-      }
-      // Logs removed to reduce noise per user request
+    if (!Array.isArray(order.delivery)) {
+      order.delivery = [order.delivery];
+    }
+    // Logs removed to reduce noise per user request
   }
 
   successResponse(res, order);
@@ -613,27 +632,27 @@ router.get('/:id/track', asyncHandler(async (req, res) => {
   // 🚚 Fetch 3rd Party Tracking if available
   // Refactored to check 'deliveries' table first
   let deliveryTracking = null;
-  
+
   // order.delivery is an array, take the latest one (assuming sorting or trigger handles order)
   // Ideally sort by created_at desc in query but Supabase select needs explicit ordering or we sort here
-  const activeDelivery = order.delivery && order.delivery.length > 0 
-        ? order.delivery.sort((a,b) => new Date(b.created_at) - new Date(a.created_at))[0] 
-        : null;
+  const activeDelivery = order.delivery && order.delivery.length > 0
+    ? order.delivery.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0]
+    : null;
 
   if (activeDelivery) {
-        deliveryTracking = {
-            provider: activeDelivery.partner_id || 'shadowfax',
-            rider_name: activeDelivery.rider_name,
-            rider_phone: activeDelivery.rider_phone,
-            rider_location: activeDelivery.rider_coordinates, 
-            tracking_url: activeDelivery.tracking_url,
-            pickup_otp: activeDelivery.pickup_otp,
-            delivery_otp: activeDelivery.delivery_otp,
-            status: activeDelivery.status
-        };
-        // Shadowfax On-Demand Check (if we still need to hit their API live)
-        // Only if status is incomplete and we don't trust our DB? 
-        // For now, rely on Webhook updates stored in DB.
+    deliveryTracking = {
+      provider: activeDelivery.partner_id || 'shadowfax',
+      rider_name: activeDelivery.rider_name,
+      rider_phone: activeDelivery.rider_phone,
+      rider_location: activeDelivery.rider_coordinates,
+      tracking_url: activeDelivery.tracking_url,
+      pickup_otp: activeDelivery.pickup_otp,
+      delivery_otp: activeDelivery.delivery_otp,
+      status: activeDelivery.status
+    };
+    // Shadowfax On-Demand Check (if we still need to hit their API live)
+    // Only if status is incomplete and we don't trust our DB? 
+    // For now, rely on Webhook updates stored in DB.
   }
 
   successResponse(res, {
@@ -646,16 +665,59 @@ router.get('/:id/track', asyncHandler(async (req, res) => {
     })),
     estimated_delivery: order.estimated_delivery_time,
     rider: deliveryTracking ? {
-        name: deliveryTracking.rider_name,
-        phone: deliveryTracking.rider_phone,
-        location: deliveryTracking.rider_location
-    } : null, 
+      name: deliveryTracking.rider_name,
+      phone: deliveryTracking.rider_phone,
+      location: deliveryTracking.rider_location
+    } : null,
     delivery_tracking: deliveryTracking,
     vendor_location: order.vendor ? {
       lat: order.vendor.latitude,
       lng: order.vendor.longitude
     } : null
   });
+}));
+
+// ============================================
+// GET INVOICE (HTML)
+// GET /api/orders/:id/invoice
+// ============================================
+router.get('/:id/invoice', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const { data: order, error } = await supabaseAdmin
+    .from('orders')
+    .select('*, items:order_items(*), vendor:vendors(*)')
+    .eq('id', id)
+    .single();
+
+  if (error || !order) throw new ApiError(404, 'Order not found');
+
+  // Generate HTML
+  const html = generateCustomerInvoiceHtml(order);
+
+  res.set('Content-Type', 'text/html');
+  res.send(html);
+}));
+
+// ============================================
+// GET KITCHEN TICKET (KOT) (HTML)
+// GET /api/orders/:id/kot
+// ============================================
+router.get('/:id/kot', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const { data: order, error } = await supabaseAdmin
+    .from('orders')
+    .select('*, items:order_items(*), vendor:vendors(*)')
+    .eq('id', id)
+    .single();
+
+  if (error || !order) throw new ApiError(404, 'Order not found');
+
+  const html = generateVendorKOTHtml(order);
+
+  res.set('Content-Type', 'text/html');
+  res.send(html);
 }));
 
 export default router;

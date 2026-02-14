@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { Minimize2, Share2, Phone, AlertCircle } from 'lucide-react';
 import { OrderTrackingMap } from '../components/OrderTrackingMap';
@@ -10,11 +10,12 @@ import { toast } from 'sonner';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../contexts/AuthContext';
 import { nodeApiService } from '../utils/nodeApi';
+import { LoadingScreen } from '../components/common/LoadingScreen';
 
 export function OrderTrackingPage() {
     const { currentRoute, navigate: routerNavigate } = useRouter();
     // Extract orderId from the URL path manually since we aren't using <Route> components
-    const pathId = currentRoute.split('/tracking/')[1];
+    const pathId = currentRoute ? currentRoute.split('/tracking/')[1] : null;
 
     const { activeOrder: contextOrder, startTracking, minimizeOrder } = useOrderTracking();
     const { user } = useAuth();
@@ -171,7 +172,7 @@ export function OrderTrackingPage() {
     }, [orderId]);
 
     // Locations (Dynamic with strict No-Fallback)
-    const getVendorLocation = () => {
+    const storeLocation = useMemo(() => {
         if (localOrder?.vendor?.latitude && localOrder?.vendor?.longitude) {
             return {
                 lat: Number(localOrder.vendor.latitude),
@@ -179,9 +180,9 @@ export function OrderTrackingPage() {
             };
         }
         return null;
-    };
+    }, [localOrder?.vendor?.latitude, localOrder?.vendor?.longitude]);
 
-    const getUserLocation = () => {
+    const userLocation = useMemo(() => {
         try {
             if (localOrder?.delivery_address) {
                 const addr = typeof localOrder.delivery_address === 'string'
@@ -199,10 +200,7 @@ export function OrderTrackingPage() {
             console.error("Error parsing delivery address:", e);
         }
         return null;
-    };
-
-    const storeLocation = getVendorLocation();
-    const userLocation = getUserLocation();
+    }, [localOrder?.delivery_address]);
 
     // 1. Extract DB Delivery
     const activeDelivery = localOrder?.delivery && localOrder.delivery.length > 0 ? localOrder.delivery[0] : null;
@@ -319,6 +317,30 @@ export function OrderTrackingPage() {
         console.log('📊 Merged Delivery:', mergedDelivery);
     }, [displayStatus, mergedDelivery, driverLoc]);
 
+    // Stabliize callback to prevent infinite render loop in Map
+    const handleDurationUpdate = useCallback((time: string) => {
+        setEta(time);
+    }, []);
+
+    if (loading) {
+        return <LoadingScreen isOpen={true} messages={["Finding your order...", "Connecting to kitchen...", "Tracking delivery..."]} />;
+    }
+
+    if (notFound || !localOrder) {
+        return (
+            <div className="flex flex-col items-center justify-center h-screen bg-gray-50 p-6 text-center">
+                <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4">
+                    <AlertCircle className="w-8 h-8 text-red-500" />
+                </div>
+                <h1 className="text-xl font-bold text-gray-900 mb-2">Order Not Found</h1>
+                <p className="text-gray-500 mb-6">We couldn't track this order. It may have been cancelled or the link is invalid.</p>
+                <Button onClick={() => routerNavigate('/')} className="bg-gutzo-brand hover:bg-gutzo-brand-dark text-white px-8">
+                    Go to Home
+                </Button>
+            </div>
+        );
+    }
+
     return (
         <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -370,7 +392,7 @@ export function OrderTrackingPage() {
                     userLocation={userLocation}
                     driverLocation={mergedDelivery?.rider_location || driverLoc}
                     status={displayStatus as any}
-                    onDurationUpdate={(time) => setEta(time)}
+                    onDurationUpdate={handleDurationUpdate}
                 />
             </div>
 

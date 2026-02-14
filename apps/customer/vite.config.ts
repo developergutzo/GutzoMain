@@ -66,7 +66,7 @@ export default defineConfig({
     port: 3000,
     open: true,
     host: true,
-    allowedHosts: ["192-168-1-36.nip.io"],
+    allowedHosts: ["192-168-1-36.nip.io", "10.128.0.3", "all"],
     proxy: {
       "/api": {
         target: "http://127.0.0.1:5000",
