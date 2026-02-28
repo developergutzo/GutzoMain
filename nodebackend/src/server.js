@@ -86,7 +86,8 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-user-phone', 'x-vendor-id', 'x-admin-key']
+  //allowedHeaders: ['Content-Type', 'Authorization', 'x-user-phone', 'x-vendor-id', 'x-admin-key']
+  allowedHeaders: '*'
 }));
 
 // Security
