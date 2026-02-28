@@ -320,74 +320,69 @@ export function OrdersPanel({ className = "", onViewOrderDetails, recentOrderDat
                       {expanded ? 'Collapse' : 'Details'}
                     </Button>
 
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-10 border-gray-200 text-gray-600 hover:bg-gray-50 flex items-center justify-center gap-1.5"
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        try {
-                          // Fetch invoice as PDF with proper auth headers
-                          const url = `${apiService.baseUrl}/api/orders/${order.id}/invoice?format=pdf`;
-                          const { data: { session } } = await (await import('../utils/supabase/client')).supabase.auth.getSession();
+                    {(order.status === 'delivered' || order.status === 'completed') && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 h-10 border-gray-200 text-gray-600 hover:bg-gray-50 flex items-center justify-center gap-1.5"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          try {
+                            // Fetch invoice as PDF with proper auth headers
+                            const url = `${apiService.baseUrl}/api/orders/${order.id}/invoice?format=pdf`;
+                            const { data: { session } } = await (await import('../utils/supabase/client')).supabase.auth.getSession();
 
-                          const headers: any = {
-                            'x-user-phone': user?.phone || '',
-                          };
-                          if (session?.access_token) {
-                            headers['Authorization'] = `Bearer ${session.access_token}`;
+                            const headers: any = {
+                              'x-user-phone': user?.phone || '',
+                            };
+                            if (session?.access_token) {
+                              headers['Authorization'] = `Bearer ${session.access_token}`;
+                            }
+
+                            const response = await fetch(url, { headers });
+                            if (!response.ok) throw new Error('Failed to fetch invoice');
+
+                            // Download logic for PDF
+                            const blob = await response.blob();
+                            const blobUrl = URL.createObjectURL(blob);
+
+                            const a = document.createElement('a');
+                            a.href = blobUrl;
+                            a.download = `Invoice_${order.order_number || order.id}.pdf`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+
+                            // Clean up blob URL after a short delay
+                            setTimeout(() => { URL.revokeObjectURL(blobUrl) }, 1000);
+                          } catch (err) {
+                            console.error('Invoice error:', err);
+                            toast.error('Failed to open invoice');
                           }
+                        }}
+                      >
+                        <FileText className="w-4 h-4" />
+                        Invoice
+                      </Button>
+                    )}
 
-                          const response = await fetch(url, { headers });
-                          if (!response.ok) throw new Error('Failed to fetch invoice');
-
-                          // Download logic for PDF
-                          const blob = await response.blob();
-                          const blobUrl = URL.createObjectURL(blob);
-
-                          const a = document.createElement('a');
-                          a.href = blobUrl;
-                          a.download = `Invoice_${order.order_number || order.id}.pdf`;
-                          document.body.appendChild(a);
-                          a.click();
-                          document.body.removeChild(a);
-
-                          // Clean up blob URL after a short delay
-                          setTimeout(() => { URL.revokeObjectURL(blobUrl) }, 1000);
-                        } catch (err) {
-                          console.error('Invoice error:', err);
-                          toast.error('Failed to open invoice');
-                        }
-                      }}
-                    >
-                      <FileText className="w-4 h-4" />
-                      Invoice
-                    </Button>
-
-                    <Button
-                      variant="default"
-                      size="sm"
-                      className={`flex-1 h-10 font-medium shadow-sm ${order.status === 'cancelled' || order.status === 'rejected'
-                        ? 'bg-red-600 hover:bg-red-700 text-white cursor-default'
-                        : order.status === 'delivered' || order.status === 'completed'
-                          ? 'bg-green-600 hover:bg-green-700 text-white cursor-default'
-                          : 'bg-gutzo-primary hover:bg-gutzo-primary-hover text-white cursor-pointer'
-                        }`}
-                      disabled={['cancelled', 'rejected', 'delivered', 'completed'].includes(order.status)}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (onViewOrderDetails) {
-                          onViewOrderDetails(order); // Keep existing hook just in case
-                        }
-                        // Navigate to tracking
-                        window.location.href = `/tracking/${order.order_number}`;
-                      }}
-                    >
-                      {order.status === 'cancelled' ? 'Cancelled' :
-                        order.status === 'rejected' ? 'Rejected' :
-                          order.status === 'delivered' ? 'Delivered' :
-                            order.status === 'completed' ? 'Completed' : 'Track Order'}
-                    </Button>
+                    {!['cancelled', 'rejected', 'delivered', 'completed'].includes(order.status) && (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="flex-1 h-10 font-medium shadow-sm bg-gutzo-primary hover:bg-gutzo-primary-hover text-white cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onViewOrderDetails) {
+                            onViewOrderDetails(order); // Keep existing hook just in case
+                          }
+                          // Navigate to tracking
+                          window.location.href = `/tracking/${order.order_number}`;
+                        }}
+                      >
+                        Track Order
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
