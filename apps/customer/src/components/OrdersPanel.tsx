@@ -223,7 +223,7 @@ export function OrdersPanel({ className = "", onViewOrderDetails, recentOrderDat
                         <span className="text-sm font-semibold text-gray-900 break-all">
                           #{order.order_number || order.id.slice(0, 8)}
                         </span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium uppercase tracking-wide whitespace-nowrap ${order.status === 'delivered' || order.status === 'confirmed'
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium uppercase tracking-wide whitespace-nowrap ${order.status === 'delivered' || order.status === 'completed' || order.status === 'confirmed'
                           ? 'bg-green-100 text-green-700'
                           : order.status === 'cancelled' || order.status === 'rejected'
                             ? 'bg-red-100 text-red-700'
