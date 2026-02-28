@@ -14,10 +14,10 @@ const DEFAULT_MESSAGES = [
   "Almost there..."
 ];
 
-export const LoadingScreen: React.FC<LoadingScreenProps> = ({ 
-  isOpen, 
-  messages = DEFAULT_MESSAGES, 
-  interval = 2000 
+export const LoadingScreen: React.FC<LoadingScreenProps> = ({
+  isOpen,
+  messages = DEFAULT_MESSAGES,
+  interval = 2000
 }) => {
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
 
@@ -43,27 +43,27 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
           {/* Ripple/Pulse Effect */}
           <div className="absolute inset-0 bg-gutzo-brand/10 rounded-full blur-2xl animate-ping" style={{ animationDuration: '2s' }}></div>
           <div className="absolute inset-0 bg-gutzo-brand/20 rounded-full blur-xl animate-pulse scale-150"></div>
-          
+
           <img
-            src="https://api.gutzo.in/service/storage/v1/object/public/Gutzo/GUTZO.svg"
+            src="https://storage.googleapis.com/gutzo/gutzobrandlogo/GUTZOH"
             alt="Gutzo"
             className="w-32 h-auto relative z-10 animate-bounce-slight"
-            style={{ 
+            style={{
               filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.1))',
               animation: 'bounce 2s infinite ease-in-out'
             }}
           />
         </div>
-        
+
         <div className="flex flex-col items-center gap-3">
-          <p 
+          <p
             className="text-lg font-medium text-gray-700 transition-all duration-500 transform"
             key={currentMessageIndex} // Key allows React to animate the change if strict mode or animation libs were used, here it ensures clean re-render
             style={{ fontFamily: 'Poppins' }}
           >
             {messages[currentMessageIndex]}
           </p>
-          
+
           <div className="flex gap-1 mt-2">
             <span className="w-2 h-2 rounded-full bg-gutzo-brand animate-bounce" style={{ animationDelay: '0ms' }}></span>
             <span className="w-2 h-2 rounded-full bg-gutzo-brand animate-bounce" style={{ animationDelay: '150ms' }}></span>

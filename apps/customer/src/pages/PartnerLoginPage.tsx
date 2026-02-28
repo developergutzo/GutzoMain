@@ -13,10 +13,10 @@ type ViewState = 'login' | 'forgot-email' | 'verify-otp' | 'reset-password';
 
 export function PartnerLoginPage() {
   const { navigate } = useRouter();
-  
+
   // View State
   const [view, setView] = useState<ViewState>('login');
-  
+
   // Data State
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -34,33 +34,33 @@ export function PartnerLoginPage() {
 
   // Handlers
   const handleLoginSubmit = async (e: React.FormEvent) => {
-      e.preventDefault();
-      setIsLoading(true);
-      setErrorMsg('');
+    e.preventDefault();
+    setIsLoading(true);
+    setErrorMsg('');
 
-      if (!validateEmail(email)) {
-        setErrorMsg("Please enter a valid email address");
-        setIsLoading(false);
-        return;
+    if (!validateEmail(email)) {
+      setErrorMsg("Please enter a valid email address");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await apiService.vendorLogin({ email, password });
+
+      if (response && response.success && response.data) {
+        localStorage.setItem('vendor_data', JSON.stringify(response.data.vendor));
+        toast.success(`Welcome back, ${response.data.vendor.name}!`);
+        navigate('/partner/dashboard');
       }
-
-      try {
-          const response = await apiService.vendorLogin({ email, password });
-
-          if (response && response.success && response.data) {
-              localStorage.setItem('vendor_data', JSON.stringify(response.data.vendor));
-              toast.success(`Welcome back, ${response.data.vendor.name}!`);
-              navigate('/partner/dashboard');
-          }
-      } catch (error: any) {
-          if (error.message === 'Vendor not found' || error.status === 404) {
-             setErrorMsg("Account not found. Please register as a partner first.");
-          } else {
-             setErrorMsg(error.message || "Login failed");
-          }
-      } finally {
-          setIsLoading(false);
+    } catch (error: any) {
+      if (error.message === 'Vendor not found' || error.status === 404) {
+        setErrorMsg("Account not found. Please register as a partner first.");
+      } else {
+        setErrorMsg(error.message || "Login failed");
       }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Timer Effect
@@ -115,7 +115,7 @@ export function PartnerLoginPage() {
 
   const handleResendOtp = async () => {
     if (resendTimer > 0) return;
-    
+
     setIsLoading(true);
     setErrorMsg('');
     try {
@@ -170,7 +170,7 @@ export function PartnerLoginPage() {
 
   // Render Helpers
   const renderHeader = () => {
-    switch(view) {
+    switch (view) {
       case 'login': return { title: "Kitchen Portal", desc: "Enter your password to login." };
       case 'forgot-email': return { title: "Reset Password", desc: "Enter your email to receive an OTP." };
       case 'verify-otp': return { title: "Verify OTP", desc: `Enter the code sent to ${email}` };
@@ -182,30 +182,30 @@ export function PartnerLoginPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-       <button
-          onClick={() => {
-            if (view === 'login') {
-              navigate('/');
-            } else {
-              setErrorMsg('');
-              if(view === 'verify-otp') setView('forgot-email');
-              else setView('login');
-            }
-          }}
-          className="absolute top-4 left-4 text-[#1A1A1A] hover:opacity-70 transition-opacity"
-          style={{ fontSize: 24, lineHeight: 1, background: 'none', border: 'none', cursor: 'pointer' }}
-          aria-label="Back"
-        >
-          &larr;
-        </button>
+      <button
+        onClick={() => {
+          if (view === 'login') {
+            navigate('/');
+          } else {
+            setErrorMsg('');
+            if (view === 'verify-otp') setView('forgot-email');
+            else setView('login');
+          }
+        }}
+        className="absolute top-4 left-4 text-[#1A1A1A] hover:opacity-70 transition-opacity"
+        style={{ fontSize: 24, lineHeight: 1, background: 'none', border: 'none', cursor: 'pointer' }}
+        aria-label="Back"
+      >
+        &larr;
+      </button>
 
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-8">
-           <ImageWithFallback
-              src="https://api.gutzo.in/service/storage/v1/object/public/Gutzo/GUTZO.svg"
-              alt="Gutzo"
-              className="h-12 w-auto"
-            />
+          <ImageWithFallback
+            src="https://storage.googleapis.com/gutzo/gutzobrandlogo/GUTZOH"
+            alt="Gutzo"
+            className="h-12 w-auto"
+          />
         </div>
 
         <Card className="shadow-lg border-0">
@@ -214,16 +214,16 @@ export function PartnerLoginPage() {
             <CardDescription>{headerData.desc}</CardDescription>
           </CardHeader>
           <CardContent>
-            
+
             {/* LOGIN FORM */}
             {view === 'login' && (
               <form onSubmit={handleLoginSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
-                  <Input 
-                    id="email" 
+                  <Input
+                    id="email"
                     type="email"
-                    placeholder="vendor@example.com" 
+                    placeholder="vendor@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -231,22 +231,22 @@ export function PartnerLoginPage() {
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                      <Label htmlFor="password">Password</Label>
-                      <button type="button" onClick={() => setView('forgot-email')} className="text-xs text-[#1BA672] hover:underline">Forgot password?</button>
+                    <Label htmlFor="password">Password</Label>
+                    <button type="button" onClick={() => setView('forgot-email')} className="text-xs text-[#1BA672] hover:underline">Forgot password?</button>
                   </div>
-                  <Input 
-                      id="password" 
-                      type="password"
-                      placeholder="••••••••" 
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
                   />
                 </div>
                 {errorMsg && <div className="text-red-500 text-sm text-center">{errorMsg}</div>}
-                <Button 
-                  type="submit" 
-                  className="w-full text-white" 
+                <Button
+                  type="submit"
+                  className="w-full text-white"
                   style={{ backgroundColor: '#1BA672' }}
                   disabled={isLoading}
                 >
@@ -261,19 +261,19 @@ export function PartnerLoginPage() {
               <form onSubmit={handleForgotRequest} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="reset-email">Email Address</Label>
-                  <Input 
-                    id="reset-email" 
+                  <Input
+                    id="reset-email"
                     type="email"
-                    placeholder="vendor@example.com" 
+                    placeholder="vendor@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
                   />
                 </div>
                 {errorMsg && <div className="text-red-500 text-sm text-center">{errorMsg}</div>}
-                <Button 
-                  type="submit" 
-                  className="w-full text-white" 
+                <Button
+                  type="submit"
+                  className="w-full text-white"
                   style={{ backgroundColor: '#1BA672' }}
                   disabled={isLoading}
                 >
@@ -287,10 +287,10 @@ export function PartnerLoginPage() {
               <form onSubmit={handleVerifyOtp} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="otp">Enter OTP</Label>
-                  <Input 
-                    id="otp" 
+                  <Input
+                    id="otp"
                     type="text"
-                    placeholder="Enter OTP" 
+                    placeholder="Enter OTP"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     className="text-center text-xl tracking-widest placeholder:text-gray-50"
@@ -299,16 +299,16 @@ export function PartnerLoginPage() {
                   />
                 </div>
                 {errorMsg && <div className="text-red-500 text-sm text-center">{errorMsg}</div>}
-                <Button 
-                  type="submit" 
-                  className="w-full text-white" 
+                <Button
+                  type="submit"
+                  className="w-full text-white"
                   style={{ backgroundColor: '#1BA672' }}
                   disabled={isLoading}
                 >
                   {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify OTP"}
                 </Button>
 
-                
+
                 <div className="text-center mt-4">
                   {resendTimer > 0 ? (
                     <p className="text-sm text-gray-500">
@@ -333,8 +333,8 @@ export function PartnerLoginPage() {
               <form onSubmit={handleResetPassword} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="new-pass">New Password</Label>
-                  <Input 
-                    id="new-pass" 
+                  <Input
+                    id="new-pass"
                     type="password"
                     placeholder="Min 6 chars"
                     value={newPassword}
@@ -344,8 +344,8 @@ export function PartnerLoginPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="confirm-pass">Confirm Password</Label>
-                  <Input 
-                    id="confirm-pass" 
+                  <Input
+                    id="confirm-pass"
                     type="password"
                     placeholder="Re-enter password"
                     value={confirmPassword}
@@ -354,9 +354,9 @@ export function PartnerLoginPage() {
                   />
                 </div>
                 {errorMsg && <div className="text-red-500 text-sm text-center">{errorMsg}</div>}
-                <Button 
-                  type="submit" 
-                  className="w-full text-white" 
+                <Button
+                  type="submit"
+                  className="w-full text-white"
                   style={{ backgroundColor: '#1BA672' }}
                   disabled={isLoading}
                 >
@@ -367,7 +367,7 @@ export function PartnerLoginPage() {
 
           </CardContent>
         </Card>
-        
+
         <p className="text-center text-sm text-gray-500 mt-6">
           Having trouble? <a href="/contact" className="font-semibold text-[#1BA672] hover:underline">Contact Support</a>
         </p>

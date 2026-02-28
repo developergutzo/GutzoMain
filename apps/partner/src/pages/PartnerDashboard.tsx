@@ -125,7 +125,7 @@ export function PartnerDashboard() {
       <aside className="w-full lg:w-64 flex-shrink-0 bg-white border-b lg:border-b-0 lg:border-r flex flex-col z-20 lg:h-full">
         <div className="h-16 md:h-20 flex items-center px-4 md:px-6 border-b gap-3 flex-shrink-0">
           <ImageWithFallback
-            src="https://api.gutzo.in/service/storage/v1/object/public/Gutzo/GUTZO.svg"
+            src="https://storage.googleapis.com/gutzo/gutzobrandlogo/GUTZOH"
             alt="Gutzo"
             className="object-contain block"
             style={{ width: '100px', height: 'auto' }}
@@ -139,8 +139,8 @@ export function PartnerDashboard() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors w-auto md:w-full whitespace-nowrap ${activeTab === tab.id
-                  ? 'bg-[#E8F6F1] text-[#1BA672]'
-                  : 'text-gray-600 hover:bg-gray-50'
+                ? 'bg-[#E8F6F1] text-[#1BA672]'
+                : 'text-gray-600 hover:bg-gray-50'
                 }`}
             >
               <tab.icon className="w-5 h-5 flex-shrink-0" />
