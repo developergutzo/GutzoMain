@@ -1,6 +1,6 @@
-
 import fs from 'fs';
 import path from 'path';
+import puppeteer from 'puppeteer';
 
 // CSS for Invoice (Common)
 const invoiceStyles = `
@@ -281,4 +281,51 @@ export const generateVendorKOTHtml = (order) => {
 </body>
 </html>
     `;
+};
+
+/**
+ * Generate PDF from Invoice HTML
+ */
+export const generateInvoicePDF = async (order) => {
+    const html = generateCustomerInvoiceHtml(order);
+
+    let browser;
+    try {
+        browser = await puppeteer.launch({
+            headless: 'new',
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-accelerated-2d-canvas',
+                '--disable-gpu'
+            ],
+            timeout: 30000
+        });
+
+        const page = await browser.newPage();
+        await page.setContent(html, {
+            waitUntil: 'networkidle0',
+            timeout: 30000
+        });
+
+        const pdf = await page.pdf({
+            format: 'A4',
+            printBackground: true,
+            margin: {
+                top: '20px',
+                right: '20px',
+                bottom: '20px',
+                left: '20px'
+            }
+        });
+
+        return pdf;
+    } catch (error) {
+        throw new Error(`Failed to generate PDF: ${error.message}`);
+    } finally {
+        if (browser) {
+            await browser.close();
+        }
+    }
 };

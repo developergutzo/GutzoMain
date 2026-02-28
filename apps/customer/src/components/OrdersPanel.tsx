@@ -327,8 +327,8 @@ export function OrdersPanel({ className = "", onViewOrderDetails, recentOrderDat
                       onClick={async (e) => {
                         e.stopPropagation();
                         try {
-                          // Fetch invoice with proper auth headers
-                          const url = `${apiService.baseUrl}/api/orders/${order.id}/invoice`;
+                          // Fetch invoice as PDF with proper auth headers
+                          const url = `${apiService.baseUrl}/api/orders/${order.id}/invoice?format=pdf`;
                           const { data: { session } } = await (await import('../utils/supabase/client')).supabase.auth.getSession();
 
                           const headers: any = {
@@ -341,13 +341,19 @@ export function OrdersPanel({ className = "", onViewOrderDetails, recentOrderDat
                           const response = await fetch(url, { headers });
                           if (!response.ok) throw new Error('Failed to fetch invoice');
 
-                          const html = await response.text();
-                          const blob = new Blob([html], { type: 'text/html' });
+                          // Download logic for PDF
+                          const blob = await response.blob();
                           const blobUrl = URL.createObjectURL(blob);
-                          window.open(blobUrl, '_blank');
+
+                          const a = document.createElement('a');
+                          a.href = blobUrl;
+                          a.download = `Invoice_${order.order_number || order.id}.pdf`;
+                          document.body.appendChild(a);
+                          a.click();
+                          document.body.removeChild(a);
 
                           // Clean up blob URL after a short delay
-                          setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+                          setTimeout(() => { URL.revokeObjectURL(blobUrl) }, 1000);
                         } catch (err) {
                           console.error('Invoice error:', err);
                           toast.error('Failed to open invoice');
@@ -388,8 +394,9 @@ export function OrdersPanel({ className = "", onViewOrderDetails, recentOrderDat
             );
           })}
         </div>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 }
 

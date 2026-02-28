@@ -4,7 +4,7 @@ import { asyncHandler, successResponse, paginatedResponse, ApiError } from '../m
 import { authenticate } from '../middleware/auth.js';
 import { validate, schemas } from '../middleware/validate.js';
 import { v4 as uuidv4 } from 'uuid';
-import { generateCustomerInvoiceHtml, generateVendorKOTHtml } from '../utils/invoiceGenerator.js';
+import { generateCustomerInvoiceHtml, generateVendorKOTHtml, generateInvoicePDF } from '../utils/invoiceGenerator.js';
 
 const router = express.Router();
 
@@ -678,11 +678,12 @@ router.get('/:id/track', asyncHandler(async (req, res) => {
 }));
 
 // ============================================
-// GET INVOICE (HTML)
+// GET INVOICE (HTML or PDF)
 // GET /api/orders/:id/invoice
 // ============================================
 router.get('/:id/invoice', asyncHandler(async (req, res) => {
   const { id } = req.params;
+  const { format } = req.query;
 
   const { data: order, error } = await supabaseAdmin
     .from('orders')
@@ -703,11 +704,22 @@ router.get('/:id/invoice', asyncHandler(async (req, res) => {
     order.user = user;
   }
 
-  // Generate HTML
-  const html = generateCustomerInvoiceHtml(order);
+  // Generate HTML or PDF
+  if (format === 'pdf') {
+    const pdfBuffer = await generateInvoicePDF(order);
+    const filename = `Invoice_${order.order_number}.pdf`;
 
-  res.set('Content-Type', 'text/html');
-  res.send(html);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    res.setHeader('Cache-Control', 'no-cache');
+
+    return res.end(Buffer.from(pdfBuffer));
+  } else {
+    const html = generateCustomerInvoiceHtml(order);
+    res.set('Content-Type', 'text/html');
+    res.send(html);
+  }
 }));
 
 // ============================================
