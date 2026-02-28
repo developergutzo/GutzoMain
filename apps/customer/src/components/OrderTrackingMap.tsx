@@ -21,11 +21,12 @@ interface OrderTrackingMapProps {
 export function OrderTrackingMap({
   storeLocation,
   userLocation,
-  driverLocation,
+  driverLocation: rawDriverLocation,
   status,
   fitBoundsPadding = 50,
   onDurationUpdate
 }: OrderTrackingMapProps) {
+  const driverLocation = rawDriverLocation && typeof rawDriverLocation.lat === 'number' && typeof rawDriverLocation.lng === 'number' ? rawDriverLocation : null;
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const driverMarkerRef = useRef<google.maps.Marker | null>(null);
@@ -383,8 +384,17 @@ export function OrderTrackingMap({
     );
   }
 
+  const isPickUpPhaseStatus = ['driver_assigned', 'allotted', 'accepted', 'arrived'].includes(status);
+  const isDeliveryPhaseStatus = ['picked_up', 'on_way', 'arrived_at_drop', 'out_for_delivery', 'collected', 'customer_door_step'].includes(status);
+  const isRiderAssigned = isPickUpPhaseStatus || isDeliveryPhaseStatus;
+
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+      {isRiderAssigned && !driverLocation && (
+        <div className="absolute top-20 left-4 right-4 bg-red-600 text-white p-4 rounded-xl z-[1000] text-center font-bold shadow-2xl animate-pulse ring-4 ring-red-400">
+          🚨 DEBUG: LAT/LONG NOT AVAILABLE 🚨
+        </div>
+      )}
       <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
     </div>
   );
