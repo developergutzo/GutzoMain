@@ -216,7 +216,7 @@ router.post('/webhook', async (req, res) => {
         console.log(`📥 Webhook: ${status} for ${clientOrderId || 'Unknown'}`);
 
         // ADAPTIVE STATUS MAPPING (API Spec -> Internal)
-        // API: ALLOTTED, ACCEPTED, ARRIVED, COLLECTED, CUSTOMER_DOOR_STEP, DELIVERED
+        // API: ALLOTTED, ACCEPTED, ARRIVED, COLLECTED, CUSTOMER_DOOR_STEP, DELIVERED, CANCELLED
         let internalStatus = status.toLowerCase(); // Default
 
         if (status === 'ARRIVED') internalStatus = 'reached_location';
@@ -224,6 +224,7 @@ router.post('/webhook', async (req, res) => {
         else if (status === 'CUSTOMER_DOOR_STEP') internalStatus = 'arrived_at_drop';
         else if (status === 'ALLOTTED') internalStatus = 'allotted';
         else if (status === 'DELIVERED') internalStatus = 'delivered'; // Explicit map
+        else if (status === 'CANCELLED') internalStatus = 'cancelled';
 
         // Base payload for ORDERS table 
         const orderPayload = {};
@@ -234,6 +235,8 @@ router.post('/webhook', async (req, res) => {
         } else if (status === 'COLLECTED') {
             // Order is now officially ON THE WAY
             orderPayload.status = 'on_way';
+        } else if (status === 'CANCELLED') {
+            orderPayload.status = 'cancelled';
         }
 
         // Full payload for DELIVERIES table
