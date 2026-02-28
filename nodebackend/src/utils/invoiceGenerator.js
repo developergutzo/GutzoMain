@@ -35,7 +35,20 @@ export const generateCustomerInvoiceHtml = (order) => {
     // Vendor Info
     const vendorName = order.vendor?.name || 'Restaurant Partner';
     const vendorAddress = order.vendor?.address || '';
-    const vendorGst = order.vendor?.gstin || 'N/A';
+
+    let vendorTaxLabel = 'GSTIN:';
+    let vendorTaxValue = 'N/A';
+
+    // Clean inputs (handle actual null, undefined, padding spaces, and literal "null"/"N/A" strings)
+    const gstNo = order.vendor?.gst_number?.trim();
+    const panNo = order.vendor?.pan_card_no?.trim();
+
+    if (gstNo && gstNo.toUpperCase() !== 'N/A' && gstNo.toLowerCase() !== 'null') {
+        vendorTaxValue = gstNo;
+    } else if (panNo && panNo.toUpperCase() !== 'N/A' && panNo.toLowerCase() !== 'null') {
+        vendorTaxLabel = 'PAN:';
+        vendorTaxValue = panNo;
+    }
 
     // Parse delivery address if it's a JSON string
     let deliveryAddress = order.delivery_address;
@@ -53,7 +66,7 @@ export const generateCustomerInvoiceHtml = (order) => {
         deliveryAddress = {};
     }
 
-    const customerName = deliveryAddress.name || 'Customer';
+    const customerName = order.user?.name || deliveryAddress.name || 'Customer';
     const customerAddress = deliveryAddress.address || deliveryAddress.full_address || 'Address not provided';
 
     // Calculation Breakdown
@@ -102,6 +115,7 @@ export const generateCustomerInvoiceHtml = (order) => {
         <div>
             <div class="logo">GUTZO</div>
             <div class="small">Tax Invoice</div>
+            <div class="small" style="margin-top:2px;">GSTIN: ${process.env.GUTZO_GSTIN || '33CFFPM6751J1Z8'}</div>
         </div>
         <div class="meta">
             <div><strong>Order #${order.order_number}</strong></div>
@@ -118,7 +132,7 @@ export const generateCustomerInvoiceHtml = (order) => {
                 <div class="small" style="text-transform:uppercase; margin-bottom:5px; font-weight:bold;">Ordered From</div>
                 <h2>${vendorName}</h2>
                 <div class="small">${vendorAddress}</div>
-                <div class="small">GSTIN: ${vendorGst}</div>
+                <div class="small">${vendorTaxLabel} ${vendorTaxValue}</div>
             </div>
             <div style="flex:1">
                 <div class="small" style="text-transform:uppercase; margin-bottom:5px; font-weight:bold;">Delivered To</div>

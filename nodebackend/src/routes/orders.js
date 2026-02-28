@@ -692,6 +692,17 @@ router.get('/:id/invoice', asyncHandler(async (req, res) => {
 
   if (error || !order) throw new ApiError(404, 'Order not found');
 
+  // Fetch user separately to avoid missing foreign key relation errors
+  const { data: user } = await supabaseAdmin
+    .from('users')
+    .select('name, phone')
+    .eq('id', order.user_id)
+    .single();
+
+  if (user) {
+    order.user = user;
+  }
+
   // Generate HTML
   const html = generateCustomerInvoiceHtml(order);
 
@@ -713,6 +724,17 @@ router.get('/:id/kot', asyncHandler(async (req, res) => {
     .single();
 
   if (error || !order) throw new ApiError(404, 'Order not found');
+
+  // Fetch user separately to avoid missing foreign key relation errors
+  const { data: user } = await supabaseAdmin
+    .from('users')
+    .select('name, phone')
+    .eq('id', order.user_id)
+    .single();
+
+  if (user) {
+    order.user = user;
+  }
 
   const html = generateVendorKOTHtml(order);
 
