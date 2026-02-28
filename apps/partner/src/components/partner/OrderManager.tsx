@@ -280,18 +280,32 @@ export function OrderManager({ vendorId }: { vendorId: string }) {
                                                                 </Button>
                                                             </>
                                                         ) : order.status === 'preparing' ? (
-                                                            <Button
-                                                                onClick={async (e) => {
-                                                                    e.stopPropagation();
-                                                                    try {
-                                                                        await nodeApiService.updateVendorOrderStatus(vendorId, order.id, 'ready');
-                                                                        toast.success("Order marked as ready");
-                                                                        fetchOrders();
-                                                                    } catch (e) { toast.error("Failed to update status"); }
-                                                                }}
-                                                                className="bg-green-600 hover:bg-green-700 text-white gap-2">
-                                                                <Check className="w-4 h-4" /> Food Prepared
-                                                            </Button>
+                                                            <>
+                                                                <Button
+                                                                    onClick={async (e) => {
+                                                                        e.stopPropagation();
+                                                                        try {
+                                                                            await nodeApiService.updateVendorOrderStatus(vendorId, order.id, 'ready');
+                                                                            toast.success("Order marked as ready for delivery");
+                                                                            fetchOrders();
+                                                                        } catch (e) { toast.error("Failed to update status"); }
+                                                                    }}
+                                                                    className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
+                                                                    <Check className="w-4 h-4" /> Ready for Delivery
+                                                                </Button>
+                                                                <Button
+                                                                    onClick={async (e) => {
+                                                                        e.stopPropagation();
+                                                                        try {
+                                                                            await nodeApiService.updateVendorOrderStatus(vendorId, order.id, 'ready');
+                                                                            toast.success("Order marked as ready");
+                                                                            fetchOrders();
+                                                                        } catch (e) { toast.error("Failed to update status"); }
+                                                                    }}
+                                                                    className="bg-green-600 hover:bg-green-700 text-white gap-2">
+                                                                    <Check className="w-4 h-4" /> Food Prepared
+                                                                </Button>
+                                                            </>
                                                         ) : null}
                                                     </div>
                                                 </CardContent>
