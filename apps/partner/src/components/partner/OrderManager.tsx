@@ -265,24 +265,6 @@ export function OrderManager({ vendorId }: { vendorId: string }) {
                                                         {order.status === 'placed' || order.status === 'paid' || order.status === 'confirmed' ? (
                                                             <>
                                                                 <Button
-                                                                    variant="outline"
-                                                                    onClick={async (e) => {
-                                                                        e.stopPropagation();
-                                                                        if (confirm('Are you sure you want to reject this order?')) {
-                                                                            try {
-                                                                                await nodeApiService.updateVendorOrderStatus(vendorId, order.id, 'rejected');
-                                                                                toast.success("Order rejected");
-                                                                                fetchOrders();
-                                                                            } catch (e) {
-                                                                                console.error(e);
-                                                                                toast.error("Failed to reject order");
-                                                                            }
-                                                                        }
-                                                                    }}
-                                                                    className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 gap-2">
-                                                                    <X className="w-4 h-4" /> Reject
-                                                                </Button>
-                                                                <Button
                                                                     onClick={async (e) => {
                                                                         e.stopPropagation();
                                                                         try {
