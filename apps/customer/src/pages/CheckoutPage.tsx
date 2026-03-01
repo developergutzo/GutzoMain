@@ -1012,8 +1012,14 @@ export function CheckoutPage() {
                                 >
                                     <div className="flex items-center gap-2">
                                         <span className="font-bold text-gray-900 text-[15px]">Total Bill</span>
-                                        <span className="text-sm text-gray-400 line-through">₹{(grandTotal + savings).toFixed(2)}</span>
-                                        <span className="font-bold text-gray-900 text-[15px]">₹{grandTotal.toFixed(2)}</span>
+                                        {loadingFee ? (
+                                            <span className="text-sm text-gray-400 font-medium animate-pulse">Calculating...</span>
+                                        ) : (
+                                            <>
+                                                <span className="text-sm text-gray-400 line-through">₹{(grandTotal + savings).toFixed(2)}</span>
+                                                <span className="font-bold text-gray-900 text-[15px]">₹{grandTotal.toFixed(2)}</span>
+                                            </>
+                                        )}
                                     </div>
                                     <ChevronDown
                                         className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${expandedBill ? 'rotate-180' : ''}`}
@@ -1028,7 +1034,12 @@ export function CheckoutPage() {
                                             <span>₹{itemTotal.toFixed(2)}</span>
                                         </div>
 
-                                        {deliveryFee > 0 ? (
+                                        {loadingFee ? (
+                                            <div className="flex justify-between items-center w-full">
+                                                <span>Delivery Partner Fee</span>
+                                                <span className="text-gray-400 animate-pulse text-xs font-semibold">Calculating...</span>
+                                            </div>
+                                        ) : deliveryFee > 0 ? (
                                             <div className="flex justify-between">
                                                 <span>Delivery Partner Fee</span>
                                                 <span>₹{deliveryFee.toFixed(2)}</span>
@@ -1109,6 +1120,10 @@ export function CheckoutPage() {
                                             <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
                                             <span className="text-lg font-bold">Processing...</span>
                                         </div>
+                                    ) : loadingFee ? (
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-lg font-bold animate-pulse">Calculating fee... 🚚</span>
+                                        </div>
                                     ) : (
                                         <div className="flex items-center gap-2">
                                             <span className="text-lg font-bold">Pay ₹{grandTotal.toFixed(2)}</span>
@@ -1145,9 +1160,13 @@ export function CheckoutPage() {
 
                 <div className="px-4 py-4">
                     {(loadingFee || loadingAddresses) ? (
-                        <div className="w-full">
-                            <div className="w-full h-12 bg-gray-200 animate-pulse rounded-lg mb-2"></div>
-                            <div className="w-32 h-4 bg-gray-200 animate-pulse rounded mx-auto"></div>
+                        <div className="flex gap-4 items-center mb-2">
+                            <div className="flex-1">
+                                <span className="font-extrabold text-gray-400 text-[15px] animate-pulse">Calculating...</span>
+                            </div>
+                            <div className="h-12 w-32 bg-gray-200 animate-pulse rounded-lg flex items-center justify-center">
+                                <span className="text-[14px] font-bold text-gray-500">Wait... 🚚</span>
+                            </div>
                         </div>
                     ) : (!isServiceable || !selectedAddress) ? (
                         <div className="w-full flex flex-col gap-3">
