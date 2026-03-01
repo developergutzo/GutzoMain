@@ -52,7 +52,7 @@ export function CheckoutPage() {
 
 
 
-    const { user, logout } = useAuth();
+    const { user, login, logout } = useAuth();
 
     const handleLogout = async () => {
         try {
@@ -1289,7 +1289,15 @@ export function CheckoutPage() {
             <LoginPanel
                 isOpen={showLoginPanel}
                 onClose={() => setShowLoginPanel(false)}
-                onAuthComplete={() => setShowLoginPanel(false)}
+                onAuthComplete={async (authData) => {
+                    try {
+                        if (login) await login(authData);
+                        setShowLoginPanel(false);
+                        toast.success("Login successful. You can now complete your order.");
+                    } catch (error) {
+                        toast.error('Failed to sync login state');
+                    }
+                }}
             />
 
             <AddressModal
