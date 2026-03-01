@@ -223,18 +223,24 @@ export function OrdersPanel({ className = "", onViewOrderDetails, recentOrderDat
                         <span className="text-sm font-semibold text-gray-900 break-all">
                           #{order.order_number || order.id.slice(0, 8)}
                         </span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium uppercase tracking-wide whitespace-nowrap ${order.status === 'delivered' || order.status === 'completed' || order.status === 'confirmed'
-                          ? 'bg-green-100 text-green-700'
-                          : order.status === 'cancelled' || order.status === 'rejected'
-                            ? 'bg-red-100 text-red-700'
-                            : order.status === 'preparing' || order.status === 'arrived_at_drop' || order.status === 'on_way'
-                              ? 'bg-blue-50 text-blue-600'
-                              : 'bg-gray-100 text-gray-600'
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium uppercase tracking-wide whitespace-nowrap ${(order.payment_status === 'pending' || order.payment_status === 'failed') && order.payment_method !== 'cod'
+                          ? 'bg-red-100 text-red-700'
+                          : order.status === 'delivered' || order.status === 'completed' || order.status === 'confirmed'
+                            ? 'bg-green-100 text-green-700'
+                            : order.status === 'cancelled' || order.status === 'rejected'
+                              ? 'bg-red-100 text-red-700'
+                              : order.status === 'preparing' || order.status === 'arrived_at_drop' || order.status === 'on_way'
+                                ? 'bg-blue-50 text-blue-600'
+                                : 'bg-gray-100 text-gray-600'
                           }`}>
-                          {order.status === 'confirmed' ? 'Waiting for acceptance' :
-                            order.status === 'arrived_at_drop' ? 'Valet at Doorstep' :
-                              order.status === 'reached_location' ? 'Rider at Restaurant' :
-                                order.status.replace(/_/g, ' ')}
+                          {
+                            (order.payment_status === 'pending' || order.payment_status === 'failed') && order.payment_method !== 'cod'
+                              ? 'Payment Failed'
+                              : order.status === 'confirmed' ? 'Waiting for acceptance' :
+                                order.status === 'arrived_at_drop' ? 'Valet at Doorstep' :
+                                  order.status === 'reached_location' ? 'Rider at Restaurant' :
+                                    order.status.replace(/_/g, ' ')
+                          }
                         </span>
                       </div>
 
@@ -366,7 +372,86 @@ export function OrdersPanel({ className = "", onViewOrderDetails, recentOrderDat
                       </Button>
                     )}
 
-                    {!['cancelled', 'rejected', 'delivered', 'completed'].includes(order.status) && (
+                    {!['cancelled', 'rejected'].includes(order.status) && (order.payment_status === 'pending' || order.payment_status === 'failed') && order.payment_method !== 'cod' ? (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="flex-1 h-10 font-medium shadow-sm !bg-red-600 hover:!bg-red-700 !text-white cursor-pointer"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          try {
+                            const amount = order.total_amount;
+                            toast.loading('Initiating payment...');
+                            const data = await (apiService as any).initiatePaytmPayment(user?.phone, order.id, amount, user?.id);
+
+                            const responseData = data.data || data;
+                            const paytmResp = responseData.paytmResponse || responseData.initiateTransactionResponse;
+                            const token = responseData.txnToken || paytmResp?.body?.txnToken;
+
+                            if (data.success && token && paytmResp) {
+                              toast.dismiss();
+                              const mid = responseData.mid || paytmResp.body.mid;
+                              const PAYTM_ENV = import.meta.env.VITE_PAYTM_ENV;
+                              const PAYTM_BASE_URL = PAYTM_ENV === 'production'
+                                ? 'https://secure.paytmpayments.com'
+                                : 'https://securestage.paytmpayments.com';
+
+                              const script = document.createElement('script');
+                              script.src = `${PAYTM_BASE_URL}/merchantpgpui/checkoutjs/merchants/${mid}.js`;
+                              script.async = true;
+                              script.crossOrigin = "anonymous";
+                              script.onload = () => {
+                                // @ts-ignore
+                                if (window.Paytm && window.Paytm.CheckoutJS) {
+                                  // @ts-ignore
+                                  const checkoutJs = window.Paytm.CheckoutJS;
+                                  checkoutJs.onLoad(() => {
+                                    const config = {
+                                      merchant: { mid: mid, name: "Gutzo", redirect: false },
+                                      flow: "DEFAULT",
+                                      data: {
+                                        orderId: order.order_number,
+                                        token: token,
+                                        tokenType: "TXN_TOKEN",
+                                        amount: String(amount)
+                                      },
+                                      handler: {
+                                        notifyMerchant: function (eventName: string, eventData: any) { },
+                                        transactionStatus: function (paymentStatus: any) {
+                                          // @ts-ignore
+                                          window.Paytm.CheckoutJS.close();
+                                          const form = document.createElement('form');
+                                          form.method = 'POST';
+                                          form.action = `${apiService.baseUrl}/api/payments/callback`;
+                                          Object.keys(paymentStatus).forEach(key => {
+                                            if (typeof paymentStatus[key] === 'object') return;
+                                            const input = document.createElement('input');
+                                            input.type = 'hidden';
+                                            input.name = key;
+                                            input.value = String(paymentStatus[key]);
+                                            form.appendChild(input);
+                                          });
+                                          document.body.appendChild(form);
+                                          form.submit();
+                                        }
+                                      }
+                                    };
+                                    checkoutJs.init(config).then(() => checkoutJs.invoke()).catch(() => toast.error('Payment failed'));
+                                  });
+                                }
+                              };
+                              document.body.appendChild(script);
+                            } else {
+                              toast.error('Failed to initiate payment');
+                            }
+                          } catch (err: any) {
+                            toast.error(err.message || 'Payment initiation failed');
+                          }
+                        }}
+                      >
+                        Retry Payment
+                      </Button>
+                    ) : !['cancelled', 'rejected', 'delivered', 'completed'].includes(order.status) && (
                       <Button
                         variant="default"
                         size="sm"
