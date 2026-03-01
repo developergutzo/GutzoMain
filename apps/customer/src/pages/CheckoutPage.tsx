@@ -94,6 +94,7 @@ export function CheckoutPage() {
     const [showSaveAddressModal, setShowSaveAddressModal] = useState(false);
     const [addressToSave, setAddressToSave] = useState<any>(null);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [processingMessage, setProcessingMessage] = useState('Processing...');
     const [dynamicEta, setDynamicEta] = useState<string | null>(null);
     // const [showNoteSheet, setShowNoteSheet] = useState(false); // Managed internally by OrderNote
     const [orderNote, setOrderNote] = useState("");
@@ -377,6 +378,7 @@ export function CheckoutPage() {
         }
 
         setIsProcessing(true);
+        setProcessingMessage('Creating order...');
         try {
             // 1. Create order
             const isSubscription = displayItems.some(item => item.metadata?.subscription);
@@ -412,6 +414,7 @@ export function CheckoutPage() {
             const amount = order.total_amount || grandTotal;
 
             // 2. Initiate Payment
+            setProcessingMessage('Initiating secure payment...');
             if (useMockPayment) {
                 // Mock Payment Flow
                 const mockRes = await (apiService as any).mockSuccessPayment(userPhone, order.order_number, useMockShadowfax);
@@ -437,6 +440,7 @@ export function CheckoutPage() {
                         ? 'https://secure.paytmpayments.com'
                         : 'https://securestage.paytmpayments.com';
 
+                    setProcessingMessage('Loading payment gateway...');
                     const script = document.createElement('script');
                     script.src = `${PAYTM_BASE_URL}/merchantpgpui/checkoutjs/merchants/${mid}.js`;
                     script.async = true;
@@ -462,7 +466,9 @@ export function CheckoutPage() {
                                     },
                                     handler: {
                                         notifyMerchant: function (eventName: string, eventData: any) {
-                                            // console.log('Paytm Event:', eventName, eventData);
+                                            if (eventName === 'APP_CLOSED') {
+                                                setIsProcessing(false);
+                                            }
                                         },
                                         transactionStatus: function (paymentStatus: any) {
                                             // @ts-ignore
@@ -1118,7 +1124,7 @@ export function CheckoutPage() {
                                     {isProcessing ? (
                                         <div className="flex items-center gap-2">
                                             <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
-                                            <span className="text-lg font-bold">Processing...</span>
+                                            <span className="text-lg font-bold">{processingMessage}</span>
                                         </div>
                                     ) : loadingFee ? (
                                         <div className="flex items-center gap-2">
@@ -1228,7 +1234,7 @@ export function CheckoutPage() {
                                 {isProcessing ? (
                                     <div className="flex items-center gap-2">
                                         <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
-                                        <span className="text-lg font-bold">Processing...</span>
+                                        <span className="text-[15px] font-bold">{processingMessage}</span>
                                     </div>
                                 ) : (
                                     <div className="flex items-center gap-2">
