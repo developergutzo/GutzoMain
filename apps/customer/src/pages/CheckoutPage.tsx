@@ -297,7 +297,7 @@ export function CheckoutPage() {
                     setIsServiceable(true);
 
                     if (serviceable) {
-                        setDeliveryFee(res.data.total_amount || 50);
+                        setDeliveryFee(res.data.total_amount || 100);
 
                         // Fetch dynamic ETA
                         const pickupEtaStr = res.data.pickup_eta || res.data.value?.pickup_eta;
@@ -333,11 +333,11 @@ export function CheckoutPage() {
                         setDynamicEta(null);
                     }
                 } else {
-                    setDeliveryFee(50);
+                    setDeliveryFee(100);
                 }
             } catch (e) {
                 console.error(e);
-                setDeliveryFee(50);
+                setDeliveryFee(100);
             } finally {
                 setLoadingFee(false);
             }
@@ -804,8 +804,8 @@ export function CheckoutPage() {
                                             {/* Premium Badge (Static to ensure visibility) */}
                                             <div className="mb-3 flex items-center justify-between">
                                                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider shadow-sm border ${isTrial
-                                                        ? 'bg-orange-100 text-orange-700 border-orange-200'
-                                                        : 'bg-green-100 text-green-700 border-green-200'
+                                                    ? 'bg-orange-100 text-orange-700 border-orange-200'
+                                                    : 'bg-green-100 text-green-700 border-green-200'
                                                     }`}>
                                                     {subscription.planType || 'Subscription'}
                                                 </span>
