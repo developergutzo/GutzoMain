@@ -604,16 +604,27 @@ export function CheckoutPage() {
 
     // NEW: Auto-redirect on empty cart for Mobile/Tablet (<1024px)
     useEffect(() => {
-        if (cartItems.length === 0 && !isLoading && !isReplaceModalOpen) {
+        // If the cart is momentarily syncing during a login callback, don't hastily evict the user backward
+        const isAuthSyncing = window.localStorage.getItem('gutzo_cart_migrated') === 'pending';
+
+        if (cartItems.length === 0 && !isLoading && !isReplaceModalOpen && !isAuthSyncing) {
             // Check viewport width - if mobile/tablet (<1024px), go back
             if (window.innerWidth < 1024) {
-                console.log('📱 Mobile/Tablet Empty Cart - Redirecting back...');
-                goBack();
+                // To prevent immediate bounce back after a successful login (due to slight CartContext load lag)
+                // Add a small safety timer
+                const timer = setTimeout(() => {
+                    if (cartItems.length === 0 && !isLoading) {
+                        console.log('📱 Mobile/Tablet Empty Cart - Redirecting back...');
+                        goBack();
+                    }
+                }, 1000);
+                return () => clearTimeout(timer);
             }
         }
     }, [cartItems.length, isLoading, isReplaceModalOpen, navigate, goBack]);
 
-    if (cartItems.length === 0 && !isLoading && !isReplaceModalOpen) {
+    const isAuthSyncing = window.localStorage.getItem('gutzo_cart_migrated') === 'pending';
+    if (cartItems.length === 0 && !isLoading && !isReplaceModalOpen && !isAuthSyncing) {
         console.log('🛒 DEBUG: Cart is empty (checkout render)', { items: cartItems, isLoading, isReplaceModalOpen });
         // Show explicit empty state
         return (
