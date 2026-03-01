@@ -47,7 +47,7 @@ export function SearchBottomSheet({ isOpen, onClose, searchQuery, onSearchChange
       <SheetContent 
         side="bottom" 
         className="rounded-t-3xl p-0 w-full max-w-full left-0 right-0 transition-transform duration-300 ease-in-out" 
-        style={{ top: '104px', bottom: 0, height: 'calc(100vh - 104px)', position: 'fixed', zIndex: 1100 }}
+        style={{ top: '104px', bottom: 0, position: 'fixed', zIndex: 1100 }}
       >
         <style>{`
           [data-slot="sheet-content"] > button[class*="absolute"] {

@@ -156,7 +156,7 @@ const MealPlanBottomSheet: React.FC<MealPlanBottomSheetProps> = ({ plan, onClose
         `}
         style={isDesktop 
            ? { width: '600px', maxWidth: '600px', zIndex: 1002 } 
-           : { top: '104px', bottom: 0, height: 'calc(100vh - 104px)', zIndex: 1002 }
+           : { top: '104px', bottom: 0, zIndex: 1002 }
         }
       >
         <style>{`

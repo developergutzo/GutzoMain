@@ -735,7 +735,7 @@ export function ProfilePanel({ isOpen, onClose, onLogout, content, userInfo, onV
               isOpen ? 'translate-y-0' : 'translate-y-full'
             }`
         }
-        style={!isDesktop ? { top: '104px', bottom: 0, height: 'calc(100vh - 104px)' } : undefined}
+        style={!isDesktop ? { top: '104px', bottom: 0 } : undefined}
       >
         {/* Close Button */}
         <div className="absolute top-4 right-4 z-10">

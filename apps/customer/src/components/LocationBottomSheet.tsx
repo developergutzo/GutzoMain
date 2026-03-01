@@ -219,7 +219,7 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress, onEditAddre
         `}
         style={isDesktop ? {} : { 
             top: '104px', 
-            height: 'calc(100vh - 104px)',
+            bottom: 0,
             // zIndex is handled by class orSheet default, but explicit for mobile as per original
             zIndex: 1100 
         }}
