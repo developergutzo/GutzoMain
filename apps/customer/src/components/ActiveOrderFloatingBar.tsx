@@ -160,7 +160,7 @@ export function ActiveOrderFloatingBar() {
   const config = getStatusConfig(order.status);
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 md:w-full md:max-w-[400px] z-[1000] transition-all duration-300 ease-in-out">
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-sm z-[1000] transition-all duration-300 ease-in-out">
         <div 
           className="bg-white rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] flex overflow-hidden border border-gray-100"
           style={{ height: '100px' }}
