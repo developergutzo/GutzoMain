@@ -120,12 +120,9 @@ export function Footer() {
         </div>
 
         <div className="max-w-7xl mx-auto border-t border-gray-800 pt-8 sm:pt-12 lg:pt-16 mt-6 sm:mt-8 lg:mt-10">
-          <div className="flex flex-col sm:flex-row justify-between items-center text-center sm:text-left gap-4">
+          <div className="flex justify-center items-center text-center gap-4">
             <p className="text-gray-400 text-xs sm:text-sm">
               © 2026 Gutzo. All rights reserved.
-            </p>
-            <p className="text-gray-400 text-xs sm:text-sm flex items-center justify-center gap-1.5">
-              Made with <span className="text-red-500 animate-pulse">❤️</span> in India
             </p>
           </div>
         </div>
