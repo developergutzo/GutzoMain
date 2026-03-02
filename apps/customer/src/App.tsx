@@ -303,9 +303,7 @@ function AppContent() {
     }
   };
   const handleShowCart = () => {
-    // Updated to navigate to CheckoutPage
-    navigate('/checkout');
-    // setShowCartPanel(true); // Old logic
+    setShowCartPanel(true);
   };
   const handleCloseCart = () => {
     setShowCartPanel(false);

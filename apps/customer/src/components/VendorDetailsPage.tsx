@@ -220,7 +220,7 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors
         {/* Always render header; use CSS for responsive visibility */}
         <div className="hidden lg:block">
           <Header
-            onShowCart={() => navigate('/checkout', { from: 'vendor_details' })}
+            onShowCart={() => setShowCartPanel(true)}
             onShowLogin={handleShowLogin}
             onShowProfile={handleShowProfile}
             onLogout={handleLogout}
@@ -281,7 +281,7 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors
         </div>
         {(!showCartPanel && !showCheckoutPanel) && (
           <CartStrip
-            onShowCart={() => navigate('/checkout', { from: 'vendor_details' })}
+            onShowCart={() => setShowCartPanel(true)}
             isOpen={
               cartItems.length > 0
                 ? (cartItems[0].vendorId === vendor.id
