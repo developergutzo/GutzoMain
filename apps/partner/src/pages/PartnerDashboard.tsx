@@ -114,7 +114,6 @@ export function PartnerDashboard() {
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'menu', label: 'Menu', icon: UtensilsCrossed },
     { id: 'meal-plans', label: 'Meal Plans', icon: CalendarDays },
-    { id: 'orders', label: 'Orders', icon: ShoppingBag },
     { id: 'gst', label: 'GST', icon: ReceiptText },
     { id: 'profile', label: 'Profile', icon: UserCog },
   ];
@@ -202,13 +201,16 @@ export function PartnerDashboard() {
                   <StatsCard label="Total Orders" value={vendor.total_orders || 0} icon={ShoppingBag} color="text-blue-500" />
                   <StatsCard label="Menu Items" value="Manage" icon={UtensilsCrossed} color="text-orange-500" onClick={() => setActiveTab('menu')} />
                 </div>
+
+                <div className="mt-8 border-t border-gray-100 pt-8">
+                  <OrderManager vendorId={vendor.id} />
+                </div>
               </div>
             )}
 
             {activeTab === 'menu' && <MenuManager vendorId={vendor.id} />}
             {activeTab === 'meal-plans' && <MealPlansManager vendorId={vendor.id} />}
             {activeTab === 'profile' && <ProfileManager vendorId={vendor.id} initialData={vendor} onUpdate={refreshProfile} />}
-            {activeTab === 'orders' && <OrderManager vendorId={vendor.id} />}
             {activeTab === 'gst' && <GSTReportManager vendorId={vendor.id} />}
           </div>
         </div>

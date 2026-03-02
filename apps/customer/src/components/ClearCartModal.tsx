@@ -19,7 +19,7 @@ const ClearCartModal: React.FC<ClearCartModalProps> = ({ isOpen, onClose, onConf
       <div className="absolute inset-0" onClick={onClose} />
       
       <div 
-        className="relative bg-white w-full max-w-[360px] p-6 shadow-2xl scale-100 animate-in zoom-in-95 duration-200"
+        className="relative bg-white w-full max-w-sm md:max-w-md p-6 shadow-2xl scale-100 animate-in zoom-in-95 duration-200 mx-auto"
         style={{ borderRadius: '24px' }}
       >
         {/* Close Icon (Top Right) */}

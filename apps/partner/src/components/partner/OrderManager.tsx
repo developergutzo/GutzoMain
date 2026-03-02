@@ -262,7 +262,7 @@ export function OrderManager({ vendorId }: { vendorId: string }) {
 
                                                     {/* Action Buttons */}
                                                     <div className="flex justify-end gap-3">
-                                                        {order.status === 'placed' || order.status === 'paid' || order.status === 'confirmed' ? (
+                                                        {['placed', 'paid', 'confirmed', 'searching_rider'].includes(order.status) ? (
                                                             <>
                                                                 <Button
                                                                     onClick={async (e) => {
