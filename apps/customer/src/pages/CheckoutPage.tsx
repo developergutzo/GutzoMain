@@ -1305,18 +1305,12 @@ export function CheckoutPage() {
                     fetchAddresses();
                 }}
                 onAddAddress={() => {
-                    setShowLocationSheet(false);
-                    setTimeout(() => {
-                        setAddressToSave(null);
-                        setShowSaveAddressModal(true);
-                    }, 350);
+                    setAddressToSave(null);
+                    setShowSaveAddressModal(true);
                 }}
                 onEditAddress={(addr) => {
-                    setShowLocationSheet(false);
-                    setTimeout(() => {
-                        setAddressToSave(addr);
-                        setShowSaveAddressModal(true);
-                    }, 350);
+                    setAddressToSave(addr);
+                    setShowSaveAddressModal(true);
                 }}
                 refreshTrigger={addressRefreshTrigger}
             />

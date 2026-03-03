@@ -991,10 +991,11 @@ export function AddressModal({
     <DialogPrimitive.Root open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogPrimitive.Portal forceMount={isOpen ? true : undefined}>
         {isOpen && (
-          <div className="fixed inset-0 z-[100000]">
-            <DialogPrimitive.Overlay className="fixed inset-0 bg-black/40 transition-opacity duration-300 ease-out" />
+          <div style={{ zIndex: 999999, position: 'relative' }}>
+            <DialogPrimitive.Overlay className="fixed inset-0 bg-black/40 transition-opacity duration-300 ease-out" style={{ zIndex: 999999 }} />
             <DialogPrimitive.Content
-              className="fixed inset-0 flex items-end sm:items-center justify-center outline-none"
+              className="fixed inset-0 flex items-end sm:items-center justify-center outline-none pointer-events-none"
+              style={{ zIndex: 999999 }}
               onInteractOutside={(e) => {
                 // Prevent default to avoid closing when interacting with google maps dropdowns, etc.
                 // AddressModal relies on explicit handleClose or close button.

@@ -207,7 +207,7 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress, onEditAddre
   const context = useLocation();
 
   return (
-    <Sheet open={isOpen} onOpenChange={onClose} modal={false}>
+    <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent
         side={isDesktop ? "right" : "bottom"}
         className={`

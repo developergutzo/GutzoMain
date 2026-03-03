@@ -72,26 +72,26 @@ import { nodeApiService as apiService } from "./utils/nodeApi";
 import { useMobileNavigation } from "./hooks/useMobileNavigation";
 
 function AppContent() {
-    // Enable mobile navigation (back button handling)
-    useMobileNavigation();
+  // Enable mobile navigation (back button handling)
+  useMobileNavigation();
 
-    // Use responsive hook for desktop detection
-    const isDesktop = useMediaQuery('(min-width: 850px)');
+  // Use responsive hook for desktop detection
+  const isDesktop = useMediaQuery('(min-width: 850px)');
 
-    // Next steps state for meal plan
-    const [selectedMealPlan, setSelectedMealPlan] = useState<MealPlan | null>(null);
+  // Next steps state for meal plan
+  const [selectedMealPlan, setSelectedMealPlan] = useState<MealPlan | null>(null);
 
-    // Prevent background scroll when panel is open
-    useEffect(() => {
-      if (selectedMealPlan) {
-        document.body.style.overflow = 'hidden';
-      } else {
-        document.body.style.overflow = '';
-      }
-      return () => {
-        document.body.style.overflow = '';
-      };
-    }, [selectedMealPlan]);
+  // Prevent background scroll when panel is open
+  useEffect(() => {
+    if (selectedMealPlan) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [selectedMealPlan]);
   const { vendors, loading, loadVendorProducts } = useVendors();
   const { isInCoimbatore, isLoading: locationLoading } = useLocation();
   const { currentRoute } = useRouter();
@@ -143,7 +143,7 @@ function AppContent() {
   // Meal plan scroll lock handled in consolidated effect below
 
   // Right panel and bottom sheet components (reuse from VendorDetailsPage)
-// 252-330: Removed Legacy RightPanelNextSteps and BottomSheetNextSteps
+  // 252-330: Removed Legacy RightPanelNextSteps and BottomSheetNextSteps
 
   useEffect(() => {
     const handler = (e: any) => {
@@ -161,12 +161,12 @@ function AppContent() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('subscription_success') === 'true') {
-        toast.success("Subscription Activated Successfully! 🎉");
-        // Clean URL
-        const newUrl = window.location.pathname;
-        window.history.replaceState({}, '', newUrl);
-        // Ensure we refresh subscriptions
-        if (isAuthenticated) fetchActiveSubscription();
+      toast.success("Subscription Activated Successfully! 🎉");
+      // Clean URL
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+      // Ensure we refresh subscriptions
+      if (isAuthenticated) fetchActiveSubscription();
     }
   }, [isAuthenticated]); // Run on mount and auth change
 
@@ -174,36 +174,36 @@ function AppContent() {
   const fetchActiveSubscription = async () => {
     if (!user?.phone) return;
     try {
-        // Fetch user's orders that are subscriptions and active
-        // Or deeper integration: fetch active subscription endpoint if exists
-        // Since we don't have a dedicated endpoint confirmed in nodeApi list for "active subscription"
-        // we might fallback to checking orders with metadata.active = true or similar.
-        // But let's assume we can fetch orders and find the latest active subscription.
-        
-        // Actually, looking at nodeApi.ts, we have `getMyMealPlanSubscriptions`:
-        // async getMyMealPlanSubscriptions(phone: string)
-        
-        const res = await apiService.getMyMealPlanSubscriptions(user.phone);
-        if (res.success && res.data && res.data.length > 0) {
-            // Get the most recent active one
-             const active = res.data.find((sub: any) => sub.status === 'active');
-             if (active) {
-                 setActiveSubscription(active);
-             } else {
-                 // Fallback: check general orders for now if subscription API not fully ready
-                 // This is a temporary bridge if needed.
-             }
+      // Fetch user's orders that are subscriptions and active
+      // Or deeper integration: fetch active subscription endpoint if exists
+      // Since we don't have a dedicated endpoint confirmed in nodeApi list for "active subscription"
+      // we might fallback to checking orders with metadata.active = true or similar.
+      // But let's assume we can fetch orders and find the latest active subscription.
+
+      // Actually, looking at nodeApi.ts, we have `getMyMealPlanSubscriptions`:
+      // async getMyMealPlanSubscriptions(phone: string)
+
+      const res = await apiService.getMyMealPlanSubscriptions(user.phone);
+      if (res.success && res.data && res.data.length > 0) {
+        // Get the most recent active one
+        const active = res.data.find((sub: any) => sub.status === 'active');
+        if (active) {
+          setActiveSubscription(active);
+        } else {
+          // Fallback: check general orders for now if subscription API not fully ready
+          // This is a temporary bridge if needed.
         }
+      }
     } catch (err) {
-        console.error("Failed to fetch subscription", err);
+      console.error("Failed to fetch subscription", err);
     }
   };
 
   useEffect(() => {
     if (isAuthenticated) {
-        fetchActiveSubscription();
+      fetchActiveSubscription();
     } else {
-        setActiveSubscription(null);
+      setActiveSubscription(null);
     }
   }, [isAuthenticated, user?.phone]);
 
@@ -211,12 +211,12 @@ function AppContent() {
   // Removed redundant loadVendorProducts() call
 
   useEffect(() => {
-    const shouldLock = 
-      selectedMealPlan !== null || 
-      showLoginPanel || 
-      showProfilePanel || 
-      showCartPanel || 
-      showCheckoutPanel || 
+    const shouldLock =
+      selectedMealPlan !== null ||
+      showLoginPanel ||
+      showProfilePanel ||
+      showCartPanel ||
+      showCheckoutPanel ||
       showAddressPanel ||
       showSubscriptionSheet;
 
@@ -224,13 +224,13 @@ function AppContent() {
       document.body.style.overflow = 'hidden';
       // Only add padding right if it's a modal panel (not necessarily for meal plan if needed, but safe to add)
       if (!selectedMealPlan) {
-         document.body.style.paddingRight = '0px'; 
+        document.body.style.paddingRight = '0px';
       }
     } else {
       document.body.style.overflow = '';
       document.body.style.paddingRight = '';
     }
-    
+
     return () => {
       document.body.style.overflow = '';
       document.body.style.paddingRight = '';
@@ -241,7 +241,7 @@ function AppContent() {
 
   useEffect(() => {
     //if (!locationLoading && !isInCoimbatore) {
-    if(false){
+    if (false) {
       const timer = setTimeout(() => {
         setShowLocationGate(true);
       }, 2000);
@@ -389,34 +389,19 @@ function AppContent() {
     }
     setAddressRefreshTrigger(prev => prev + 1);
     setShowAddressModal(false);
-    
-    // Check if we need to return to the location sheet
-    if (returnToLocationSheetRef.current) {
-      setTimeout(() => {
-        setShowLocationSheet(true);
-        returnToLocationSheetRef.current = false;
-      }, 300); // Small delay for smooth transition
-    }
+    returnToLocationSheetRef.current = false; // Reset just in case
   };
 
 
 
   const handleOpenAddAddress = () => {
     setEditingAddress(null);
-    setShowLocationSheet(false);
-    returnToLocationSheetRef.current = true;
-    setTimeout(() => {
-      setShowAddressModal(true);
-    }, 350);
+    setShowAddressModal(true);
   };
 
   const handleEditAddress = (address: any) => {
     setEditingAddress(address);
-    setShowLocationSheet(false);
-    returnToLocationSheetRef.current = true;
-    setTimeout(() => {
-      setShowAddressModal(true);
-    }, 350);
+    setShowAddressModal(true);
   };
 
   const handleShowLocationSheet = () => {
@@ -426,13 +411,7 @@ function AppContent() {
   const handleCloseAddressModal = () => {
     setShowAddressModal(false);
     setEditingAddress(null);
-    if (returnToLocationSheetRef.current) {
-      // Small delay to ensure modal teardown doesn't conflict with sheet mounting
-      setTimeout(() => {
-        setShowLocationSheet(true);
-        returnToLocationSheetRef.current = false;
-      }, 100);
-    }
+    returnToLocationSheetRef.current = false; // Reset just in case
   };
   const handleAddressSelected = (address: any) => {
     setShowAddressPanel(false);
@@ -457,9 +436,9 @@ function AppContent() {
 
   if (authLoading) {
     return (
-      <LoadingScreen 
-        isOpen={true} 
-        messages={["Checking authentication...", "Securing your session...", "Almost ready..."]} 
+      <LoadingScreen
+        isOpen={true}
+        messages={["Checking authentication...", "Securing your session...", "Almost ready..."]}
       />
     );
   }
@@ -470,8 +449,8 @@ function AppContent() {
     return <OrderTrackingPage />;
   }
   // Added /checkout to the route list
-  if (typeof currentRoute === 'string' && ['/T&C','/refund_policy','/privacy_policy','/payment-status','/phonepe-soon','/contact','/about', '/checkout'].includes(currentRoute)) {
-    switch(currentRoute) {
+  if (typeof currentRoute === 'string' && ['/T&C', '/refund_policy', '/privacy_policy', '/payment-status', '/phonepe-soon', '/contact', '/about', '/checkout'].includes(currentRoute)) {
+    switch (currentRoute) {
       case '/checkout': return <CheckoutPage />;
       case '/T&C': return <TermsPage />;
       case '/refund_policy': return <RefundPage />;
@@ -495,7 +474,7 @@ function AppContent() {
         />
       </div>
       {(showLoginPanel || showProfilePanel || showCartPanel || showCheckoutPanel || showAddressPanel || showLocationSheet) && (
-        <div 
+        <div
           className="fixed inset-0 z-40 transition-all duration-300 ease-out bg-black-50"
           onClick={() => {
             if (showLoginPanel) handleCloseAuth();
@@ -508,7 +487,7 @@ function AppContent() {
           }}
         />
       )}
-      <Header 
+      <Header
         onShowLogin={handleShowLogin}
         onLogout={handleLogout}
         onShowProfile={handleShowProfile}
@@ -520,8 +499,8 @@ function AppContent() {
       />
       {!isNoService && <Inspiration onOptionClick={setSelectedCategory} loading={loading} />}
       {!isNoService && (
-        <WeeklyMealPlansSection 
-          onMealPlanClick={plan => setSelectedMealPlan(plan)} 
+        <WeeklyMealPlansSection
+          onMealPlanClick={plan => setSelectedMealPlan(plan)}
           validVendorIds={filteredVendors.map(v => v.id)}
         />
       )}
@@ -539,81 +518,81 @@ function AppContent() {
 
       {/* Subscription Details Sheet */}
       {showSubscriptionSheet && activeSubscription && (
-         <SubscriptionDetailsSheet
-            isOpen={showSubscriptionSheet}
-            onClose={() => setShowSubscriptionSheet(false)}
-            subscription={activeSubscription}
-            onSkip={() => toast.info("Skip functionality coming soon!")}
-            onCancel={() => toast.info("Cancel functionality coming soon!")}
-         />
+        <SubscriptionDetailsSheet
+          isOpen={showSubscriptionSheet}
+          onClose={() => setShowSubscriptionSheet(false)}
+          subscription={activeSubscription}
+          onSkip={() => toast.info("Skip functionality coming soon!")}
+          onCancel={() => toast.info("Cancel functionality coming soon!")}
+        />
       )}
       <main
-          className="w-full py-6 md:py-8 flex-1"
+        className="w-full py-6 md:py-8 flex-1"
         ref={listingsRef}
       >
-          <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           {!isNoService && (
             <div className="mb-6">
               <div className="flex items-center justify-between mb-2">
                 <h2
                   className="text-left font-semibold text-3xl md:text-4xl lg:text-5xl tracking-tight w-full font-primary text-main"
                 >
-                  {selectedCategory === "All" 
-                    ? "Kitchens Near You" 
+                  {selectedCategory === "All"
+                    ? "Kitchens Near You"
                     : `${filteredVendors.length} ${selectedCategory} restaurants`
                   }
                 </h2>
               </div>
             </div>
           )}
-            {isNoService ? (
-              <div className="flex flex-col items-center justify-center min-h-[60vh] text-center w-full max-w-lg mx-auto px-6">
-                 <div className="bg-green-50 p-6 rounded-full mb-6">
-                   <MapPin className="h-12 w-12 text-gutzo-brand" />
-                 </div>
-                 <h3 className="text-2xl font-bold text-gray-900 mb-3" style={{ fontFamily: 'Poppins' }}>No Service Available Here</h3>
-                 <p className="text-gray-500 text-base mb-8 leading-relaxed">
-                   We couldn't find any vendors delivering to your current location. Try changing your location to explore delicious choices.
-                 </p>
-                 <Button 
-                   onClick={() => handleShowProfile('address')}
-                   className="text-white px-6 py-2 rounded-lg font-medium shadow-md hover:shadow-lg transition-all duration-300"
-                   style={{ backgroundColor: 'var(--brand-green)', fontSize: '1rem' }}
-                 >
-                   Change Location
-                 </Button>
+          {isNoService ? (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center w-full max-w-lg mx-auto px-6">
+              <div className="bg-green-50 p-6 rounded-full mb-6">
+                <MapPin className="h-12 w-12 text-gutzo-brand" />
               </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-full mx-auto w-full">
-                {loading ? (
-                  // Show 4 skeletons while loading
-                  [...Array(4)].map((_, i) => (
-                    <div key={i} className="w-full h-full">
-                      <VendorSkeleton />
-                    </div>
-                  ))
-                ) : (
-                  filteredVendors.map((vendor) => (
-                    <div key={vendor.id} className="flex justify-center items-stretch w-full h-full">
-                      <VendorCard
-                        vendor={vendor}
-                        onClick={handleVendorClick}
-                      />
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
+              <h3 className="text-2xl font-bold text-gray-900 mb-3" style={{ fontFamily: 'Poppins' }}>No Service Available Here</h3>
+              <p className="text-gray-500 text-base mb-8 leading-relaxed">
+                We couldn't find any vendors delivering to your current location. Try changing your location to explore delicious choices.
+              </p>
+              <Button
+                onClick={() => handleShowProfile('address')}
+                className="text-white px-6 py-2 rounded-lg font-medium shadow-md hover:shadow-lg transition-all duration-300"
+                style={{ backgroundColor: 'var(--brand-green)', fontSize: '1rem' }}
+              >
+                Change Location
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-full mx-auto w-full">
+              {loading ? (
+                // Show 4 skeletons while loading
+                [...Array(4)].map((_, i) => (
+                  <div key={i} className="w-full h-full">
+                    <VendorSkeleton />
+                  </div>
+                ))
+              ) : (
+                filteredVendors.map((vendor) => (
+                  <div key={vendor.id} className="flex justify-center items-stretch w-full h-full">
+                    <VendorCard
+                      vendor={vendor}
+                      onClick={handleVendorClick}
+                    />
+                  </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
       </main>
       <Footer />
       <Toaster position="top-center" />
-      <LoginPanel 
+      <LoginPanel
         isOpen={showLoginPanel}
         onClose={handleCloseAuth}
         onAuthComplete={handleAuthComplete}
       />
-      <ProfilePanel 
+      <ProfilePanel
         isOpen={showProfilePanel}
         onClose={handleCloseProfile}
         onLogout={handleLogout}
@@ -635,17 +614,17 @@ function AppContent() {
       />
       {/* Show VendorCartStrip (Detailed) only when cart, profile, and login panels are not open, and no meal plan is selected */}
       {!showCartPanel && !showProfilePanel && !showLoginPanel && !showCheckoutPanel && !selectedMealPlan && cartItems.length > 0 && (
-          <VendorCartStrip 
-            vendorId={cartItems[0].vendorId || cartItems[0].vendor?.id || 'v1'} // Fallback safely
-            vendorName={cartItems[0].vendor?.name || 'Vendor'}
-            vendorImage={cartItems[0].vendor?.image}
-            onViewCart={handleShowCart} 
-            isOpen={
-                // If vendor not found (e.g. No Service / Location Error), default to TRUE so user can still access cart/checkout
-                // This allows them to change location from checkout or view their existing items
-                (vendors.find(v => v.id === (cartItems[0].vendorId || cartItems[0].vendor?.id))?.isOpen ?? true)
-            }
-          />
+        <VendorCartStrip
+          vendorId={cartItems[0].vendorId || cartItems[0].vendor?.id || 'v1'} // Fallback safely
+          vendorName={cartItems[0].vendor?.name || 'Vendor'}
+          vendorImage={cartItems[0].vendor?.image}
+          onViewCart={handleShowCart}
+          isOpen={
+            // If vendor not found (e.g. No Service / Location Error), default to TRUE so user can still access cart/checkout
+            // This allows them to change location from checkout or view their existing items
+            (vendors.find(v => v.id === (cartItems[0].vendorId || cartItems[0].vendor?.id))?.isOpen ?? true)
+          }
+        />
       )}
       {/* InstantOrderPanel removed - use /checkout route instead */}
       {paymentSuccessData && (
@@ -658,7 +637,7 @@ function AppContent() {
           onContinueExploring={handleContinueExploringFromSuccess}
         />
       )}
-  <AddressModal
+      <AddressModal
         isOpen={showAddressModal}
         onClose={handleCloseAddressModal}
         onSave={handleAddressAdded}
