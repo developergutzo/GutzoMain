@@ -404,15 +404,19 @@ function AppContent() {
   const handleOpenAddAddress = () => {
     setEditingAddress(null);
     setShowLocationSheet(false);
-    setShowAddressModal(true);
     returnToLocationSheetRef.current = true;
+    setTimeout(() => {
+      setShowAddressModal(true);
+    }, 350);
   };
 
   const handleEditAddress = (address: any) => {
     setEditingAddress(address);
     setShowLocationSheet(false);
-    setShowAddressModal(true);
     returnToLocationSheetRef.current = true;
+    setTimeout(() => {
+      setShowAddressModal(true);
+    }, 350);
   };
 
   const handleShowLocationSheet = () => {

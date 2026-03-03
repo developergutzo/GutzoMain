@@ -1033,8 +1033,8 @@ export function CheckoutPage() {
                                             <span className="text-sm text-gray-400 font-medium animate-pulse">Calculating...</span>
                                         ) : (
                                             <>
-                                                <span 
-                                                    className="text-sm text-gray-400 font-medium" 
+                                                <span
+                                                    className="text-sm text-gray-400 font-medium"
                                                     style={{ textDecoration: 'line-through', textDecorationColor: '#9CA3AF' }}
                                                 >
                                                     ₹{(grandTotal + savings).toFixed(2)}
@@ -1086,12 +1086,12 @@ export function CheckoutPage() {
                                                 <span>₹{donationAmount.toFixed(2)}</span>
                                             </div>
                                         )}
-                                        
+
                                         <div className="flex justify-between pt-2 mt-2 border-t border-gray-100 font-medium text-gray-800">
                                             <span>Total Amount</span>
                                             <div className="flex items-center gap-2">
-                                                <span 
-                                                    className="text-gray-400 font-normal" 
+                                                <span
+                                                    className="text-gray-400 font-normal"
                                                     style={{ textDecoration: 'line-through', textDecorationColor: '#9CA3AF' }}
                                                 >
                                                     ₹{(grandTotal + savings).toFixed(2)}
@@ -1305,14 +1305,18 @@ export function CheckoutPage() {
                     fetchAddresses();
                 }}
                 onAddAddress={() => {
-                    setAddressToSave(null);
-                    setShowSaveAddressModal(true);
                     setShowLocationSheet(false);
+                    setTimeout(() => {
+                        setAddressToSave(null);
+                        setShowSaveAddressModal(true);
+                    }, 350);
                 }}
                 onEditAddress={(addr) => {
-                    setAddressToSave(addr);
-                    setShowSaveAddressModal(true);
                     setShowLocationSheet(false);
+                    setTimeout(() => {
+                        setAddressToSave(addr);
+                        setShowSaveAddressModal(true);
+                    }, 350);
                 }}
                 refreshTrigger={addressRefreshTrigger}
             />

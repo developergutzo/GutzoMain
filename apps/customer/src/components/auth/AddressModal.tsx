@@ -4,7 +4,7 @@ import {
   useCallback,
   useRef,
 } from "react";
-import ReactDOM from "react-dom";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X, MapPin, AlertCircle, Home, Building2, MapPinIcon } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -13,11 +13,11 @@ import { GoogleMapPicker } from "../GoogleMapPicker";
 import { useLocation } from "../../contexts/LocationContext";
 import { useAddresses } from "../../hooks/useAddresses";
 import { useAuth } from "../../contexts/AuthContext";
-import { 
-  UserAddress, 
-  AddressFormData, 
-  AddressType, 
-  AddressTypeOption 
+import {
+  UserAddress,
+  AddressFormData,
+  AddressType,
+  AddressTypeOption
 } from "../../types/address";
 import { LocationSearchInput } from "../common/LocationSearchInput";
 
@@ -103,8 +103,8 @@ interface AddressFormProps {
     errors:
       | { [key: string]: string }
       | ((prev: { [key: string]: string }) => {
-          [key: string]: string;
-        }),
+        [key: string]: string;
+      }),
   ) => void;
   areaRef?: React.RefObject<HTMLInputElement>;
   customTagRef?: React.RefObject<HTMLInputElement>; // Add customTagRef to props
@@ -147,44 +147,44 @@ const AddressForm = ({
   const placesServiceRef = useRef<any | null>(null);
 
   const handlePredictionSelect = (prediction: any) => {
-     if (!window.google?.maps?.places) return;
+    if (!window.google?.maps?.places) return;
 
-     if (!placesServiceRef.current) {
-        const dummyDiv = document.createElement('div');
-        placesServiceRef.current = new google.maps.places.PlacesService(dummyDiv);
-     }
+    if (!placesServiceRef.current) {
+      const dummyDiv = document.createElement('div');
+      placesServiceRef.current = new google.maps.places.PlacesService(dummyDiv);
+    }
 
-     const request = {
-        placeId: prediction.place_id,
-        fields: ['name', 'geometry', 'formatted_address', 'address_components']
-     };
+    const request = {
+      placeId: prediction.place_id,
+      fields: ['name', 'geometry', 'formatted_address', 'address_components']
+    };
 
-     placesServiceRef.current.getDetails(request, (place: any, status: any) => {
-        if (status === google.maps.places.PlacesServiceStatus.OK && place && place.geometry && place.geometry.location) {
-             const lat = place.geometry.location.lat();
-             const lng = place.geometry.location.lng();
-             const address = place.formatted_address || place.name || '';
-             
-             // Update parent
-             onLocationSelect({ lat, lng }, address);
-             
-             // Clear search
-             setSearchText("");
-             setPredictions([]);
-        }
-     });
+    placesServiceRef.current.getDetails(request, (place: any, status: any) => {
+      if (status === google.maps.places.PlacesServiceStatus.OK && place && place.geometry && place.geometry.location) {
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+        const address = place.formatted_address || place.name || '';
+
+        // Update parent
+        onLocationSelect({ lat, lng }, address);
+
+        // Clear search
+        setSearchText("");
+        setPredictions([]);
+      }
+    });
   };
 
 
 
   // Uniqueness Checks
   // Check if Home exists
-  const hasHome = existingAddresses.some((addr: any) => 
+  const hasHome = existingAddresses.some((addr: any) =>
     (addr.label || addr.type) === 'Home'
   );
 
   // Check if Work exists
-  const hasWork = existingAddresses.some((addr: any) => 
+  const hasWork = existingAddresses.some((addr: any) =>
     (addr.label || addr.type) === 'Work'
   );
 
@@ -202,7 +202,7 @@ const AddressForm = ({
 
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col flex-1 w-full h-full min-h-0 overflow-hidden">
       {/* Mobile Header */}
       <div className="sm:hidden flex items-center justify-between p-4 border-b border-gray-200 bg-white sticky top-0 z-10">
         <h2 className="font-semibold text-gray-900">
@@ -240,283 +240,279 @@ const AddressForm = ({
       >
         {/* Search Input inline matching design */}
         <div className="mb-4">
-           <LocationSearchInput 
-              onSearchChange={setSearchText}
-              onPredictionsChange={setPredictions}
-              onLocationSelect={() => {}} // Disabled as we handle it via predictions
-           />
+          <LocationSearchInput
+            onSearchChange={setSearchText}
+            onPredictionsChange={setPredictions}
+            onLocationSelect={() => { }} // Disabled as we handle it via predictions
+          />
         </div>
 
         {/* Search Results List */}
         {isSearching && predictions.length > 0 ? (
           <div className="space-y-3 px-1">
-             <h3 className="text-sm font-medium text-gray-500 mb-2">
-                Search Results
-             </h3>
-             {predictions.map((prediction) => (
-                <button
-                  key={prediction.place_id}
-                  onClick={() => handlePredictionSelect(prediction)}
-                  className="w-full flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors text-left border-b border-gray-50 last:border-0"
-                >
-                   <MapPin className="h-5 w-5 text-gray-400 flex-shrink-0 mt-0.5" />
-                   <div>
-                      <h4 className="font-medium text-gray-900 text-sm">
-                         {prediction.structured_formatting?.main_text || prediction.description}
-                      </h4>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                         {prediction.structured_formatting?.secondary_text}
-                      </p>
-                   </div>
-                </button>
-             ))}
-             <div className="flex justify-end p-2">
-                 <span className="text-[10px] text-gray-400">powered by Google</span>
-             </div>
+            <h3 className="text-sm font-medium text-gray-500 mb-2">
+              Search Results
+            </h3>
+            {predictions.map((prediction) => (
+              <button
+                key={prediction.place_id}
+                onClick={() => handlePredictionSelect(prediction)}
+                className="w-full flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors text-left border-b border-gray-50 last:border-0"
+              >
+                <MapPin className="h-5 w-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-medium text-gray-900 text-sm">
+                    {prediction.structured_formatting?.main_text || prediction.description}
+                  </h4>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {prediction.structured_formatting?.secondary_text}
+                  </p>
+                </div>
+              </button>
+            ))}
+            <div className="flex justify-end p-2">
+              <span className="text-[10px] text-gray-400">powered by Google</span>
+            </div>
           </div>
         ) : (
           <>
-        {/* Google Maps Location Picker */}
-        <GoogleMapPicker
-          key={`${newAddress.latitude}-${newAddress.longitude}`}
-          onLocationSelect={(locationData) =>
-            onLocationSelect(
-              { lat: locationData.lat, lng: locationData.lng },
-              locationData.address,
-            )
-          }
-          initialLocation={
-            newAddress.latitude && newAddress.longitude
-              ? {
-                  lat: newAddress.latitude,
-                  lng: newAddress.longitude,
-                  address: newAddress.complete_address,
-                }
-              : (location?.coordinates?.latitude && location?.coordinates?.longitude)
-                ? {
-                    lat: location.coordinates.latitude,
-                    lng: location.coordinates.longitude,
-                    address: locationDisplay || "",
+            {/* Google Maps Location Picker */}
+            <GoogleMapPicker
+              key={`${newAddress.latitude}-${newAddress.longitude}`}
+              onLocationSelect={(locationData) =>
+                onLocationSelect(
+                  { lat: locationData.lat, lng: locationData.lng },
+                  locationData.address,
+                )
+              }
+              initialLocation={
+                newAddress.latitude && newAddress.longitude
+                  ? {
+                    lat: newAddress.latitude,
+                    lng: newAddress.longitude,
+                    address: newAddress.complete_address,
                   }
-                : { lat: 11.0018115, lng: 76.9628425, address: "" } // Fallback to Coimbatore
-          }
-          className="mb-5"
-        />
-
-        {/* Address Form - Desktop Layout */}
-        <div className="space-y-4">
-          {/* Street Address */}
-          <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
-              House / Flat / Block No.
-            </label>
-            <Input
-              value={addressData.street}
-              onChange={(e) => {
-                setAddressData(prev => ({
-                  ...prev,
-                  street: e.target.value
-                }));
-                
-                // Clear validation error
-                if (validationErrors.street) {
-                  setValidationErrors(prev => ({ ...prev, street: '' }));
-                }
-              }}
-              placeholder="Enter house/flat number"
-              className={`border-2 focus:ring-0 rounded-xl ${
-                validationErrors.street
-                  ? "border-red-300 focus:border-red-500"
-                  : "border-gray-200 focus:border-gutzo-primary"
-              }`}
-              disabled={savingAddress || loadingTypes}
-            />
-            {validationErrors.street && (
-              <div className="flex items-center mt-2 text-red-600 text-sm">
-                <AlertCircle className="h-4 w-4 mr-1" />
-                {validationErrors.street}
-              </div>
-            )}
-          </div>
-
-          {/* Apartment/Road/Area - Matching Desktop */}
-          <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
-              Apartment / Road / Area (Optional)
-            </label>
-            <Input
-              ref={areaRef}
-              value={addressData.area || ""}
-              onChange={(e) => {
-                setAddressData(prev => ({
-                  ...prev,
-                  area: e.target.value
-                }));
-              }}
-              placeholder="Enter area details"
-              className="border-2 border-gray-200 focus:border-gutzo-primary focus:ring-0 rounded-xl"
-              disabled={savingAddress || loadingTypes}
-            />
-          </div>
-
-          {/* Phone Number - Matching Desktop */}
-          <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
-              Phone Number (Alternative Contact)
-            </label>
-            <Input
-              value={addressData.landmark || ""}
-              onChange={(e) => {
-                setAddressData(prev => ({
-                  ...prev,
-                  landmark: e.target.value
-                }));
-              }}
-              placeholder="Enter phone number"
-              type="tel"
-              className="border-2 border-gray-200 focus:border-gutzo-primary focus:ring-0 rounded-xl"
-              disabled={savingAddress || loadingTypes}
-            />
-          </div>
-
-          {/* Desktop-style Address Type Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-900 mb-3">
-              Save as
-            </label>
-            
-            <div className="flex space-x-3">
-              {(['home', 'work', 'other'] as AddressType[]).map((type) => {
-                const isSelected = addressData.type === type;
-                // Determine if this specific type should be disabled
-                // Only disable 'home' if user already has 'Home', and 'work' if user has 'Work'
-                // BUT do not disable if we are currently editing that address (handled by isEditing check if we had one)
-                // For now, assume this modal is always for NEW addresses (based on usage in InstantOrderPanel)
-                // If editing is added later, we need to pass currentAddressId prop.
-                
-                // RESTRICTION CODE COMMENTED OUT AS PER USER REQUEST (Allow multiple Home/Work)
-                // const isDisabled = (type === 'home' && hasHome) || (type === 'work' && hasWork);
-                const isDisabled = false;
-
-                const typeConfig = {
-                  home: { label: 'Home', icon: Home },
-                  work: { label: 'Work', icon: Building2 },
-                  other: { label: 'Other', icon: MapPinIcon }
-                };
-                
-                const config = typeConfig[type];
-                const IconComponent = config.icon;
-                
-                return (
-                  <div key={type} className="flex-1">
-                    <button
-                      type="button"
-                      disabled={isDisabled}
-                      className={`w-full flex items-center justify-center space-x-2 p-3 rounded-lg border-2 transition-all duration-200 ${
-                        isSelected
-                          ? 'border-gutzo-primary bg-gutzo-primary/5'
-                          : isDisabled
-                            ? 'border-gray-100 bg-gray-50 opacity-60 cursor-not-allowed'
-                            : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                      onClick={() => {
-                        if (isDisabled) return;
-                        setAddressData(prev => ({ ...prev, type }));
-                        
-                        // Update legacy state for backward compatibility
-                        const legacyType = type === 'home' ? 'Home' : 
-                                          type === 'work' ? 'Work' : 'Other';
-                        setNewAddress(prev => ({ ...prev, type: legacyType }));
-                        
-                        // Clear validation errors
-                        setValidationErrors(prev => ({ ...prev, label: '' }));
-
-                        // Scroll to custom tag field only on user interaction
-                        if (type === 'other') {
-                          setTimeout(() => {
-                            if (modalContentRef?.current && customTagRef?.current) {
-                              modalContentRef.current.scrollTo({
-                                top: modalContentRef.current.scrollHeight,
-                                behavior: "smooth",
-                              });
-                              customTagRef.current.focus();
-                            }
-                          }, 100);
-                        }
-                      }}
-                    >
-                      <div className={`p-2 rounded-lg ${
-                        isSelected 
-                          ? 'bg-gutzo-primary text-white' 
-                          : isDisabled
-                            ? 'bg-gray-200 text-gray-400'
-                            : 'bg-gray-100 text-gray-600'
-                      }`}>
-                        <IconComponent className="h-4 w-4" />
-                      </div>
-                      
-                      <span className={`font-medium text-sm ${
-                        isDisabled ? 'text-gray-400' : 'text-gray-900'
-                      }`}>
-                        {config.label}
-                      </span>
-                    </button>
-                    {isDisabled && (
-                      <p className="text-[10px] text-center text-amber-600 mt-1">
-                        Already exists
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Custom Label for "Other" type */}
-          {addressData.type === 'other' && (
-            <div data-custom-tag-section>
-              <label className="block text-sm font-medium text-gray-900 mb-2">
-                Custom Label *
-              </label>
-              <Input
-                ref={customTagRef}
-                value={addressData.label || ""}
-                onChange={e => {
-                  const val = e.target.value;
-                  setAddressData(prev => ({
-                    ...prev,
-                    label: val
-                  }));
-                  setNewAddress(prev => ({
-                    ...prev,
-                    custom_tag: val,
-                  }));
-                  
-                  // Real-time unique validation
-                  if (existingCustomLabels.includes(val.toLowerCase().trim())) {
-                     setValidationErrors(prev => ({
-                       ...prev,
-                       label: "This label already exists. Please choose another name."
-                     }));
-                  } else {
-                     if (validationErrors.label) {
-                      setValidationErrors(prev => ({
-                        ...prev,
-                        label: "",
-                      }));
+                  : (location?.coordinates?.latitude && location?.coordinates?.longitude)
+                    ? {
+                      lat: location.coordinates.latitude,
+                      lng: location.coordinates.longitude,
+                      address: locationDisplay || "",
                     }
-                  }
-                }}
-                placeholder="Enter custom address label (e.g., Mom's House)"
-                className={`border-2 focus:ring-0 rounded-xl ${validationErrors.label ? "border-red-300 focus:border-red-500" : "border-gray-200 focus:border-gutzo-primary"}`}
-                disabled={savingAddress || loadingTypes}
-              />
-              {validationErrors.label && (
-                <span className="text-xs text-red-500 mt-1 block">{validationErrors.label}</span>
+                    : { lat: 11.0018115, lng: 76.9628425, address: "" } // Fallback to Coimbatore
+              }
+              className="mb-5"
+            />
+
+            {/* Address Form - Desktop Layout */}
+            <div className="space-y-4">
+              {/* Street Address */}
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  House / Flat / Block No.
+                </label>
+                <Input
+                  value={addressData.street}
+                  onChange={(e) => {
+                    setAddressData(prev => ({
+                      ...prev,
+                      street: e.target.value
+                    }));
+
+                    // Clear validation error
+                    if (validationErrors.street) {
+                      setValidationErrors(prev => ({ ...prev, street: '' }));
+                    }
+                  }}
+                  placeholder="Enter house/flat number"
+                  className={`border-2 focus:ring-0 rounded-xl ${validationErrors.street
+                    ? "border-red-300 focus:border-red-500"
+                    : "border-gray-200 focus:border-gutzo-primary"
+                    }`}
+                  disabled={savingAddress || loadingTypes}
+                />
+                {validationErrors.street && (
+                  <div className="flex items-center mt-2 text-red-600 text-sm">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    {validationErrors.street}
+                  </div>
+                )}
+              </div>
+
+              {/* Apartment/Road/Area - Matching Desktop */}
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  Apartment / Road / Area (Optional)
+                </label>
+                <Input
+                  ref={areaRef}
+                  value={addressData.area || ""}
+                  onChange={(e) => {
+                    setAddressData(prev => ({
+                      ...prev,
+                      area: e.target.value
+                    }));
+                  }}
+                  placeholder="Enter area details"
+                  className="border-2 border-gray-200 focus:border-gutzo-primary focus:ring-0 rounded-xl"
+                  disabled={savingAddress || loadingTypes}
+                />
+              </div>
+
+              {/* Phone Number - Matching Desktop */}
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  Phone Number (Alternative Contact)
+                </label>
+                <Input
+                  value={addressData.landmark || ""}
+                  onChange={(e) => {
+                    setAddressData(prev => ({
+                      ...prev,
+                      landmark: e.target.value
+                    }));
+                  }}
+                  placeholder="Enter phone number"
+                  type="tel"
+                  className="border-2 border-gray-200 focus:border-gutzo-primary focus:ring-0 rounded-xl"
+                  disabled={savingAddress || loadingTypes}
+                />
+              </div>
+
+              {/* Desktop-style Address Type Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-3">
+                  Save as
+                </label>
+
+                <div className="flex space-x-3">
+                  {(['home', 'work', 'other'] as AddressType[]).map((type) => {
+                    const isSelected = addressData.type === type;
+                    // Determine if this specific type should be disabled
+                    // Only disable 'home' if user already has 'Home', and 'work' if user has 'Work'
+                    // BUT do not disable if we are currently editing that address (handled by isEditing check if we had one)
+                    // For now, assume this modal is always for NEW addresses (based on usage in InstantOrderPanel)
+                    // If editing is added later, we need to pass currentAddressId prop.
+
+                    // RESTRICTION CODE COMMENTED OUT AS PER USER REQUEST (Allow multiple Home/Work)
+                    // const isDisabled = (type === 'home' && hasHome) || (type === 'work' && hasWork);
+                    const isDisabled = false;
+
+                    const typeConfig = {
+                      home: { label: 'Home', icon: Home },
+                      work: { label: 'Work', icon: Building2 },
+                      other: { label: 'Other', icon: MapPinIcon }
+                    };
+
+                    const config = typeConfig[type];
+                    const IconComponent = config.icon;
+
+                    return (
+                      <div key={type} className="flex-1">
+                        <button
+                          type="button"
+                          disabled={isDisabled}
+                          className={`w-full flex items-center justify-center space-x-2 p-3 rounded-lg border-2 transition-all duration-200 ${isSelected
+                            ? 'border-gutzo-primary bg-gutzo-primary/5'
+                            : isDisabled
+                              ? 'border-gray-100 bg-gray-50 opacity-60 cursor-not-allowed'
+                              : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                          onClick={() => {
+                            if (isDisabled) return;
+                            setAddressData(prev => ({ ...prev, type }));
+
+                            // Update legacy state for backward compatibility
+                            const legacyType = type === 'home' ? 'Home' :
+                              type === 'work' ? 'Work' : 'Other';
+                            setNewAddress(prev => ({ ...prev, type: legacyType }));
+
+                            // Clear validation errors
+                            setValidationErrors(prev => ({ ...prev, label: '' }));
+
+                            // Scroll to custom tag field only on user interaction
+                            if (type === 'other') {
+                              setTimeout(() => {
+                                if (modalContentRef?.current && customTagRef?.current) {
+                                  modalContentRef.current.scrollTo({
+                                    top: modalContentRef.current.scrollHeight,
+                                    behavior: "smooth",
+                                  });
+                                  customTagRef.current.focus();
+                                }
+                              }, 100);
+                            }
+                          }}
+                        >
+                          <div className={`p-2 rounded-lg ${isSelected
+                            ? 'bg-gutzo-primary text-white'
+                            : isDisabled
+                              ? 'bg-gray-200 text-gray-400'
+                              : 'bg-gray-100 text-gray-600'
+                            }`}>
+                            <IconComponent className="h-4 w-4" />
+                          </div>
+
+                          <span className={`font-medium text-sm ${isDisabled ? 'text-gray-400' : 'text-gray-900'
+                            }`}>
+                            {config.label}
+                          </span>
+                        </button>
+                        {isDisabled && (
+                          <p className="text-[10px] text-center text-amber-600 mt-1">
+                            Already exists
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Custom Label for "Other" type */}
+              {addressData.type === 'other' && (
+                <div data-custom-tag-section>
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                    Custom Label *
+                  </label>
+                  <Input
+                    ref={customTagRef}
+                    value={addressData.label || ""}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setAddressData(prev => ({
+                        ...prev,
+                        label: val
+                      }));
+                      setNewAddress(prev => ({
+                        ...prev,
+                        custom_tag: val,
+                      }));
+
+                      // Real-time unique validation
+                      if (existingCustomLabels.includes(val.toLowerCase().trim())) {
+                        setValidationErrors(prev => ({
+                          ...prev,
+                          label: "This label already exists. Please choose another name."
+                        }));
+                      } else {
+                        if (validationErrors.label) {
+                          setValidationErrors(prev => ({
+                            ...prev,
+                            label: "",
+                          }));
+                        }
+                      }
+                    }}
+                    placeholder="Enter custom address label (e.g., Mom's House)"
+                    className={`border-2 focus:ring-0 rounded-xl ${validationErrors.label ? "border-red-300 focus:border-red-500" : "border-gray-200 focus:border-gutzo-primary"}`}
+                    disabled={savingAddress || loadingTypes}
+                  />
+                  {validationErrors.label && (
+                    <span className="text-xs text-red-500 mt-1 block">{validationErrors.label}</span>
+                  )}
+                </div>
               )}
             </div>
-          )}
-        </div>
           </>
         )}
       </div>
@@ -531,7 +527,7 @@ const AddressForm = ({
             </div>
           </div>
         )}
-        
+
         <Button
           onClick={onSave}
           disabled={
@@ -553,7 +549,7 @@ const AddressForm = ({
             "Save and Proceed"
           )}
         </Button>
-        
+
         {loadingTypes && (
           <div className="h-4" />
         )}
@@ -570,81 +566,81 @@ export function AddressModal({
 }: AddressModalProps) {
   const { location } = useLocation();
   const { isAuthenticated } = useAuth();
-  const { 
-    availableTypes, 
-    loading: addressesLoading, 
-    createAddress, 
+  const {
+    availableTypes,
+    loading: addressesLoading,
+    createAddress,
     updateAddress,
     error: addressError,
     addresses // Expose existing addresses
   } = useAddresses();
-  
+
   // Add missing step state
   const [step, setStep] = useState<"search" | "details">("search");
-  
+
   // Legacy state for backward compatibility
   const [newAddress, setNewAddress] = useState<Address>(() => {
     if (editingAddress) {
-       return {
-            id: editingAddress.id,
-            complete_address: editingAddress.full_address,
-            area: editingAddress.area || extractAreaFromAddress(editingAddress.full_address),
-            city: editingAddress.city,
-            type: editingAddress.type.charAt(0).toUpperCase() + editingAddress.type.slice(1) as any,
-            custom_tag: editingAddress.custom_label,
-            is_default: editingAddress.is_default,
-            latitude: editingAddress.latitude,
-            longitude: editingAddress.longitude,
-            house_number: editingAddress.street,
-            apartment_road: editingAddress.area,
-            landmark: editingAddress.landmark,
-       };
+      return {
+        id: editingAddress.id,
+        complete_address: editingAddress.full_address,
+        area: editingAddress.area || extractAreaFromAddress(editingAddress.full_address),
+        city: editingAddress.city,
+        type: editingAddress.type.charAt(0).toUpperCase() + editingAddress.type.slice(1) as any,
+        custom_tag: editingAddress.custom_label,
+        is_default: editingAddress.is_default,
+        latitude: editingAddress.latitude,
+        longitude: editingAddress.longitude,
+        house_number: editingAddress.street,
+        apartment_road: editingAddress.area,
+        landmark: editingAddress.landmark,
+      };
     }
     return {
-        complete_address: "",
-        floor: "",
-        landmark: "",
-        area: "",
-        city: "", 
-        type: "Home",
-        phone: "",
-        house_number: "",
-        apartment_road: "",
+      complete_address: "",
+      floor: "",
+      landmark: "",
+      area: "",
+      city: "",
+      type: "Home",
+      phone: "",
+      house_number: "",
+      apartment_road: "",
     };
   });
   const [addressData, setAddressData] = useState<AddressFormData>(() => {
     if (editingAddress) {
-        return {
-            type: editingAddress.type,
-            label: editingAddress.custom_label,
-            street: editingAddress.street,
-            area: editingAddress.area,
-            landmark: editingAddress.landmark,
-            fullAddress: editingAddress.full_address,
-            latitude: editingAddress.latitude,
-            longitude: editingAddress.longitude,
-            isDefault: editingAddress.is_default,
-            zipcode: editingAddress.postal_code,
-            city: editingAddress.city,
-            state: editingAddress.state
-        };
+      return {
+        type: editingAddress.type,
+        label: editingAddress.custom_label,
+        street: editingAddress.street,
+        area: editingAddress.area,
+        landmark: editingAddress.landmark,
+        fullAddress: editingAddress.full_address,
+        latitude: editingAddress.latitude,
+        longitude: editingAddress.longitude,
+        isDefault: editingAddress.is_default,
+        zipcode: editingAddress.postal_code,
+        city: editingAddress.city,
+        state: editingAddress.state
+      };
     }
     return {
-        type: 'home',
-        street: '',
-        area: '',
-        landmark: '',
-        fullAddress: '',
-        isDefault: false,
-        zipcode: '',
-        city: '',
-        state: ''
+      type: 'home',
+      street: '',
+      area: '',
+      landmark: '',
+      fullAddress: '',
+      isDefault: false,
+      zipcode: '',
+      city: '',
+      state: ''
     };
   });
   const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
   const [savingAddress, setSavingAddress] = useState<boolean>(false);
   const [loadingTypes, setLoadingTypes] = useState<boolean>(false);
-  
+
   const modalContentRef = useRef<HTMLDivElement>(null);
   const areaRef = useRef<HTMLInputElement>(null);
   const customTagRef = useRef<HTMLInputElement>(null);
@@ -691,7 +687,7 @@ export function AddressModal({
           const area = extractAreaFromDetailedAddress(detailedAddress);
           const city = extractCityFromDetailedAddress(detailedAddress);
           const state = extractStateFromDetailedAddress(detailedAddress);
-          
+
           // Update address system
           setAddressData(prev => ({
             ...prev,
@@ -708,7 +704,7 @@ export function AddressModal({
           // Fallback to basic string parsing if geocoding fails
           console.log("⚠️ Geocoding failed, using basic address parsing");
           const fallbackParsed = parseAddressString(address);
-          
+
           const area = fallbackParsed.area || extractAreaFromAddress(address);
           const city = fallbackParsed.city || extractCityFromAddress(address);
           const state = fallbackParsed.state || "";
@@ -801,36 +797,36 @@ export function AddressModal({
     const loadAvailableTypes = async () => {
       if (isOpen) {
         if (editingAddress) {
-             setStep("details"); // Edit mode starts at details
-             // States already initialized via initializer, but let's ensure consistency if prop changes
-             setNewAddress({
-                id: editingAddress.id,
-                complete_address: editingAddress.full_address,
-                area: editingAddress.area || extractAreaFromAddress(editingAddress.full_address),
-                city: editingAddress.city,
-                type: editingAddress.type.charAt(0).toUpperCase() + editingAddress.type.slice(1) as any,
-                custom_tag: editingAddress.custom_label,
-                is_default: editingAddress.is_default,
-                latitude: editingAddress.latitude,
-                longitude: editingAddress.longitude,
-                house_number: editingAddress.street,
-                apartment_road: editingAddress.area,
-                landmark: editingAddress.landmark,
-            });
-            setAddressData({
-                type: editingAddress.type,
-                label: editingAddress.custom_label,
-                street: editingAddress.street,
-                area: editingAddress.area,
-                landmark: editingAddress.landmark,
-                fullAddress: editingAddress.full_address,
-                latitude: editingAddress.latitude,
-                longitude: editingAddress.longitude,
-                isDefault: editingAddress.is_default,
-                zipcode: editingAddress.postal_code,
-            });
-            setLoadingTypes(false);
-            return;
+          setStep("details"); // Edit mode starts at details
+          // States already initialized via initializer, but let's ensure consistency if prop changes
+          setNewAddress({
+            id: editingAddress.id,
+            complete_address: editingAddress.full_address,
+            area: editingAddress.area || extractAreaFromAddress(editingAddress.full_address),
+            city: editingAddress.city,
+            type: editingAddress.type.charAt(0).toUpperCase() + editingAddress.type.slice(1) as any,
+            custom_tag: editingAddress.custom_label,
+            is_default: editingAddress.is_default,
+            latitude: editingAddress.latitude,
+            longitude: editingAddress.longitude,
+            house_number: editingAddress.street,
+            apartment_road: editingAddress.area,
+            landmark: editingAddress.landmark,
+          });
+          setAddressData({
+            type: editingAddress.type,
+            label: editingAddress.custom_label,
+            street: editingAddress.street,
+            area: editingAddress.area,
+            landmark: editingAddress.landmark,
+            fullAddress: editingAddress.full_address,
+            latitude: editingAddress.latitude,
+            longitude: editingAddress.longitude,
+            isDefault: editingAddress.is_default,
+            zipcode: editingAddress.postal_code,
+          });
+          setLoadingTypes(false);
+          return;
         }
 
         setLoadingTypes(true);
@@ -838,14 +834,14 @@ export function AddressModal({
         // Determine smart default type
         const hasHome = addresses.some((addr: any) => (addr.label || addr.type) === 'Home');
         const hasWork = addresses.some((addr: any) => (addr.label || addr.type) === 'Work');
-        
+
         let defaultType: AddressType = 'home';
         if (hasHome && hasWork) {
-            defaultType = 'other';
+          defaultType = 'other';
         } else if (hasHome) {
-            defaultType = 'work';
+          defaultType = 'work';
         }
-        
+
         // Reset forms with smart default
         setAddressData({
           type: defaultType,
@@ -860,10 +856,10 @@ export function AddressModal({
 
         // Also update legacy state
         setNewAddress(prev => ({
-            ...prev,
-            type: defaultType === 'home' ? 'Home' : defaultType === 'work' ? 'Work' : 'Other'
+          ...prev,
+          type: defaultType === 'home' ? 'Home' : defaultType === 'work' ? 'Work' : 'Other'
         }));
-        
+
         setValidationErrors({});
 
         // Load available types using the hook
@@ -897,16 +893,16 @@ export function AddressModal({
 
     try {
       // Validate required fields using the new address structure
-      const errors: {[key: string]: string} = {};
-      
+      const errors: { [key: string]: string } = {};
+
       if (!addressData.street.trim()) {
         errors.street = 'House number is required';
       }
-      
+
       if (!addressData.fullAddress.trim()) {
         errors.fullAddress = 'Please select a location on the map';
       }
-      
+
       if (addressData.type === 'other' && (!addressData.label?.trim())) {
         errors.label = 'Label is required for Other address type';
       }
@@ -914,7 +910,7 @@ export function AddressModal({
       // Check for duplicate custom label if type is 'other'
       if (addressData.type === 'other' && addressData.label?.trim()) {
         const currentLabel = addressData.label.trim().toLowerCase();
-        
+
         // Re-calculate existing labels (same logic as in AddressForm)
         const existingCustomLabels = (addresses || []).map((addr: any) => {
           if ((addr.type && addr.type.toLowerCase() === 'other') || addr.label === 'Other') {
@@ -924,7 +920,7 @@ export function AddressModal({
         }).filter((l: string) => l && l !== 'home' && l !== 'work');
 
         if (existingCustomLabels.includes(currentLabel)) {
-           errors.label = "This label already exists. Please choose another name.";
+          errors.label = "This label already exists. Please choose another name.";
         }
       }
 
@@ -949,7 +945,7 @@ export function AddressModal({
         full_address: addressData.fullAddress || '',
         city: addressData.city || '', // Use city from state
         state: addressData.state || '', // Use state from state
-        zipcode: addressData.zipcode || '', // Fallback zipcode if not extracted
+        zipcode: addressData.zipcode || '000000', // Fallback zipcode if not extracted
         latitude: addressData.latitude,
         longitude: addressData.longitude,
         delivery_notes: undefined,
@@ -961,11 +957,11 @@ export function AddressModal({
       // Call update or create based on editing mode
       let result;
       if (editingAddress?.id) {
-         result = await updateAddress(editingAddress.id, addressPayload as any);
+        result = await updateAddress(editingAddress.id, addressPayload as any);
       } else {
-         result = await createAddress(addressPayload as any);
+        result = await createAddress(addressPayload as any);
       }
-      
+
       if (result.success) {
         console.log('✅ Address saved successfully');
         // Trigger onSave. meaningful data if create, else just payload
@@ -989,71 +985,70 @@ export function AddressModal({
     }
   }, [addressData, createAddress, updateAddress, editingAddress, onSave, handleClose]);
 
-  if (!isOpen) return null;
+  // Use Radix UI primitives to integrate with the Radix FocusScope and PointerEvents system
+  // This completely fixes bugs where other Radix components (like Sheets/Dropdowns) steal focus/clicks
+  return (
+    <DialogPrimitive.Root open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+      <DialogPrimitive.Portal forceMount={isOpen ? true : undefined}>
+        {isOpen && (
+          <div className="fixed inset-0 z-[100000]">
+            <DialogPrimitive.Overlay className="fixed inset-0 bg-black/40 transition-opacity duration-300 ease-out" />
+            <DialogPrimitive.Content
+              className="fixed inset-0 flex items-end sm:items-center justify-center outline-none"
+              onInteractOutside={(e) => {
+                // Prevent default to avoid closing when interacting with google maps dropdowns, etc.
+                // AddressModal relies on explicit handleClose or close button.
+                e.preventDefault();
+              }}
+            >
+              {/* Style injection for robust mobile layout */}
+              <style>{`
+                @media (max-width: 639px) {
+                  .address-modal-mobile {
+                    position: fixed !important;
+                    top: 104px !important;
+                    bottom: 0 !important;
+                    left: 0 !important;
+                    right: 0 !important;
+                    width: 100% !important;
 
-  // Portal-based modal content
-  const modalContent = (
-    <div className="fixed inset-0" style={{ zIndex: 99999 }}>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/40 transition-opacity duration-300 ease-out"
-        onClick={handleClose}
-      />
-      
-      {/* Unified Modal Container */}
-      <div className="fixed inset-0 flex items-end sm:items-center justify-center pointer-events-none">
-        
-        {/* Style injection for robust mobile layout */}
-        <style>{`
-          @media (max-width: 639px) {
-            .address-modal-mobile {
-              position: fixed !important;
-              top: 104px !important;
-              bottom: 0 !important;
-              left: 0 !important;
-              right: 0 !important;
-              width: 100% !important;
-
-              max-height: none !important;
-              max-width: none !important;
-              border-radius: 1.5rem 1.5rem 0 0 !important;
-              transform: none !important;
-              z-index: 100000 !important;
-              display: flex !important;
-              flex-direction: column !important;
-              pointer-events: auto !important;
-            }
-          }
-        `}</style>
-        
-        <div 
-          className="address-modal-mobile relative bg-white w-full sm:w-[480px] sm:max-w-[90%] max-h-[90vh] sm:rounded-2xl rounded-t-3xl shadow-xl overflow-hidden transform transition-all duration-300 flex flex-col pointer-events-auto"
-          style={{ zIndex: 100000 }}
-        >
-          <AddressForm
-            newAddress={newAddress}
-            setNewAddress={setNewAddress}
-            addressData={addressData}
-            setAddressData={setAddressData}
-            availableTypes={availableTypes}
-            loadingTypes={loadingTypes}
-            savingAddress={savingAddress}
-            onSave={handleSaveAddress}
-            onClose={handleClose}
-            validationErrors={validationErrors}
-            setValidationErrors={setValidationErrors}
-            customTagRef={customTagRef as React.RefObject<HTMLInputElement>}
-            modalContentRef={modalContentRef as React.RefObject<HTMLDivElement>}
-            onLocationSelect={handleLocationSelect}
-            // Add existing addresses for uniqueness check
-            existingAddresses={addresses as any[]} // Convert to any to bypass strict checks
-            title={editingAddress ? 'Edit Delivery Address' : 'Add Delivery Address'}
-          />
-        </div>
-      </div>
-    </div>
+                    max-height: none !important;
+                    max-width: none !important;
+                    border-radius: 1.5rem 1.5rem 0 0 !important;
+                    transform: none !important;
+                    display: flex !important;
+                    flex-direction: column !important;
+                    pointer-events: auto !important;
+                  }
+                }
+              `}</style>
+              <div
+                className="address-modal-mobile relative bg-white w-full sm:w-[480px] sm:max-w-[90%] max-h-[90vh] sm:rounded-2xl rounded-t-3xl shadow-xl overflow-hidden transform transition-all duration-300 flex flex-col pointer-events-auto"
+              >
+                <AddressForm
+                  newAddress={newAddress}
+                  setNewAddress={setNewAddress}
+                  addressData={addressData}
+                  setAddressData={setAddressData}
+                  availableTypes={availableTypes}
+                  loadingTypes={loadingTypes}
+                  savingAddress={savingAddress}
+                  onSave={handleSaveAddress}
+                  onClose={handleClose}
+                  validationErrors={validationErrors}
+                  setValidationErrors={setValidationErrors}
+                  customTagRef={customTagRef as React.RefObject<HTMLInputElement>}
+                  modalContentRef={modalContentRef as React.RefObject<HTMLDivElement>}
+                  onLocationSelect={handleLocationSelect}
+                  // Add existing addresses for uniqueness check
+                  existingAddresses={addresses as any[]} // Convert to any to bypass strict checks
+                  title={editingAddress ? 'Edit Delivery Address' : 'Add Delivery Address'}
+                />
+              </div>
+            </DialogPrimitive.Content>
+          </div>
+        )}
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
-
-  // Use ReactDOM.createPortal to render modal at root level
-  return ReactDOM.createPortal(modalContent, document.body);
 }

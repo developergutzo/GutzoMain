@@ -66,7 +66,7 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress, onEditAddre
 
   useEffect(() => {
     if (isOpen) {
-       refreshAddresses();
+      refreshAddresses();
     }
   }, [isOpen, refreshTrigger, refreshAddresses]);
 
@@ -86,21 +86,21 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress, onEditAddre
   const [deleteConfirmationId, setDeleteConfirmationId] = useState<string | null>(null);
 
   const handleSelectAddress = async (address: UserAddress) => {
-      if (user?.phone) {
-          try {
-            setSelectingAddressId(address.id);
-            // Set as default address
-            await setDefaultAddress(address.id);
-            // Refresh location context
-            await refreshLocation();
-            onClose();
-            // Do not force navigate to home - stay on current page
-          } catch (error) {
-            console.error("Failed to select address:", error);
-          } finally {
-            setSelectingAddressId(null);
-          }
+    if (user?.phone) {
+      try {
+        setSelectingAddressId(address.id);
+        // Set as default address
+        await setDefaultAddress(address.id);
+        // Refresh location context
+        await refreshLocation();
+        onClose();
+        // Do not force navigate to home - stay on current page
+      } catch (error) {
+        console.error("Failed to select address:", error);
+      } finally {
+        setSelectingAddressId(null);
       }
+    }
   };
 
   /* 
@@ -121,11 +121,11 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress, onEditAddre
 
   useEffect(() => {
     if (isOpen) {
-        // We can safely access LocationService here as it is imported
-        const cached = LocationService.getCachedLocation();
-        if (cached) {
-             setGpsLocationName(LocationService.getLocationDisplay(cached));
-        }
+      // We can safely access LocationService here as it is imported
+      const cached = LocationService.getCachedLocation();
+      if (cached) {
+        setGpsLocationName(LocationService.getLocationDisplay(cached));
+      }
     }
   }, [isOpen]);
 
@@ -133,95 +133,95 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress, onEditAddre
   const placesServiceRef = useRef<google.maps.places.PlacesService | null>(null);
 
   const handlePredictionSelect = (prediction: google.maps.places.AutocompletePrediction) => {
-     if (!window.google?.maps?.places) return;
+    if (!window.google?.maps?.places) return;
 
-     if (!placesServiceRef.current) {
-        // Create a dummy div for the service (as required by the API)
-        const dummyDiv = document.createElement('div');
-        placesServiceRef.current = new google.maps.places.PlacesService(dummyDiv);
-     }
+    if (!placesServiceRef.current) {
+      // Create a dummy div for the service (as required by the API)
+      const dummyDiv = document.createElement('div');
+      placesServiceRef.current = new google.maps.places.PlacesService(dummyDiv);
+    }
 
-     const request = {
-        placeId: prediction.place_id,
-        fields: ['name', 'geometry', 'formatted_address', 'address_components']
-     };
+    const request = {
+      placeId: prediction.place_id,
+      fields: ['name', 'geometry', 'formatted_address', 'address_components']
+    };
 
-     placesServiceRef.current.getDetails(request, async (place, status) => {
-        if (status === google.maps.places.PlacesServiceStatus.OK && place && place.geometry && place.geometry.location) {
-             const lat = place.geometry.location.lat();
-             const lng = place.geometry.location.lng();
-             const address = place.formatted_address || place.name || '';
-             
-             // Extract City and State for logic (like isInCoimbatore)
-             let city = '';
-             let state = '';
-             let country = 'India';
+    placesServiceRef.current.getDetails(request, async (place, status) => {
+      if (status === google.maps.places.PlacesServiceStatus.OK && place && place.geometry && place.geometry.location) {
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+        const address = place.formatted_address || place.name || '';
 
-             if (place.address_components) {
-                for (const component of place.address_components) {
-                    if (component.types.includes('locality')) {
-                        city = component.long_name;
-                    }
-                    if (component.types.includes('administrative_area_level_1')) {
-                        state = component.long_name;
-                    }
-                    if (component.types.includes('country')) {
-                        country = component.long_name;
-                    }
-                }
-             }
+        // Extract City and State for logic (like isInCoimbatore)
+        let city = '';
+        let state = '';
+        let country = 'India';
 
-             // Construct LocationData object
-             const selectedLocation = {
-                city,
-                state,
-                country,
-                formatted_address: address, // This will be used for display
-                coordinates: {
-                  latitude: lat,
-                  longitude: lng
-                },
-                timestamp: Date.now()
-             };
-
-            // Override location in context
-            if (context?.overrideLocation) {
-                await context.overrideLocation(selectedLocation);
-            } else {
-                console.error("overrideLocation missing in context");
+        if (place.address_components) {
+          for (const component of place.address_components) {
+            if (component.types.includes('locality')) {
+              city = component.long_name;
             }
-
-            onClose();
-        } else {
-            console.error("Failed to fetch place details:", status);
+            if (component.types.includes('administrative_area_level_1')) {
+              state = component.long_name;
+            }
+            if (component.types.includes('country')) {
+              country = component.long_name;
+            }
+          }
         }
-     });
+
+        // Construct LocationData object
+        const selectedLocation = {
+          city,
+          state,
+          country,
+          formatted_address: address, // This will be used for display
+          coordinates: {
+            latitude: lat,
+            longitude: lng
+          },
+          timestamp: Date.now()
+        };
+
+        // Override location in context
+        if (context?.overrideLocation) {
+          await context.overrideLocation(selectedLocation);
+        } else {
+          console.error("overrideLocation missing in context");
+        }
+
+        onClose();
+      } else {
+        console.error("Failed to fetch place details:", status);
+      }
+    });
   };
 
   const handleSearchSelect = (loc: any) => {
-     // Legacy handler, unused now if we use predictions, 
-     // but kept null op to satisfy interface if needed
-  }; 
+    // Legacy handler, unused now if we use predictions, 
+    // but kept null op to satisfy interface if needed
+  };
 
   // Safe access to context (though hook ensures it exists)
   const context = useLocation();
 
   return (
-    <Sheet open={isOpen} onOpenChange={onClose}>
+    <Sheet open={isOpen} onOpenChange={onClose} modal={false}>
       <SheetContent
         side={isDesktop ? "right" : "bottom"}
         className={`
             p-0 bg-white transition-transform duration-300 ease-in-out
-            ${isDesktop 
-                ? "h-full w-[95%] max-w-[600px] border-l border-gray-200 shadow-2xl" 
-                : "rounded-t-3xl w-full max-w-full fixed bottom-0 left-0 right-0 z-[1100]"
-            }
+            ${isDesktop
+            ? "h-full w-[95%] max-w-[600px] border-l border-gray-200 shadow-2xl"
+            : "rounded-t-3xl w-full max-w-full fixed bottom-0 left-0 right-0 z-[1100]"
+          }
         `}
-        style={isDesktop ? {} : { 
-            top: '104px', 
-            bottom: 0,
-            // zIndex is handled by class orSheet default, but explicit for mobile as per original
-            zIndex: 1100 
+        style={isDesktop ? {} : {
+          top: '104px',
+          bottom: 0,
+          // zIndex is handled by class orSheet default, but explicit for mobile as per original
+          zIndex: 1100
         }}
       >
         <style>{`
@@ -268,9 +268,9 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress, onEditAddre
           </div>
 
           <LocationSearchInput
-            key={isOpen ? 'search-active' : 'search-inactive'} 
+            key={isOpen ? 'search-active' : 'search-inactive'}
             onSearchChange={setSearchText}
-            onLocationSelect={() => {}} // Disabled as we handle it via predictions
+            onLocationSelect={() => { }} // Disabled as we handle it via predictions
             onPredictionsChange={setPredictions}
           />
         </SheetHeader>
@@ -285,15 +285,15 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress, onEditAddre
             <div className="flex items-start gap-4 min-w-0">
               <div className="p-2 bg-gutzo-primary/10 rounded-full flex-shrink-0 group-hover:bg-gutzo-primary/20 transition-colors">
                 {locationLoading ? (
-                   <Loader2 className="h-5 w-5 text-gutzo-primary animate-spin" />
+                  <Loader2 className="h-5 w-5 text-gutzo-primary animate-spin" />
                 ) : (
-                   <LocateFixed className="h-5 w-5 text-gutzo-primary" />
+                  <LocateFixed className="h-5 w-5 text-gutzo-primary" />
                 )}
               </div>
               <div className="min-w-0">
                 <h4 className="font-semibold text-gutzo-primary">Use current location</h4>
                 <p className="text-sm text-gray-500 truncate mt-0.5">
-                   {gpsLocationName || "Using GPS"}
+                  {gpsLocationName || "Using GPS"}
                 </p>
               </div>
             </div>
@@ -305,29 +305,29 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress, onEditAddre
           {/* Search Results List (Visible when searching) */}
           {isSearching && predictions.length > 0 && (
             <div className="space-y-3">
-               <h3 className="text-sm font-medium text-gray-500 mb-2 px-1">
-                  Search Results
-               </h3>
-               {predictions.map((prediction) => (
-                  <button
-                    key={prediction.place_id}
-                    onClick={() => handlePredictionSelect(prediction)}
-                    className="w-full flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors text-left border-b border-gray-50 last:border-0"
-                  >
-                     <MapPin className="h-5 w-5 text-gray-400 flex-shrink-0 mt-0.5" />
-                     <div>
-                        <h4 className="font-medium text-gray-900 text-sm">
-                           {prediction.structured_formatting?.main_text || prediction.description}
-                        </h4>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                           {prediction.structured_formatting?.secondary_text}
-                        </p>
-                     </div>
-                  </button>
-               ))}
-               <div className="flex justify-end p-2">
-                   <span className="text-[10px] text-gray-400">powered by Google</span>
-               </div>
+              <h3 className="text-sm font-medium text-gray-500 mb-2 px-1">
+                Search Results
+              </h3>
+              {predictions.map((prediction) => (
+                <button
+                  key={prediction.place_id}
+                  onClick={() => handlePredictionSelect(prediction)}
+                  className="w-full flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors text-left border-b border-gray-50 last:border-0"
+                >
+                  <MapPin className="h-5 w-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-gray-900 text-sm">
+                      {prediction.structured_formatting?.main_text || prediction.description}
+                    </h4>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {prediction.structured_formatting?.secondary_text}
+                    </p>
+                  </div>
+                </button>
+              ))}
+              <div className="flex justify-end p-2">
+                <span className="text-[10px] text-gray-400">powered by Google</span>
+              </div>
             </div>
           )}
 
@@ -373,15 +373,14 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress, onEditAddre
                       return (
                         <div
                           key={addr.id}
-                          className={`relative p-4 rounded-xl border bg-white transition-colors group cursor-pointer ${
-                             isSelecting ? 'border-gutzo-primary bg-gutzo-primary/5' : 'border-gray-200 hover:border-gutzo-primary'
-                          }`}
+                          className={`relative p-4 rounded-xl border bg-white transition-colors group cursor-pointer ${isSelecting ? 'border-gutzo-primary bg-gutzo-primary/5' : 'border-gray-200 hover:border-gutzo-primary'
+                            }`}
                           onClick={() => !isSelecting && handleSelectAddress(addr)}
                         >
                           <div className="flex items-start gap-3">
                             <Icon className="h-5 w-5 text-gutzo-primary flex-shrink-0 mt-0.5" />
                             <div className="flex-1 min-w-0">
-                                <h4 className="font-medium text-gray-900 mb-1 flex items-center gap-2">
+                              <h4 className="font-medium text-gray-900 mb-1 flex items-center gap-2">
                                 {label}
                                 {addr.is_default && (
                                   <span
@@ -458,25 +457,25 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress, onEditAddre
               </div>
 
               <AlertDialog open={!!deleteConfirmationId} onOpenChange={(open) => !open && setDeleteConfirmationId(null)}>
-                <AlertDialogContent 
+                <AlertDialogContent
                   className="p-6 border-0 shadow-xl bg-white gap-0 overflow-hidden outline-none"
-                  style={{ 
+                  style={{
                     borderRadius: '24px',
                     width: '90vw',
                     maxWidth: '360px'
                   }}
                 >
                   {/* Close Icon (Top Right) */}
-                  <button 
+                  <button
                     onClick={() => setDeleteConfirmationId(null)}
                     className="absolute right-4 top-4 p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors outline-none"
                   >
-                     <X size={20} strokeWidth={2.5} />
+                    <X size={20} strokeWidth={2.5} />
                   </button>
 
                   <div className="flex flex-col gap-2 mt-2">
                     <AlertDialogHeader className="space-y-0">
-                      <AlertDialogTitle 
+                      <AlertDialogTitle
                         className="text-left text-gray-900 leading-tight"
                         style={{ fontSize: '20px', fontWeight: 600 }}
                       >
@@ -488,9 +487,9 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress, onEditAddre
                     </AlertDialogHeader>
 
                     <div className="grid grid-cols-2 gap-3 w-full">
-                      <button 
+                      <button
                         className="w-full h-12 flex items-center justify-center font-bold text-[16px] uppercase tracking-wide transition-transform active:scale-95 outline-none"
-                        style={{ 
+                        style={{
                           backgroundColor: '#E8F6F1',
                           color: '#1BA672',
                           borderRadius: '10px'
@@ -499,12 +498,12 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress, onEditAddre
                       >
                         No
                       </button>
-                      
+
                       <button
                         className="w-full h-12 flex items-center justify-center text-white font-bold text-[16px] uppercase tracking-wide shadow-md transition-transform active:scale-95 outline-none"
-                        style={{ 
-                           backgroundColor: '#1BA672',
-                           borderRadius: '10px'
+                        style={{
+                          backgroundColor: '#1BA672',
+                          borderRadius: '10px'
                         }}
                         onClick={async () => {
                           if (deleteConfirmationId) {
@@ -520,7 +519,7 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress, onEditAddre
                 </AlertDialogContent>
               </AlertDialog>
             </>
-          )} 
+          )}
 
           {/* Search Results would go here if we were rendering a custom list, 
               but Google Maps Autocomplete renders its own dropdown attached to the input.
@@ -533,9 +532,9 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress, onEditAddre
       <LoadingScreen
         isOpen={!!selectingAddressId || locationLoading}
         messages={[
-           locationLoading ? "Finding your spot..." : "Setting your location...",
-           "Checking kitchens nearby...",
-           "Getting menus ready..."
+          locationLoading ? "Finding your spot..." : "Setting your location...",
+          "Checking kitchens nearby...",
+          "Getting menus ready..."
         ]}
       />
 
