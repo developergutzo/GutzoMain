@@ -40,7 +40,7 @@ router.get('/', asyncHandler(async (req, res) => {
         subtotal: 0
       };
     }
-    
+
     const itemTotal = (item.product?.price || 0) * item.quantity;
     vendorGroups[vendorId].items.push({
       ...item,
@@ -91,7 +91,7 @@ router.post('/sync', asyncHandler(async (req, res) => {
   // We need to fetch products to get vendor_id if not provided, but
   // usually the frontend sends vendor_id.
   // We'll rely on the input items having product_id, vendor_id, quantity.
-  
+
   const formattedItems = items.map(item => ({
     user_phone: req.user.phone,
     product_id: item.productId || item.product_id,
@@ -117,7 +117,7 @@ router.post('/sync', asyncHandler(async (req, res) => {
     successResponse(res, { items: newItems }, 'Cart synced successfully');
   } catch (batchError) {
     console.warn('⚠️ Batch insert failed, attempting serial insert to salvage valid items:', batchError.message);
-    
+
     // Fallback: Insert valid items one by one
     const savedItems = [];
     for (const item of formattedItems) {
@@ -127,7 +127,7 @@ router.post('/sync', asyncHandler(async (req, res) => {
           .insert(item)
           .select()
           .single();
-          
+
         if (!singleError && savedItem) {
           savedItems.push(savedItem);
         }
@@ -175,7 +175,7 @@ router.post('/', validate(schemas.addToCart), asyncHandler(async (req, res) => {
   if (existingItem) {
     // Update quantity
     const newQuantity = existingItem.quantity + quantity;
-    
+
     // Check max order quantity
     if (product.max_order_qty && newQuantity > product.max_order_qty) {
       throw new ApiError(400, `Maximum ${product.max_order_qty} items allowed`);
@@ -183,7 +183,7 @@ router.post('/', validate(schemas.addToCart), asyncHandler(async (req, res) => {
 
     const { data: updated, error: updateError } = await supabaseAdmin
       .from('cart')
-      .update({ 
+      .update({
         quantity: newQuantity,
         updated_at: new Date().toISOString()
       })
@@ -207,7 +207,7 @@ router.post('/', validate(schemas.addToCart), asyncHandler(async (req, res) => {
       variant_id,
       addons: addons ? JSON.stringify(addons) : null,
       special_instructions,
-      metadata
+      metadata: metadata || null
     })
     .select()
     .single();
@@ -383,9 +383,9 @@ router.post('/validate', asyncHandler(async (req, res) => {
 
   Object.values(vendorTotals).forEach(({ vendor, total }) => {
     if (vendor.minimum_order && total < vendor.minimum_order) {
-      issues.push({ 
-        vendor_id: vendor.id, 
-        issue: `Minimum order ₹${vendor.minimum_order} required for ${vendor.name}. Current: ₹${total}` 
+      issues.push({
+        vendor_id: vendor.id,
+        issue: `Minimum order ₹${vendor.minimum_order} required for ${vendor.name}. Current: ₹${total}`
       });
     }
   });
