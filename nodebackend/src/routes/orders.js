@@ -754,4 +754,95 @@ router.get('/:id/kot', asyncHandler(async (req, res) => {
   res.send(html);
 }));
 
+
+// ============================================
+// REPRICE ORDER (for payment retry with fresh prices)
+// PATCH /api/orders/:id/reprice
+// ============================================
+router.patch('/:id/reprice', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  // 1. Fetch the existing failed order (must be 'created' = unpaid)
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  const { data: order, error } = await supabaseAdmin
+    .from('orders')
+    .select('*, items:order_items(*)')
+    .eq(isUUID ? 'id' : 'order_number', id)
+    .eq('user_id', req.user.id)
+    .single();
+
+  if (error || !order) throw new ApiError(404, 'Order not found');
+
+  // Only allow reprice on unpaid orders
+  if (order.status !== 'created') {
+    throw new ApiError(400, `Cannot reprice an order with status '${order.status}'. Only unpaid orders can be repriced.`);
+  }
+
+  // 2. Rebuild items array for the calculator (use stored quantities, fresh prices)
+  const items = (order.items || []).map(item => ({
+    product_id: item.product_id,
+    quantity: item.quantity,
+    variant_id: item.variant_id,
+    addons: item.customizations ? JSON.parse(item.customizations) : null,
+    special_instructions: item.special_instructions,
+  }));
+
+  // 3. Recalculate with CURRENT product prices AND current fees
+  //    delivery_fee and platform_fee are intentionally NOT overridden
+  //    so calculateOrderTotal fetches the vendor's current delivery_fee
+  //    and uses the default platform_fee — reflecting today's rates.
+  const feeOverrides = {
+    packaging_fee: order.packaging_fee,     // Keep packaging as-is
+    taxes: undefined,                        // Recalculate taxes from scratch
+    discount_amount: order.discount_amount, // Keep any coupon discount
+  };
+
+  const calculation = await calculateOrderTotal(items, order.vendor_id, order.coupon_code, feeOverrides);
+  const newTotal = calculation.total + (order.tip_amount || 0);
+
+  // 4. Update order with fresh prices
+  const { data: updated, error: updateError } = await supabaseAdmin
+    .from('orders')
+    .update({
+      subtotal: calculation.subtotal,
+      taxes: calculation.taxes,
+      total_amount: newTotal,
+      gst_items: calculation.gstDetails.itemTax,
+      gst_fees: calculation.gstDetails.feeTax,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', order.id)
+    .select()
+    .single();
+
+  if (updateError) throw new ApiError(500, `Failed to reprice order: ${updateError.message}`);
+
+  // 5. Also update individual order_items with new unit prices
+  for (const item of calculation.itemDetails) {
+    await supabaseAdmin
+      .from('order_items')
+      .update({
+        unit_price: item.unit_price,
+        total_price: item.total_price,
+      })
+      .eq('order_id', order.id)
+      .eq('product_id', item.product_id);
+  }
+
+  successResponse(res, {
+    order_number: updated.order_number,
+    new_total: newTotal,
+    breakdown: {
+      subtotal: calculation.subtotal,
+      delivery_fee: calculation.deliveryFee,
+      platform_fee: calculation.platformFee,
+      taxes: calculation.taxes,
+      discount: calculation.discount,
+      tip: order.tip_amount || 0,
+      total: newTotal,
+    }
+  }, 'Order repriced with current prices');
+}));
+
 export default router;
+

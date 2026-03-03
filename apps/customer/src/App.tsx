@@ -207,7 +207,20 @@ function AppContent() {
     }
   }, [isAuthenticated, user?.phone]);
 
-  // Initial Data Fetch - useVendors hooks handles itself
+  // Auto-open panel from URL query param (e.g. ?open=orders from PaymentStatusPage)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const openPanel = params.get('open');
+    if (openPanel === 'orders') {
+      setProfilePanelContent('orders');
+      setShowProfilePanel(true);
+      // Clean up the URL param without a full page reload
+      const url = new URL(window.location.href);
+      url.searchParams.delete('open');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, []);
+
   // Removed redundant loadVendorProducts() call
 
   useEffect(() => {

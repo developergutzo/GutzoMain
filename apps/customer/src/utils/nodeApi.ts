@@ -524,6 +524,14 @@ class NodeApiService {
         });
     }
 
+    async repriceOrder(phone: string, id: string) {
+        const formattedPhone = this.formatPhone(phone);
+        return this.request(`/orders/${id}/reprice`, {
+            method: "PATCH",
+            headers: { "x-user-phone": formattedPhone },
+        });
+    }
+
     // --- Subscriptions ---
     async getSubscriptions(phone: string) {
         const formattedPhone = this.formatPhone(phone);
