@@ -102,6 +102,7 @@ export function CheckoutPage() {
     const [expandedBill, setExpandedBill] = useState(false);
     const [useMockPayment, setUseMockPayment] = useState(false);
     const [useMockShadowfax, setUseMockShadowfax] = useState(true);
+    const [useFreeFees, setUseFreeFees] = useState(false);
 
     // Constants
     const ITEMS_GST_RATE = 0.05;
@@ -349,8 +350,11 @@ export function CheckoutPage() {
     const displayItems = syncedItems.length > 0 ? syncedItems : cartItems;
     const itemTotal = displayItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
+    const effectiveDeliveryFee = useFreeFees ? 0 : deliveryFee;
+    const effectivePlatformFee = useFreeFees ? 0 : PLATFORM_FEE;
+
     const donation = isDonationChecked ? donationAmount : 0;
-    const grandTotal = itemTotal + deliveryFee + PLATFORM_FEE + donation;
+    const grandTotal = itemTotal + effectiveDeliveryFee + effectivePlatformFee + donation;
     const savings = Math.round(grandTotal * 0.15);
 
     const handleQuantityChange = async (productId: string, newQty: number) => {
@@ -396,8 +400,8 @@ export function CheckoutPage() {
                 mock_shadowfax: useMockShadowfax,
                 order_source: isSubscription ? 'subscription' : 'app',
                 // Send dynamic fees
-                delivery_fee: deliveryFee,
-                platform_fee: PLATFORM_FEE,
+                delivery_fee: effectiveDeliveryFee,
+                platform_fee: effectivePlatformFee,
                 taxes: 0,
                 discount_amount: 0,
                 tip_amount: isDonationChecked ? donationAmount : 0
@@ -1061,10 +1065,10 @@ export function CheckoutPage() {
                                                 <span>Delivery Partner Fee</span>
                                                 <span className="text-gray-400 animate-pulse text-xs font-semibold">Calculating...</span>
                                             </div>
-                                        ) : deliveryFee > 0 ? (
+                                        ) : effectiveDeliveryFee > 0 ? (
                                             <div className="flex justify-between">
                                                 <span>Delivery Partner Fee</span>
-                                                <span>₹{deliveryFee.toFixed(2)}</span>
+                                                <span>₹{effectiveDeliveryFee.toFixed(2)}</span>
                                             </div>
                                         ) : (
                                             <div className="flex justify-between text-green-600">
@@ -1075,7 +1079,11 @@ export function CheckoutPage() {
 
                                         <div className="flex justify-between">
                                             <span>Platform Fee</span>
-                                            <span>₹{PLATFORM_FEE.toFixed(2)}</span>
+                                            {effectivePlatformFee === 0 ? (
+                                                <span className="text-green-600 font-semibold">FREE</span>
+                                            ) : (
+                                                <span>₹{effectivePlatformFee.toFixed(2)}</span>
+                                            )}
                                         </div>
 
 
@@ -1252,6 +1260,20 @@ export function CheckoutPage() {
                                 />
                                 <label htmlFor="mockShadowfaxMobile" className="text-xs text-gray-600 font-medium cursor-pointer select-none">
                                     Mock Shadowfax Order
+                                </label>
+                            </div>
+
+                            {/* Free Fees Checkbox */}
+                            <div className="flex items-center gap-2 mb-3 px-1">
+                                <input
+                                    type="checkbox"
+                                    id="freeFeeMobile"
+                                    checked={useFreeFees}
+                                    onChange={(e) => setUseFreeFees(e.target.checked)}
+                                    className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
+                                />
+                                <label htmlFor="freeFeeMobile" className="text-xs text-gray-600 font-medium cursor-pointer select-none">
+                                    Free Delivery &amp; Platform Fee (Dev Only)
                                 </label>
                             </div>
 
