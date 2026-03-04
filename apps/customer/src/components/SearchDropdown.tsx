@@ -1,4 +1,4 @@
-import { Search, Clock, TrendingUp, X } from "lucide-react";
+import { Search, Clock, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 interface SearchDropdownProps {
@@ -64,33 +64,11 @@ export function SearchDropdown({ isOpen, onClose, searchQuery, onSearchChange }:
         </div>
       )}
 
-      {/* Popular Searches */}
+      {/* Recent Searches */}
       {!searchQuery && (
         <div className="p-4">
           <div className="flex items-center gap-2 mb-3">
-            <TrendingUp className="h-4 w-4 text-gray-400" />
-            <h3 className="font-medium text-gray-900">Popular Searches</h3>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {["Salads", "Protein Bowls", "Smoothies", "Vegan", "Keto", "Gluten-Free"].map((item) => (
-              <button
-                key={item}
-                onClick={() => handleSearchSelect(item)}
-                className="px-4 py-2 bg-gray-50 hover:bg-gray-100 rounded-full text-sm text-gray-700 border border-gray-200 transition-colors"
-              >
-                {item}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Recent Searches */}
-      {!searchQuery && (
-        <div className="p-4 border-t border-gray-100">
-          <div className="flex items-center gap-2 mb-3">
-            <Clock className="h-4 w-4 text-gray-400" />
-            <h3 className="font-medium text-gray-900">Recent Searches</h3>
+            <h3 className="text-sm font-medium text-gray-500">Recent Searches</h3>
           </div>
           <div className="space-y-1">
             {["Fresh Bowls", "Salads", "Protein Meals", "Smoothies"].map((item, index) => (
@@ -100,7 +78,7 @@ export function SearchDropdown({ isOpen, onClose, searchQuery, onSearchChange }:
                 className="w-full flex items-center gap-3 px-3 py-2 hover:bg-gray-50 rounded-lg transition-colors text-left"
               >
                 <Clock className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                <span className="flex-1 text-sm text-gray-700">{item}</span>
+                <span className="flex-1 text-[15px] font-normal text-gray-700">{item}</span>
               </button>
             ))}
           </div>
