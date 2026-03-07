@@ -1,6 +1,9 @@
 import { Search, X, Clock } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "./ui/sheet";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+import { useRecentSearches } from "../hooks/useRecentSearches";
+import { useCategories } from "../hooks/useCategories";
+import { useRouter } from "./Router";
 
 interface SearchBottomSheetProps {
   isOpen: boolean;
@@ -11,12 +14,9 @@ interface SearchBottomSheetProps {
 
 export function SearchBottomSheet({ isOpen, onClose, searchQuery, onSearchChange }: SearchBottomSheetProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [recentSearches] = useState<string[]>([
-    "Healthy Bowls",
-    "Salads",
-    "Protein Meals",
-    "Smoothies"
-  ]);
+  const { navigate } = useRouter();
+  const { recentSearches, clearSearches, addSearch } = useRecentSearches();
+  const { categories, loading: categoriesLoading } = useCategories();
 
   useEffect(() => {
     if (isOpen && inputRef.current) {
@@ -28,8 +28,10 @@ export function SearchBottomSheet({ isOpen, onClose, searchQuery, onSearchChange
   }, [isOpen]);
 
   const handleSearchSelect = (query: string) => {
+    addSearch(query);
     onSearchChange(query);
     onClose();
+    navigate(`/search?q=${encodeURIComponent(query)}`);
   };
 
   const handleClearSearch = () => {
@@ -38,15 +40,22 @@ export function SearchBottomSheet({ isOpen, onClose, searchQuery, onSearchChange
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && searchQuery.trim()) {
+      addSearch(searchQuery.trim());
       onClose();
+      // We also dispatch a custom event if App.tsx needs to do anything globally,
+      // but the hook alone handles persistence.
+      window.dispatchEvent(new CustomEvent('save-recent-search', { detail: searchQuery.trim() }));
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
+
+  const todayMoodCategories = categories; // Display all categories
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent 
         side="bottom" 
-        className="rounded-t-3xl p-0 w-full max-w-full left-0 right-0 transition-transform duration-300 ease-in-out" 
+        className="rounded-t-3xl p-0 w-full max-w-full left-0 right-0 transition-transform duration-300 ease-in-out flex flex-col" 
         style={{ top: '104px', bottom: 0, position: 'fixed', zIndex: 1100 }}
       >
         <style>{`
@@ -75,9 +84,13 @@ export function SearchBottomSheet({ isOpen, onClose, searchQuery, onSearchChange
               transform: translateY(100%);
             }
           }
+          .mask-edges-horizontal {
+            -webkit-mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
+            mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
+          }
         `}</style>
         {/* Always visible close button, top right, above all content */}
-        <SheetHeader className="p-4 sm:p-6 border-b border-gray-100 space-y-4">
+        <SheetHeader className="p-4 sm:p-6 border-b border-gray-100 space-y-4 shrink-0">
           <div className="flex items-center justify-between">
             <SheetTitle className="text-xl font-bold text-gray-900">Search</SheetTitle>
             <button
@@ -112,39 +125,118 @@ export function SearchBottomSheet({ isOpen, onClose, searchQuery, onSearchChange
           </div>
         </SheetHeader>
 
-        <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
-          {/* Recent Searches */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 pb-24">
+          
+          {/* Empty State: Recent Searches & Today's Mood */}
           {!searchQuery && (
-            <>
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <h3 className="text-sm font-medium text-gray-500">Recent Searches</h3>
+            <div className="pb-8">
+              
+              {/* Recent Searches Section */}
+              {recentSearches.length > 0 && (
+                <div className="mb-8">
+                  <div className="flex items-center justify-between mb-4">
+                     <h3 className="text-[13px] font-semibold tracking-wider text-gray-500 uppercase">Your Recent Searches</h3>
+                     <button 
+                       onClick={clearSearches}
+                       className="text-sm font-medium text-gutzo-error hover:text-gutzo-error/80 transition-colors"
+                     >
+                       Clear
+                     </button>
+                  </div>
+                  
+                  <div className="flex overflow-x-auto scrollbar-hide gap-3 pb-2 -mx-4 px-4 mask-edges-horizontal">
+                    {recentSearches.map((item, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleSearchSelect(item)}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-100 rounded-xl transition-colors shrink-0"
+                      >
+                        <Clock className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                        <span className="text-[14px] font-medium text-gray-700 whitespace-nowrap">{item}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  {recentSearches.map((item, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleSearchSelect(item)}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 rounded-xl transition-colors text-left"
-                    >
-                      <Clock className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                      <span className="flex-1 text-[15px] font-normal text-gray-700">{item}</span>
-                    </button>
-                  ))}
+              )}
+
+              {/* Today's Mood Section */}
+              {todayMoodCategories.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-5">
+                     <h3 className="text-[13px] font-semibold tracking-wider text-gray-500 uppercase">What's on your mind?</h3>
+                  </div>
+                  
+                  {categoriesLoading ? (
+                     <div className="flex flex-col min-w-max pb-2 -mx-4 px-4 mask-edges-horizontal">
+                       <div className="flex overflow-x-auto scrollbar-hide gap-3 mb-3">
+                         {[...Array(5)].map((_, i) => (
+                            <div key={`row1-${i}`} className="flex flex-col items-center shrink-0 w-[80px] animate-pulse">
+                              <div className="w-[74px] h-[74px] rounded-full bg-gray-100 mb-2"></div>
+                              <div className="w-12 h-3 rounded bg-gray-100"></div>
+                            </div>
+                         ))}
+                       </div>
+                       <div className="flex overflow-x-auto scrollbar-hide gap-3">
+                         {[...Array(5)].map((_, i) => (
+                            <div key={`row2-${i}`} className="flex flex-col items-center shrink-0 w-[80px] animate-pulse">
+                              <div className="w-[74px] h-[74px] rounded-full bg-gray-100 mb-2"></div>
+                              <div className="w-12 h-3 rounded bg-gray-100"></div>
+                            </div>
+                         ))}
+                       </div>
+                     </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-y-6 justify-start pt-2 pb-6 px-1">
+                      {todayMoodCategories.map((cat) => (
+                        <button
+                          key={cat.id}
+                          onClick={() => handleSearchSelect(cat.name)}
+                          className="flex flex-col items-center group focus:outline-none shrink-0"
+                          style={{ width: '25%' }}
+                        >
+                          <span
+                            className="block rounded-full flex items-center justify-center overflow-hidden mb-2 transition-transform group-hover:scale-105 bg-gray-50 border border-gray-100 shadow-sm shrink-0"
+                            style={{ width: '70px', height: '70px' }}
+                          >
+                            {cat.image_url ? (
+                              <img
+                                src={cat.image_url}
+                                alt={cat.name}
+                                className="w-full h-full object-cover rounded-full"
+                                style={{ aspectRatio: 1, display: 'block' }}
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gray-100 flex items-center justify-center text-[10px] text-gray-400">Img</div>
+                            )}
+                          </span>
+                          <span className="text-[12px] font-medium text-gray-700 truncate w-full text-center group-hover:text-gutzo-primary transition-colors px-1">
+                            {cat.name}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
-            </>
+              )}
+
+              {recentSearches.length === 0 && todayMoodCategories.length === 0 && !categoriesLoading && (
+                <div className="text-center py-10 text-gray-500 text-sm">
+                  Type above to start searching
+                </div>
+              )}
+            </div>
           )}
 
-          {/* Search Results Info */}
+          {/* Search Results Info (when typing but before enter) */}
           {searchQuery && (
-            <div className="text-center py-8">
-              <Search className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-sm text-gray-500">
-                Searching for "{searchQuery}"
+            <div className="text-center py-12 flex flex-col items-center justify-center min-h-[200px]">
+              <Search className="h-12 w-12 text-gray-200 mx-auto mb-4" />
+              <p className="text-sm font-medium text-gray-600">
+                Press Enter or click the Search icon
               </p>
               <p className="text-xs text-gray-400 mt-2">
-                Results will appear in the main screen
+                to see results for "{searchQuery}" on the main screen
               </p>
             </div>
           )}

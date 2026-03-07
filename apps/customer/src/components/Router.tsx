@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 
-type Route = '/' | '/T&C' | '/refund_policy' | '/privacy_policy' | '/payment-status' | '/contact' | '/about' | '/checkout' | '/phonepe-soon' | `/vendor/${string}` | `/tracking/${string}`;
+type Route = '/' | '/search' | `/search?${string}` | '/T&C' | '/refund_policy' | '/privacy_policy' | '/payment-status' | '/contact' | '/about' | '/checkout' | '/phonepe-soon' | `/vendor/${string}` | `/tracking/${string}`;
 
 interface RouterContextType {
   currentRoute: Route;
@@ -17,6 +17,7 @@ export function RouterProvider({ children }: { children: ReactNode }) {
   const updateDocumentTitle = useCallback((route: Route) => {
     const titles: Record<string, string> = {
       '/': 'Gutzo - Feels lighter',
+      '/search': 'Search | Gutzo',
       '/T&C': 'Terms & Conditions | Gutzo',
       '/refund_policy': 'Refund Policy | Gutzo',
       '/privacy_policy': 'Privacy Policy | Gutzo',
@@ -42,7 +43,7 @@ export function RouterProvider({ children }: { children: ReactNode }) {
   // Initialize route from browser URL
   useEffect(() => {
   const path = window.location.pathname as Route;
-  const validRoutes: string[] = ['/', '/T&C', '/refund_policy', '/privacy_policy', '/payment-status', '/contact', '/about', '/checkout', '/phonepe-soon'];
+  const validRoutes: string[] = ['/', '/search', '/T&C', '/refund_policy', '/privacy_policy', '/payment-status', '/contact', '/about', '/checkout', '/phonepe-soon'];
     
     // Check if it's a valid static route OR a vendor route OR a tracking route
     if (validRoutes.includes(path) || path.startsWith('/vendor/') || path.startsWith('/tracking/')) {
@@ -93,7 +94,7 @@ export function RouterProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const handlePopState = () => {
     const path = window.location.pathname as Route;
-    const validRoutes: string[] = ['/', '/T&C', '/refund_policy', '/privacy_policy', '/payment-status', '/contact', '/about', '/partner-with-gutzo', '/checkout', '/phonepe-soon'];
+    const validRoutes: string[] = ['/', '/search', '/T&C', '/refund_policy', '/privacy_policy', '/payment-status', '/contact', '/about', '/partner-with-gutzo', '/checkout', '/phonepe-soon'];
       
       if (validRoutes.includes(path) || path.startsWith('/vendor/') || path.startsWith('/tracking/')) {
         window.scrollTo(0, 0);

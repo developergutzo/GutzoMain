@@ -191,8 +191,28 @@ export function Header({ onShowLogin, onLogout, onShowProfile, onShowCart, onSho
                         value={searchQuery}
                         onChange={(e) => onSearchChange?.(e.target.value)}
                         onFocus={() => setShowSearchDropdown(true)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && searchQuery.trim()) {
+                            setShowSearchDropdown(false);
+                            // We dispatch a custom event to App.tsx to save the search
+                            window.dispatchEvent(new CustomEvent('save-recent-search', { detail: searchQuery.trim() }));
+                            navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+                          }
+                        }}
                         className="flex-1 outline-none text-gray-900 placeholder:text-gray-400 bg-transparent ml-3"
                       />
+                      {searchQuery && onSearchChange && (
+                        <button
+                          onClick={() => {
+                            onSearchChange('');
+                            // Don't close dropdown so they can see empty state
+                          }}
+                          className="p-1 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0 mr-2"
+                          aria-label="Clear search"
+                        >
+                          <X className="h-4 w-4 text-gray-400 hover:text-gray-600 transition-colors" />
+                        </button>
+                      )}
                     </div>
 
                     {/* Search Dropdown */}

@@ -47,6 +47,7 @@ import PhonePeComingSoon from "./pages/PaytmComingSoon";
 // Partner imports removed
 
 import { CheckoutPage } from "./pages/CheckoutPage"; // Added CheckoutPage import
+import { SearchPage } from "./pages/SearchPage"; // Search results view
 import { OrderTrackingPage } from "./pages/OrderTrackingPage";
 import { Toaster } from "./components/ui/sonner";
 import { toast } from "sonner";
@@ -462,8 +463,9 @@ function AppContent() {
     return <OrderTrackingPage />;
   }
   // Added /checkout to the route list
-  if (typeof currentRoute === 'string' && ['/T&C', '/refund_policy', '/privacy_policy', '/payment-status', '/phonepe-soon', '/contact', '/about', '/checkout'].includes(currentRoute)) {
+  if (typeof currentRoute === 'string' && ['/search', '/T&C', '/refund_policy', '/privacy_policy', '/payment-status', '/phonepe-soon', '/contact', '/about', '/checkout'].includes(currentRoute)) {
     switch (currentRoute) {
+      case '/search': return <SearchPage />;
       case '/checkout': return <CheckoutPage />;
       case '/T&C': return <TermsPage />;
       case '/refund_policy': return <RefundPage />;
