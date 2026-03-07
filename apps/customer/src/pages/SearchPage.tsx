@@ -80,11 +80,29 @@ export function SearchPage() {
           </div>
         ) : filteredVendors.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full">
-            {filteredVendors.map((vendor) => (
-              <div key={vendor.id} className="flex justify-center items-stretch w-full h-full">
-                <VendorCard vendor={vendor} onClick={handleVendorClick} />
-              </div>
-            ))}
+            {filteredVendors.map((vendor) => {
+              let matchedItems = null;
+              if (searchQuery) {
+                const q = searchQuery.toLowerCase();
+                const isNameMatch = vendor.name.toLowerCase().includes(q);
+                // If the vendor name doesn't match directly, check products to show what matched
+                if (vendor.products && !isNameMatch) {
+                   const matches = vendor.products.filter(p => 
+                     p.name.toLowerCase().includes(q) || 
+                     (p.description && p.description.toLowerCase().includes(q))
+                   );
+                   if (matches.length > 0) {
+                     matchedItems = matches;
+                   }
+                }
+              }
+
+              return (
+                <div key={vendor.id} className="flex justify-center items-stretch w-full h-full">
+                  <VendorCard vendor={vendor} onClick={handleVendorClick} matchedItems={matchedItems} />
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-2xl shadow-sm border border-gray-100">

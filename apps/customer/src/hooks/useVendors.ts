@@ -140,11 +140,13 @@ export const useVendors = () => {
               servicedVendors.push({
                 ...vendor,
                 deliveryTime: dynamicDeliveryTime,
+                isServiceable: true,
               });
             } else {
-              // console.log(
-              //   `Vendor ${vendor.name} is not serviceable at current location.`,
-              // );
+              servicedVendors.push({
+                ...vendor,
+                isServiceable: false,
+              });
             }
           } catch (err) {
             console.error(
