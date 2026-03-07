@@ -18,6 +18,7 @@ const PAYTM_BASE_URL = PAYTM_ENV === 'production'
   ? 'https://secure.paytmpayments.com'
   : 'https://securestage.paytmpayments.com';
 
+
 // ============================================
 // PAYTM PAYMENT ENDPOINTS
 // ============================================
@@ -203,7 +204,7 @@ router.post('/callback', asyncHandler(async (req, res) => {
     .from('payments')
     .update({
       transaction_id: txnId,
-      status: paymentStatus,
+      status: paymentStatus === 'paid' ? 'success' : paymentStatus,
       gateway_response: paytmParams,
       updated_at: new Date().toISOString(),
     })
@@ -323,6 +324,7 @@ router.post('/callback', asyncHandler(async (req, res) => {
             message: `Payment received. Searching for delivery partner...`,
             data: { order_id: orderId, txn_id: txnId }
           });
+
           console.log(`[Shadowfax] Order ${orderId} accepted. Notification delayed until rider allocation.`);
 
         } else {
@@ -471,7 +473,7 @@ router.post('/webhook', asyncHandler(async (req, res) => {
     .from('payments')
     .update({
       transaction_id: txnId,
-      status: paymentStatus,
+      status: paymentStatus === 'paid' ? 'success' : paymentStatus,
       gateway_response: paytmParams,
       updated_at: new Date().toISOString(),
     })
@@ -479,7 +481,6 @@ router.post('/webhook', asyncHandler(async (req, res) => {
 
   // Shadowfax Logic (Same as Callback)
   if (paymentStatus === 'paid' && existingOrder.payment_status !== 'paid' && updatedOrder) {
-
     try {
       // Notify User of Payment Success First
       await supabaseAdmin.from('notifications').insert({
@@ -519,17 +520,16 @@ router.post('/webhook', asyncHandler(async (req, res) => {
           console.log(`[Shadowfax WebhookHandler] Order ${orderId} accepted. ID: ${shadowfaxId}`);
 
           // Update Delivery
-          await supabaseAdmin.from('deliveries').insert({
+          await supabaseAdmin.from('deliveries').upsert({
             order_id: updatedOrder.id,
             partner_id: 'shadowfax',
-            partner_order_id: shadowfaxId,
-            status: 'searching_rider'
-          });
+            external_order_id: shadowfaxId,
+            status: 'searching_rider',
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'order_id' });
 
-          // CRITICAL: Update ORDERS table so Webhook can find it later
-          await supabaseAdmin.from('orders')
-            .update({ shadowfax_order_id: shadowfaxId })
-            .eq('id', updatedOrder.id);
+          // shadowfax_order_id column is missing in orders table as per schema. 
+          // Stored already in deliveries.external_order_id
 
           // NOW Notify Vendor
           // Notify Vendor - MOVED TO WEBHOOK
@@ -656,7 +656,7 @@ router.get('/:id/status', asyncHandler(async (req, res) => {
       let code = 'PENDING';
       let state = 'PENDING';
 
-      if (payment.status === 'paid') {
+      if (payment.status === 'success' || payment.status === 'paid') {
         code = 'SUCCESS';
         state = 'COMPLETED';
       } else if (payment.status === 'failed' || payment.status === 'cancelled') {

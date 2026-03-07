@@ -278,7 +278,13 @@ router.post('/webhook', async (req, res) => {
         if (clientOrderId) {
             query = query.eq('order_number', clientOrderId);
         } else if (sfOrderId) {
-            query = query.eq('shadowfax_order_id', sfOrderId);
+            // If we only have sfOrderId, we must first find it in deliveries table
+            const { data: del } = await supabaseAdmin.from('deliveries').select('order_id').eq('external_order_id', sfOrderId).single();
+            if (del) {
+                query = query.eq('id', del.order_id);
+            } else {
+                return res.status(200).send('OK (Order not found for SF ID)');
+            }
         }
 
         const { data: updatedOrder, error: updateError } = await query.select('*, vendor:vendors(*)')
@@ -420,11 +426,10 @@ router.post('/mock-create-order', async (req, res) => {
                 updated_at: new Date().toISOString()
             }, { onConflict: 'order_id' });
 
-        // 3. Update Orders Table
+        // 3. Update Orders Table Status
         await supabaseAdmin
             .from('orders')
             .update({
-                shadowfax_order_id: mockSfId,
                 status: 'searching_rider' // Set status visible to user
             })
             .eq('id', orderId);
