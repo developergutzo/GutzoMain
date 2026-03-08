@@ -424,48 +424,36 @@ router.post('/callback', asyncHandler(async (req, res) => {
 router.post('/webhook', asyncHandler(async (req, res) => {
   // 1. Capture payload and signature
   const paytmParams = req.body;
-
-  // Signature can be in body (CHECKSUMHASH) or in headers (x-paytm-signature)
   const receivedChecksum =
     paytmParams.CHECKSUMHASH ||
     req.headers['x-paytm-signature'] ||
     req.headers['signature'] ||
     req.headers['x-paytm-checksum'];
 
-  // Enhanced Logging for Debugging
-  console.log('[Paytm Webhook] Received Body:', JSON.stringify(paytmParams));
-  console.log('[Paytm Webhook] Received Signature:', receivedChecksum ? 'PRESENT' : 'MISSING');
-  if (!receivedChecksum) {
-    console.log('[Paytm Webhook] All Headers:', JSON.stringify(req.headers));
-  }
+  console.log('[Paytm Webhook] Webhook ID:', paytmParams.ORDERID);
+  console.log('[Paytm Webhook] Checksum:', receivedChecksum ? 'PRESENT' : 'MISSING');
 
-  if (!receivedChecksum) {
-    console.error('[Paytm Webhook] No checksum found in body or headers');
-    return res.status(200).send('CHECKSUM_MISSING');
-  }
-
-  // Remove checksum from params for verification if it was in the body
-  const paramsForVerify = { ...paytmParams };
-  delete paramsForVerify.CHECKSUMHASH;
-
-  // 2. Verify Checksum or Use Secure Fallback
+  // 2. Verification Logic
   let isValid = false;
-  let isVerifiedViaApi = false;
-
   if (receivedChecksum) {
+    const paramsForVerify = { ...paytmParams };
+    delete paramsForVerify.CHECKSUMHASH;
     isValid = PaytmChecksum.verifySignature(paramsForVerify, PAYTM_MERCHANT_KEY, receivedChecksum);
   }
 
+  // 3. Secure Fallback if not valid/present
   if (!isValid) {
-    console.log(`[Paytm Webhook] Checksum ${receivedChecksum ? 'invalid' : 'missing'}. Triggering Secure API Fallback...`);
+    console.log(`[Paytm Webhook] Verification ${receivedChecksum ? 'failed' : 'missing'}. Calling Status API as fallback...`);
     const statusCheck = await verifyPaytmStatus(paytmParams.ORDERID);
 
     if (statusCheck.success) {
       console.log(`[Paytm Webhook] ✅ Securely Verified via Paytm Status API: SUCCESS`);
       isValid = true;
-      isVerifiedViaApi = true;
     } else {
       console.error(`[Paytm Webhook] ❌ Secure API verification failed: ${statusCheck.status || 'unknown'}`);
+      if (!receivedChecksum) {
+        console.log('[Paytm Webhook] DEBUG HEADERS:', JSON.stringify(req.headers));
+      }
       return res.status(200).send('VERIFICATION_FAILED');
     }
   }
