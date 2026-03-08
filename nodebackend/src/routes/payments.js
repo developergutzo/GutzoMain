@@ -18,6 +18,48 @@ const PAYTM_BASE_URL = PAYTM_ENV === 'production'
   ? 'https://secure.paytmpayments.com'
   : 'https://securestage.paytmpayments.com';
 
+const PAYTM_STATUS_QUERY_URL = PAYTM_ENV === 'production'
+  ? 'https://secure.paytmpayments.com/v3/order/status'
+  : 'https://securestage.paytmpayments.com/v3/order/status';
+
+/**
+ * Helper to verify payment status directly with Paytm API (Secure Fallback)
+ * Used when webhook checksum is missing or untrusted.
+ */
+async function verifyPaytmStatus(orderId) {
+  const paytmParams = {
+    mid: PAYTM_MID,
+    orderId: orderId,
+  };
+
+  try {
+    const checksum = await PaytmChecksum.generateSignature(JSON.stringify(paytmParams), PAYTM_MERCHANT_KEY);
+
+    const payload = {
+      head: { signature: checksum },
+      body: paytmParams
+    };
+
+    const response = await fetch(PAYTM_STATUS_QUERY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+    console.log(`[Paytm Status Query] Response for ${orderId}:`, JSON.stringify(data));
+
+    return {
+      success: data?.body?.resultInfo?.resultStatus === 'TXN_SUCCESS',
+      status: data?.body?.resultInfo?.resultStatus,
+      raw: data
+    };
+  } catch (error) {
+    console.error(`[Paytm Status Query] Error for ${orderId}:`, error.message);
+    return { success: false, error: error.message };
+  }
+}
+
 
 // ============================================
 // PAYTM PAYMENT ENDPOINTS
@@ -406,12 +448,26 @@ router.post('/webhook', asyncHandler(async (req, res) => {
   const paramsForVerify = { ...paytmParams };
   delete paramsForVerify.CHECKSUMHASH;
 
-  // 2. Verify Checksum
-  const isValid = PaytmChecksum.verifySignature(paramsForVerify, PAYTM_MERCHANT_KEY, receivedChecksum);
+  // 2. Verify Checksum or Use Secure Fallback
+  let isValid = false;
+  let isVerifiedViaApi = false;
+
+  if (receivedChecksum) {
+    isValid = PaytmChecksum.verifySignature(paramsForVerify, PAYTM_MERCHANT_KEY, receivedChecksum);
+  }
 
   if (!isValid) {
-    console.error('[Paytm Webhook] Invalid checksum');
-    return res.status(200).send('CHECKSUM_INVALID');
+    console.log(`[Paytm Webhook] Checksum ${receivedChecksum ? 'invalid' : 'missing'}. Triggering Secure API Fallback...`);
+    const statusCheck = await verifyPaytmStatus(paytmParams.ORDERID);
+
+    if (statusCheck.success) {
+      console.log(`[Paytm Webhook] ✅ Securely Verified via Paytm Status API: SUCCESS`);
+      isValid = true;
+      isVerifiedViaApi = true;
+    } else {
+      console.error(`[Paytm Webhook] ❌ Secure API verification failed: ${statusCheck.status || 'unknown'}`);
+      return res.status(200).send('VERIFICATION_FAILED');
+    }
   }
 
   // 3. Process Status
