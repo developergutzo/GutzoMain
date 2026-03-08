@@ -380,43 +380,29 @@ router.post('/callback', asyncHandler(async (req, res) => {
 
 // PAYTM S2S WEBHOOK (BACKGROUND NOTIFICATION)
 router.post('/webhook', asyncHandler(async (req, res) => {
-  // 1. Verify that content-type is form-urlencoded (Paytm sends it this way)
-  // Express body-parser handles this automatically if configured.
-
-  // const paytmParams = req.body;
-  // console.log('[Paytm Webhook] Received:', JSON.stringify(paytmParams));
-
-  // const testPhone = '+919944751745';
-  // const apiUrl = `http://localhost:${process.env.PORT || 5000}/api/auth/send-otp`;
-
-  // try {
-  //   const response = await fetch(apiUrl, {
-  //     method: "POST",
-  //     headers: { "Content-Type": "application/json" },
-  //     body: JSON.stringify({ phone: testPhone })
-  //   });
-
-  //   const status = response.status;
-  //   const body = await response.json();
-
-  //   console.log(`[Webhook Debug OTP] Success: ${status}`, body);
-  //   return res.status(200).send(`DEBUG_FETCH_SUCCESS: ${status} ${JSON.stringify(body)}`);
-  // } catch (error) {
-  //   console.error('[Webhook Debug OTP] Error:', error.message);
-  //   return res.status(200).send(`DEBUG_FETCH_ERROR: ${error.message}`);
-  // }
-
+  // 1. Capture payload and signature
   const paytmParams = req.body;
-  console.log('[Paytm Webhook] Received:', JSON.stringify(paytmParams));
 
-  const receivedChecksum = paytmParams.CHECKSUMHASH;
+  // Signature can be in body (CHECKSUMHASH) or in headers (x-paytm-signature)
+  const receivedChecksum =
+    paytmParams.CHECKSUMHASH ||
+    req.headers['x-paytm-signature'] ||
+    req.headers['signature'] ||
+    req.headers['x-paytm-checksum'];
+
+  // Enhanced Logging for Debugging
+  console.log('[Paytm Webhook] Received Body:', JSON.stringify(paytmParams));
+  console.log('[Paytm Webhook] Received Signature:', receivedChecksum ? 'PRESENT' : 'MISSING');
+  if (!receivedChecksum) {
+    console.log('[Paytm Webhook] All Headers:', JSON.stringify(req.headers));
+  }
 
   if (!receivedChecksum) {
-    console.error('[Paytm Webhook] No checksum provided');
+    console.error('[Paytm Webhook] No checksum found in body or headers');
     return res.status(200).send('CHECKSUM_MISSING');
   }
 
-  // Remove checksum for verification
+  // Remove checksum from params for verification if it was in the body
   const paramsForVerify = { ...paytmParams };
   delete paramsForVerify.CHECKSUMHASH;
 
