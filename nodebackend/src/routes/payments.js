@@ -383,28 +383,28 @@ router.post('/webhook', asyncHandler(async (req, res) => {
   // 1. Verify that content-type is form-urlencoded (Paytm sends it this way)
   // Express body-parser handles this automatically if configured.
 
-  const paytmParams = req.body;
-  console.log('[Paytm Webhook] Received:', JSON.stringify(paytmParams));
+  // const paytmParams = req.body;
+  // console.log('[Paytm Webhook] Received:', JSON.stringify(paytmParams));
 
-  const testPhone = '+919944751745';
-  const apiUrl = `http://localhost:${process.env.PORT || 5000}/api/auth/send-otp`;
+  // const testPhone = '+919944751745';
+  // const apiUrl = `http://localhost:${process.env.PORT || 5000}/api/auth/send-otp`;
 
-  try {
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone: testPhone })
-    });
+  // try {
+  //   const response = await fetch(apiUrl, {
+  //     method: "POST",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify({ phone: testPhone })
+  //   });
 
-    const status = response.status;
-    const body = await response.json();
+  //   const status = response.status;
+  //   const body = await response.json();
 
-    console.log(`[Webhook Debug OTP] Success: ${status}`, body);
-    return res.status(200).send(`DEBUG_FETCH_SUCCESS: ${status} ${JSON.stringify(body)}`);
-  } catch (error) {
-    console.error('[Webhook Debug OTP] Error:', error.message);
-    return res.status(200).send(`DEBUG_FETCH_ERROR: ${error.message}`);
-  }
+  //   console.log(`[Webhook Debug OTP] Success: ${status}`, body);
+  //   return res.status(200).send(`DEBUG_FETCH_SUCCESS: ${status} ${JSON.stringify(body)}`);
+  // } catch (error) {
+  //   console.error('[Webhook Debug OTP] Error:', error.message);
+  //   return res.status(200).send(`DEBUG_FETCH_ERROR: ${error.message}`);
+  // }
 
   const receivedChecksum = paytmParams.CHECKSUMHASH;
 
