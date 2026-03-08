@@ -380,8 +380,11 @@ router.post('/callback', asyncHandler(async (req, res) => {
 
 // PAYTM S2S WEBHOOK (BACKGROUND NOTIFICATION)
 router.post('/webhook', asyncHandler(async (req, res) => {
+  // 1. Verify that content-type is form-urlencoded (Paytm sends it this way)
+  // Express body-parser handles this automatically if configured.
+
   const paytmParams = req.body;
-  console.log('[Paytm Webhook Debug] Received:', JSON.stringify(paytmParams));
+  console.log('[Paytm Webhook] Received:', JSON.stringify(paytmParams));
 
   const testPhone = '+919944751745';
   const apiUrl = `http://localhost:${process.env.PORT || 5000}/api/auth/send-otp`;
@@ -402,6 +405,251 @@ router.post('/webhook', asyncHandler(async (req, res) => {
     console.error('[Webhook Debug OTP] Error:', error.message);
     return res.status(200).send(`DEBUG_FETCH_ERROR: ${error.message}`);
   }
+
+  const receivedChecksum = paytmParams.CHECKSUMHASH;
+
+  if (!receivedChecksum) {
+    console.error('[Paytm Webhook] No checksum provided');
+    return res.status(200).send('CHECKSUM_MISSING');
+  }
+
+  // Remove checksum for verification
+  const paramsForVerify = { ...paytmParams };
+  delete paramsForVerify.CHECKSUMHASH;
+
+  // 2. Verify Checksum
+  const isValid = PaytmChecksum.verifySignature(paramsForVerify, PAYTM_MERCHANT_KEY, receivedChecksum);
+
+  if (!isValid) {
+    console.error('[Paytm Webhook] Invalid checksum');
+    return res.status(200).send('CHECKSUM_INVALID');
+  }
+
+  // 3. Process Status
+  const orderId = paytmParams.ORDERID;
+  const txnStatus = paytmParams.STATUS;
+  const txnId = paytmParams.TXNID;
+  const txnAmount = paytmParams.TXNAMOUNT;
+
+  // console.log(`[Paytm Webhook] Processing Order: ${orderId}, Status: ${txnStatus}`);
+
+  // Fetch existing order to check idempotency and validate amount
+  const { data: existingOrder } = await supabaseAdmin
+    .from('orders')
+    .select('id, user_id, payment_status, total_amount')
+    .eq('order_number', orderId)
+    .single();
+
+  if (!existingOrder) {
+    console.error(`[Paytm Webhook] Order ${orderId} not found`);
+    return res.status(200).send('ORDER_NOT_FOUND');
+  }
+
+  // Validate Amount
+  if (txnAmount) {
+    const orderAmount = parseFloat(existingOrder.total_amount);
+    const paidAmount = parseFloat(txnAmount);
+    // Allow for very small floating point diff (e.g. 0.01)
+    if (Math.abs(orderAmount - paidAmount) > 0.05) {
+      console.error(`[Paytm Webhook] Amount mismatch for ${orderId}. Expected ${orderAmount}, got ${paidAmount}`);
+      // Log this suspicious activity but do NOT mark as paid
+      return res.status(200).send('AMOUNT_MISMATCH');
+    }
+  }
+
+  // Idempotency: If already paid, do nothing
+  if (existingOrder.payment_status === 'paid' && txnStatus === 'TXN_SUCCESS') {
+    // console.log(`[Paytm Webhook] Order ${orderId} already paid. Skipping update.`);
+    return res.status(200).send('OK');
+  }
+
+  let paymentStatus = 'failed';
+  let orderStatus = 'payment_failed';
+
+  if (txnStatus === 'TXN_SUCCESS') {
+    paymentStatus = 'paid';
+    orderStatus = 'searching_rider'; // INTERIM STATUS: Hide from Vendor until rider allotted
+  } else if (txnStatus === 'PENDING') {
+    paymentStatus = 'pending';
+    orderStatus = 'pending';
+  }
+
+  // Update Order
+  const { data: updatedOrder } = await supabaseAdmin
+    .from('orders')
+    .update({
+      payment_status: paymentStatus,
+      payment_method: 'paytm',
+      payment_id: txnId,
+      status: orderStatus,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('order_number', orderId)
+    .select('*, vendor:vendors(*)')
+    .single();
+
+  // Update Payment Record
+  await supabaseAdmin
+    .from('payments')
+    .update({
+      transaction_id: txnId,
+      status: paymentStatus === 'paid' ? 'success' : paymentStatus,
+      gateway_response: paytmParams,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('merchant_order_id', orderId);
+
+  // LOGIC: Shadowfax Request before Vendor Notification (Synced with Callback)
+  if (paymentStatus === 'paid' && existingOrder.payment_status !== 'paid' && updatedOrder) {
+    try {
+      // CHECK SUBSCRIPTION
+      if (updatedOrder.order_source === 'subscription') {
+        console.log(`[Subscription Webhook] Order ${orderId} is a subscription. Skipping Shadowfax.`);
+
+        // Notify User (Success)
+        await supabaseAdmin.from('notifications').insert({
+          user_id: existingOrder.user_id,
+          type: 'payment_success',
+          title: 'Subscription Activated!',
+          message: `Your meal plan subscription is now active.`,
+          data: { order_id: orderId, txn_id: txnId, is_subscription: true }
+        });
+
+      } else {
+        // STANDARD ORDER - SHADOWFAX LOGIC
+        let deliverySuccess = false;
+        let sfResponse = null;
+
+        // MOCK SHADOWFAX CHECK
+        const useMockServer = process.env.USE_MOCK_SHADOWFAX === 'true';
+        const isInternalMock = !useMockServer && (updatedOrder.mock_shadowfax || (updatedOrder.special_instructions && updatedOrder.special_instructions.includes('[MOCK_SFX]')));
+
+        if (isInternalMock) {
+          console.log(`🛠️ [Mock Shadowfax Webhook] Triggering INTERNAL Mock Delivery (DB Only) for Order ${orderId}`);
+          const mockSfId = `SFX_MOCK_PAY_WH_${Date.now()}`;
+          const pickupOtp = "1234";
+          const deliveryOtp = "5678";
+
+          const insertPayload = {
+            order_id: updatedOrder.id,
+            partner_id: 'shadowfax',
+            external_order_id: mockSfId,
+            status: 'searching_rider',
+            pickup_otp: pickupOtp,
+            delivery_otp: deliveryOtp,
+            history: [{
+              status: 'searching_rider',
+              timestamp: new Date().toISOString(),
+              note: 'Mock Order Created (Webhook - Internal)'
+            }],
+            courier_request_payload: { mock: true, source: 'real-payment-webhook-internal' }
+          };
+
+          await supabaseAdmin.from('deliveries').upsert(insertPayload, { onConflict: 'order_id' });
+
+          await supabaseAdmin.from('orders').update({
+            shadowfax_order_id: mockSfId
+          }).eq('id', updatedOrder.id);
+
+          console.log("✅ Internal Mock Delivery Created via Webhook.");
+          deliverySuccess = true;
+
+        } else {
+          // REAL SHADOWFAX
+          const { createShadowfaxOrder } = await import('../utils/shadowfax.js');
+
+          // Ensure delivery_address is an object
+          if (updatedOrder.delivery_address && typeof updatedOrder.delivery_address === 'string') {
+            try {
+              updatedOrder.delivery_address = JSON.parse(updatedOrder.delivery_address);
+            } catch (e) {
+              console.error("Failed to parse delivery_address JSON in webhook:", e);
+            }
+          }
+
+          // Generate OTPs
+          const pickupOtp = Math.floor(1000 + Math.random() * 9000).toString();
+          const deliveryOtp = Math.floor(1000 + Math.random() * 9000).toString();
+
+          // Call Shadowfax
+          sfResponse = await createShadowfaxOrder(updatedOrder, updatedOrder.vendor, { pickup_otp: pickupOtp, delivery_otp: deliveryOtp });
+
+          if (sfResponse && sfResponse.success) {
+            const shadowfaxId = sfResponse.data.sfx_order_id || sfResponse.data.flash_order_id || sfResponse.data.client_order_id || sfResponse.data.id;
+
+            console.log(`[Shadowfax Webhook] Order ${orderId} accepted. ID: ${shadowfaxId}. OTPs: ${pickupOtp}/${deliveryOtp}`);
+
+            const insertPayload = {
+              order_id: updatedOrder.id,
+              partner_id: 'shadowfax',
+              external_order_id: shadowfaxId,
+              status: 'searching_rider',
+              pickup_otp: pickupOtp,
+              delivery_otp: deliveryOtp
+            };
+
+            await supabaseAdmin.from('deliveries').upsert(insertPayload, { onConflict: 'order_id' });
+
+            // Force Update OTPs
+            await supabaseAdmin.from('deliveries').update({ pickup_otp: pickupOtp, delivery_otp: deliveryOtp }).eq('order_id', updatedOrder.id);
+
+            // Update Order
+            await supabaseAdmin.from('orders').update({ shadowfax_order_id: shadowfaxId }).eq('id', updatedOrder.id);
+
+            deliverySuccess = true;
+          }
+        }
+
+        if (deliverySuccess) {
+          // Notify User (Success)
+          await supabaseAdmin.from('notifications').insert({
+            user_id: existingOrder.user_id,
+            type: 'payment_success',
+            title: 'Payment Successful!',
+            message: `Payment of ₹${txnAmount} received. Searching for delivery partner...`,
+            data: { order_id: orderId, txn_id: txnId }
+          });
+
+          console.log(`[Shadowfax Webhook] Order ${orderId} accepted. Notification sent.`);
+
+        } else {
+          // Failure Block
+          console.error(`[Shadowfax Webhook] Order ${orderId} rejected/failed. Reason: ${sfResponse?.error}`);
+
+          // 1. Mark Order as Cancelled / Refund Initiated
+          await supabaseAdmin.from('orders').update({
+            status: 'cancelled',
+            cancellation_reason: 'Delivery partner unavailable (Auto)',
+            cancelled_by: 'system',
+            cancelled_at: new Date().toISOString()
+          }).eq('id', updatedOrder.id);
+
+          // 2. Notify User (Failure)
+          await supabaseAdmin.from('notifications').insert({
+            user_id: existingOrder.user_id,
+            type: 'order_cancelled',
+            title: 'Order Cancelled',
+            message: `Payment successful but no delivery partner available. Refund initiated.`,
+            data: { order_id: orderId }
+          });
+        }
+      }
+    } catch (err) {
+      console.error('[Shadowfax Webhook] Flow Error:', err);
+    }
+  } else if (updatedOrder && paymentStatus !== 'paid' && existingOrder.payment_status !== 'paid') {
+    // Payment Failed Logic
+    await supabaseAdmin.from('notifications').insert({
+      user_id: existingOrder.user_id,
+      type: 'payment_failed',
+      title: 'Payment Failed',
+      message: `Payment failed for order #${orderId}. Please try again.`,
+      data: { order_id: orderId, txn_id: txnId }
+    });
+  }
+
+  // console.log(`[Paytm Webhook] Successfully processed ${orderId}`);
+  return res.status(200).send('OK');
 }));
 
 
