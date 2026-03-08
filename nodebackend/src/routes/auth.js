@@ -16,7 +16,7 @@ router.post('/send-otp', validate(schemas.sendOtp), asyncHandler(async (req, res
 
   // Generate 6-digit OTP
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  
+
   // Set expiration time (5 minutes from now)
   const expiresAt = new Date();
   expiresAt.setMinutes(expiresAt.getMinutes() + 5);
@@ -46,18 +46,18 @@ router.post('/send-otp', validate(schemas.sendOtp), asyncHandler(async (req, res
 
   if (!whatsappToken || !phoneNumberId) {
     console.error('Missing WhatsApp environment variables');
-    
+
     // In development, still return success with OTP for testing
     if (process.env.NODE_ENV === 'development') {
       // console.log(`[DEV] OTP for ${phone}: ${otp}`);
-      return successResponse(res, { 
+      return successResponse(res, {
         phone,
         message: 'OTP generated (WhatsApp not configured)',
         otp, // Only in development!
         expiresIn: 300
       }, 'OTP generated successfully');
     }
-    
+
     throw new ApiError(500, 'WhatsApp service not configured');
   }
 
@@ -108,15 +108,15 @@ router.post('/send-otp', validate(schemas.sendOtp), asyncHandler(async (req, res
         status: whatsappResponse.status,
         error: errorText
       });
-      throw new ApiError(500, 'Failed to send WhatsApp message');
+      throw new ApiError(500, `WhatsApp API error (${whatsappResponse.status}): ${errorText}`);
     }
 
     const whatsappResult = await whatsappResponse.json();
-    // console.log('WhatsApp message sent successfully:', whatsappResult);
 
-    successResponse(res, { 
+    successResponse(res, {
       phone,
       message: 'OTP sent successfully via WhatsApp',
+      whatsappResult, // Return the raw result for debugging
       expiresIn: 300
     }, 'OTP sent to your WhatsApp');
 
@@ -158,7 +158,7 @@ router.post('/verify-otp', validate(schemas.verifyOtp), asyncHandler(async (req,
   // Check if OTP has expired
   const now = new Date();
   const expirationTime = new Date(otpRecord.expires_at);
-  
+
   if (now > expirationTime) {
     throw new ApiError(400, 'OTP has expired. Please request a new one.');
   }
@@ -190,7 +190,7 @@ router.post('/verify-otp', validate(schemas.verifyOtp), asyncHandler(async (req,
     // User doesn't exist - create new user
     isNewUser = true;
     const referralCode = `GZ${phone.slice(-6)}${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
-    
+
     const { data: newUser, error: createError } = await supabaseAdmin
       .from('users')
       .insert({
@@ -218,7 +218,7 @@ router.post('/verify-otp', validate(schemas.verifyOtp), asyncHandler(async (req,
     // Update existing user
     await supabaseAdmin
       .from('users')
-      .update({ 
+      .update({
         verified: true,
         last_login_at: new Date().toISOString()
       })
@@ -329,7 +329,7 @@ router.post('/create-user', asyncHandler(async (req, res) => {
     const updates = {};
     if (name) updates.name = name;
     if (email) updates.email = email;
-    
+
     if (Object.keys(updates).length > 0) {
       const { data: updatedUser, error: updateError } = await supabaseAdmin
         .from('users')
@@ -337,10 +337,10 @@ router.post('/create-user', asyncHandler(async (req, res) => {
         .eq('phone', phone)
         .select()
         .single();
-        
-       if (!updateError && updatedUser) {
-         return successResponse(res, { user: updatedUser }, 'User profile updated', 200);
-       }
+
+      if (!updateError && updatedUser) {
+        return successResponse(res, { user: updatedUser }, 'User profile updated', 200);
+      }
     }
 
     // console.log('User already exists, returning existing profile:', phone);
