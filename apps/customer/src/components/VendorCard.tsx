@@ -1,20 +1,15 @@
-import { Star, Clock, Search, ChevronRight, ChevronDown } from "lucide-react";
+import { Star, Clock } from "lucide-react";
 import StarIcon from "./StarIcon";
 import { Card, CardContent } from "./ui/card";
 import { ImageWithFallback } from "./common/ImageWithFallback";
 import { Vendor } from "../types";
-import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
 
 interface VendorCardProps {
   vendor: Vendor;
   onClick: (vendor: Vendor, productId?: string) => void;
-  matchedItems?: any[] | null;
 }
 
-export function VendorCard({ vendor, onClick, matchedItems }: VendorCardProps) {
-  const navigate = useNavigate();
-  const [isExpanded, setIsExpanded] = useState(false);
+export function VendorCard({ vendor, onClick }: VendorCardProps) {
   return (
     <Card
       className="cursor-pointer group rounded-[16px] gutzo-card-hover transition-all duration-200 overflow-hidden p-0 flex flex-col shadow-none w-full gap-3"
@@ -66,41 +61,6 @@ export function VendorCard({ vendor, onClick, matchedItems }: VendorCardProps) {
         <div className="text-[15px] text-gray-500 mb-2" style={{ fontFamily: 'Poppins', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>
           {vendor.location}
         </div>
-        
-        {matchedItems && matchedItems.length > 0 && (
-          <div className="mt-3 pt-3 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
-            <div className="flex flex-col gap-1.5">
-              {(isExpanded ? matchedItems : matchedItems.slice(0, 2)).map((item, idx) => (
-                <div 
-                  key={idx} 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (onClick) onClick(vendor, item.id);
-                  }}
-                  className="group flex items-center justify-between rounded-[8px] px-3 py-2 bg-gray-50/80 hover:bg-[#E8F6F1] cursor-pointer transition-all border border-transparent hover:border-[#CDEBDD]"
-                >
-                  <div className="flex items-center gap-2 overflow-hidden pr-2">
-                    <Search className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#1BA672] flex-shrink-0 transition-colors" />
-                    <span className="text-[13px] text-gray-700 font-medium truncate group-hover:text-[#1BA672] transition-colors" style={{ fontFamily: 'Poppins' }}>
-                      {item.name}
-                    </span>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-[#1BA672] flex-shrink-0 transition-colors" />
-                </div>
-              ))}
-              {matchedItems.length > 2 && (
-                 <div 
-                   onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
-                   className="text-[12px] text-gray-500 hover:text-[#1BA672] font-medium px-2 pt-0.5 flex items-center gap-1 cursor-pointer transition-colors w-fit" 
-                   style={{ fontFamily: 'Poppins' }}
-                 >
-                   {isExpanded ? "Show less" : `+${matchedItems.length - 2} more product matches`}
-                   <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
-                 </div>
-              )}
-            </div>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

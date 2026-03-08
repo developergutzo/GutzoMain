@@ -21,7 +21,7 @@ export function SearchPage() {
   const handleVendorClick = (vendor: Vendor, productId?: string) => {
     const url = productId ? `/vendor/${vendor.id}?productId=${productId}` : `/vendor/${vendor.id}`;
     // @ts-ignore
-    navigate(url as any, { state: { vendor, fromSearch: true } });
+    navigate(url as any, { state: { vendor, fromSearch: true, searchQuery } });
   };
 
   const filteredVendors = vendors.filter((vendor) => {
@@ -54,7 +54,7 @@ export function SearchPage() {
               className="p-2 -ml-2 rounded-full hover:bg-gray-200 transition-colors text-gray-700"
               aria-label="Go back"
             >
-              <ArrowLeft className="w-6 h-6" />
+               <ArrowLeft className="w-6 h-6" />
             </button>
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight" style={{ fontFamily: 'Poppins' }}>
               {loading ? (
@@ -84,25 +84,9 @@ export function SearchPage() {
         ) : filteredVendors.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full">
             {filteredVendors.map((vendor) => {
-              let matchedItems = null;
-              if (searchQuery) {
-                const q = searchQuery.toLowerCase();
-                const isNameMatch = vendor.name.toLowerCase().includes(q);
-                // If the vendor name doesn't match directly, check products to show what matched
-                if (vendor.products && !isNameMatch) {
-                   const matches = vendor.products.filter(p => 
-                     p.name.toLowerCase().includes(q) || 
-                     (p.description && p.description.toLowerCase().includes(q))
-                   );
-                   if (matches.length > 0) {
-                     matchedItems = matches;
-                   }
-                }
-              }
-
               return (
                 <div key={vendor.id} className="flex justify-center items-stretch w-full h-full">
-                  <VendorCard vendor={vendor} onClick={handleVendorClick} matchedItems={matchedItems} />
+                  <VendorCard vendor={vendor} onClick={handleVendorClick} />
                 </div>
               );
             })}
