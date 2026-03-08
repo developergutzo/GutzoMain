@@ -216,6 +216,24 @@ router.post('/callback', asyncHandler(async (req, res) => {
   const bankTxnId = paytmParams.BANKTXNID;
   const txnAmount = paytmParams.TXNAMOUNT;
 
+  // Fetch existing order to check idempotency
+  const { data: existingOrder } = await supabaseAdmin
+    .from('orders')
+    .select('id, user_id, payment_status, total_amount, shadowfax_order_id')
+    .eq('order_number', orderId)
+    .single();
+
+  if (!existingOrder) {
+    console.error(`[Paytm Callback] Order ${orderId} not found`);
+    return res.status(404).send('Order not found');
+  }
+
+  // Idempotency: If already marked as paid (likely by webhook), just redirect to success
+  if (existingOrder.payment_status === 'paid' && txnStatus === 'TXN_SUCCESS') {
+    console.log(`[Paytm Callback] Order ${orderId} already processed (idempotent). Redirecting...`);
+    return res.redirect(`${process.env.FRONTEND_URL}/payment-status?orderId=${orderId}`);
+  }
+
   let paymentStatus = 'failed';
   let orderStatus = 'payment_failed';
 
