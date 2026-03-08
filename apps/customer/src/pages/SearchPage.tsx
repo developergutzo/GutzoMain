@@ -4,6 +4,7 @@ import { VendorCard } from "../components/VendorCard";
 import { VendorSkeleton } from "../components/VendorSkeleton";
 import { useRouter } from "../components/Router";
 import { MapPin, ArrowLeft } from "lucide-react";
+import { Vendor } from "../types";
 
 export function SearchPage() {
   const { vendors, loading } = useVendors();
@@ -17,8 +18,10 @@ export function SearchPage() {
     setSearchQuery(q);
   }, []);
 
-  const handleVendorClick = (vendor: any) => {
-    navigate(`/vendor/${vendor.id}`);
+  const handleVendorClick = (vendor: Vendor, productId?: string) => {
+    const url = productId ? `/vendor/${vendor.id}?productId=${productId}` : `/vendor/${vendor.id}`;
+    // @ts-ignore
+    navigate(url as any, { state: { vendor, fromSearch: true } });
   };
 
   const filteredVendors = vendors.filter((vendor) => {

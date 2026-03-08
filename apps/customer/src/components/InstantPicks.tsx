@@ -27,7 +27,7 @@ const InstantPicksItem: React.FC<{ product: Product; isLast: boolean; noPadding:
 
   return (
     <React.Fragment>
-      <div className={`instant-picks-card${noPadding ? ' no-padding' : ''}`} style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+      <div id={`product-${product.id}`} className={`instant-picks-card${noPadding ? ' no-padding' : ''}`} style={{ display: 'flex', alignItems: 'center', width: '100%', scrollMarginTop: '120px', transition: 'background-color 1.5s ease', borderRadius: '12px', padding: '8px' }}>
         <div className="instant-picks-details" style={{ flex: 1, paddingRight: 24, minWidth: 0 }}>
           <div className="instant-picks-title">{product.name}</div>
           <div className="instant-picks-price">₹{product.price}</div>
@@ -186,6 +186,25 @@ const InstantPicks: React.FC<InstantPicksProps> = ({ noPadding = false, vendorId
 
     loadProducts();
   }, [vendorId]);
+
+  React.useEffect(() => {
+    if (products.length > 0) {
+      const params = new URLSearchParams(window.location.search);
+      const targetId = params.get('productId');
+      if (targetId) {
+        setTimeout(() => {
+          const el = document.getElementById(`product-${targetId}`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.style.backgroundColor = '#E8F6F1';
+            setTimeout(() => {
+               el.style.backgroundColor = 'transparent';
+            }, 2500);
+          }
+        }, 300); // small delay to ensure rendering is complete
+      }
+    }
+  }, [products]);
 
   if (loading) {
     return (
