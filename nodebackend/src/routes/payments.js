@@ -406,6 +406,9 @@ router.post('/webhook', asyncHandler(async (req, res) => {
   //   return res.status(200).send(`DEBUG_FETCH_ERROR: ${error.message}`);
   // }
 
+  const paytmParams = req.body;
+  console.log('[Paytm Webhook] Received:', JSON.stringify(paytmParams));
+
   const receivedChecksum = paytmParams.CHECKSUMHASH;
 
   if (!receivedChecksum) {
