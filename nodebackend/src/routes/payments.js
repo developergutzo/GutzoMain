@@ -479,87 +479,153 @@ router.post('/webhook', asyncHandler(async (req, res) => {
     })
     .eq('merchant_order_id', orderId);
 
-  // Shadowfax Logic (Same as Callback)
+  // LOGIC: Shadowfax Request before Vendor Notification (Synced with Callback)
   if (paymentStatus === 'paid' && existingOrder.payment_status !== 'paid' && updatedOrder) {
     try {
-      // Notify User of Payment Success First
-      await supabaseAdmin.from('notifications').insert({
-        user_id: existingOrder.user_id,
-        type: 'payment_success',
-        title: updatedOrder.order_source === 'subscription' ? 'Subscription Activated!' : 'Payment Successful!',
-        message: updatedOrder.order_source === 'subscription'
-          ? `Your meal plan subscription is now active.`
-          : `Payment of ₹${txnAmount} received for order #${orderId}`,
-        data: {
-          order_id: orderId,
-          txn_id: txnId,
-          is_subscription: updatedOrder.order_source === 'subscription'
-        }
-      });
-
+      // CHECK SUBSCRIPTION
       if (updatedOrder.order_source === 'subscription') {
         console.log(`[Subscription Webhook] Order ${orderId} is a subscription. Skipping Shadowfax.`);
-        // No further action needed for subscriptions here
-      } else {
-        // STANDARD ORDER - SHADOWFAX
-        const { createShadowfaxOrder } = await import('../utils/shadowfax.js');
 
-        // Ensure delivery_address is an object (Supabase sometimes returns it as JSON string)
-        if (updatedOrder.delivery_address && typeof updatedOrder.delivery_address === 'string') {
-          try {
-            updatedOrder.delivery_address = JSON.parse(updatedOrder.delivery_address);
-          } catch (e) {
-            console.error("Failed to parse delivery_address JSON in webhook:", e);
+        // Notify User (Success)
+        await supabaseAdmin.from('notifications').insert({
+          user_id: existingOrder.user_id,
+          type: 'payment_success',
+          title: 'Subscription Activated!',
+          message: `Your meal plan subscription is now active.`,
+          data: { order_id: orderId, txn_id: txnId, is_subscription: true }
+        });
+
+      } else {
+        // STANDARD ORDER - SHADOWFAX LOGIC
+        let deliverySuccess = false;
+        let sfResponse = null;
+
+        // MOCK SHADOWFAX CHECK
+        const useMockServer = process.env.USE_MOCK_SHADOWFAX === 'true';
+        const isInternalMock = !useMockServer && (updatedOrder.mock_shadowfax || (updatedOrder.special_instructions && updatedOrder.special_instructions.includes('[MOCK_SFX]')));
+
+        if (isInternalMock) {
+          console.log(`🛠️ [Mock Shadowfax Webhook] Triggering INTERNAL Mock Delivery (DB Only) for Order ${orderId}`);
+          const mockSfId = `SFX_MOCK_PAY_WH_${Date.now()}`;
+          const pickupOtp = "1234";
+          const deliveryOtp = "5678";
+
+          const insertPayload = {
+            order_id: updatedOrder.id,
+            partner_id: 'shadowfax',
+            external_order_id: mockSfId,
+            status: 'searching_rider',
+            pickup_otp: pickupOtp,
+            delivery_otp: deliveryOtp,
+            history: [{
+              status: 'searching_rider',
+              timestamp: new Date().toISOString(),
+              note: 'Mock Order Created (Webhook - Internal)'
+            }],
+            courier_request_payload: { mock: true, source: 'real-payment-webhook-internal' }
+          };
+
+          await supabaseAdmin.from('deliveries').upsert(insertPayload, { onConflict: 'order_id' });
+
+          await supabaseAdmin.from('orders').update({
+            shadowfax_order_id: mockSfId
+          }).eq('id', updatedOrder.id);
+
+          console.log("✅ Internal Mock Delivery Created via Webhook.");
+          deliverySuccess = true;
+
+        } else {
+          // REAL SHADOWFAX
+          const { createShadowfaxOrder } = await import('../utils/shadowfax.js');
+
+          // Ensure delivery_address is an object
+          if (updatedOrder.delivery_address && typeof updatedOrder.delivery_address === 'string') {
+            try {
+              updatedOrder.delivery_address = JSON.parse(updatedOrder.delivery_address);
+            } catch (e) {
+              console.error("Failed to parse delivery_address JSON in webhook:", e);
+            }
+          }
+
+          // Generate OTPs
+          const pickupOtp = Math.floor(1000 + Math.random() * 9000).toString();
+          const deliveryOtp = Math.floor(1000 + Math.random() * 9000).toString();
+
+          // Call Shadowfax
+          sfResponse = await createShadowfaxOrder(updatedOrder, updatedOrder.vendor, { pickup_otp: pickupOtp, delivery_otp: deliveryOtp });
+
+          if (sfResponse && sfResponse.success) {
+            const shadowfaxId = sfResponse.data.sfx_order_id || sfResponse.data.flash_order_id || sfResponse.data.client_order_id || sfResponse.data.id;
+
+            console.log(`[Shadowfax Webhook] Order ${orderId} accepted. ID: ${shadowfaxId}. OTPs: ${pickupOtp}/${deliveryOtp}`);
+
+            const insertPayload = {
+              order_id: updatedOrder.id,
+              partner_id: 'shadowfax',
+              external_order_id: shadowfaxId,
+              status: 'searching_rider',
+              pickup_otp: pickupOtp,
+              delivery_otp: deliveryOtp
+            };
+
+            await supabaseAdmin.from('deliveries').upsert(insertPayload, { onConflict: 'order_id' });
+
+            // Force Update OTPs
+            await supabaseAdmin.from('deliveries').update({ pickup_otp: pickupOtp, delivery_otp: deliveryOtp }).eq('order_id', updatedOrder.id);
+
+            // Update Order
+            await supabaseAdmin.from('orders').update({ shadowfax_order_id: shadowfaxId }).eq('id', updatedOrder.id);
+
+            deliverySuccess = true;
           }
         }
 
-        const sfResponse = await createShadowfaxOrder(updatedOrder, updatedOrder.vendor);
+        if (deliverySuccess) {
+          // Notify User (Success)
+          await supabaseAdmin.from('notifications').insert({
+            user_id: existingOrder.user_id,
+            type: 'payment_success',
+            title: 'Payment Successful!',
+            message: `Payment of ₹${txnAmount} received. Searching for delivery partner...`,
+            data: { order_id: orderId, txn_id: txnId }
+          });
 
-        if (sfResponse && sfResponse.success) {
-          const shadowfaxId = sfResponse.data.sfx_order_id || sfResponse.data.flash_order_id || sfResponse.data.client_order_id || sfResponse.data.id;
-          console.log(`[Shadowfax WebhookHandler] Order ${orderId} accepted. ID: ${shadowfaxId}`);
+          console.log(`[Shadowfax Webhook] Order ${orderId} accepted. Notification sent.`);
 
-          // Update Delivery
-          await supabaseAdmin.from('deliveries').upsert({
-            order_id: updatedOrder.id,
-            partner_id: 'shadowfax',
-            external_order_id: shadowfaxId,
-            status: 'searching_rider',
-            updated_at: new Date().toISOString()
-          }, { onConflict: 'order_id' });
-
-          // shadowfax_order_id column is missing in orders table as per schema. 
-          // Stored already in deliveries.external_order_id
-
-          // NOW Notify Vendor
-          // Notify Vendor - MOVED TO WEBHOOK
-          console.log(`[Shadowfax WebhookHandler] Order ${orderId} accepted. Notification delayed until rider allocation.`);
         } else {
-          console.error(`[Shadowfax WebhookHandler] Order ${orderId} rejected. Auto-Refunding...`);
+          // Failure Block
+          console.error(`[Shadowfax Webhook] Order ${orderId} rejected/failed. Reason: ${sfResponse?.error}`);
 
-          // Cancel & Refund
+          // 1. Mark Order as Cancelled / Refund Initiated
           await supabaseAdmin.from('orders').update({
             status: 'cancelled',
             cancellation_reason: 'Delivery partner unavailable (Auto)',
-            cancelled_by: 'system'
+            cancelled_by: 'system',
+            cancelled_at: new Date().toISOString()
           }).eq('id', updatedOrder.id);
 
+          // 2. Notify User (Failure)
           await supabaseAdmin.from('notifications').insert({
-            user_id: updatedOrder.user_id,
+            user_id: existingOrder.user_id,
             type: 'order_cancelled',
             title: 'Order Cancelled',
-            message: `We could not find a delivery partner. Your refund has been initiated.`,
+            message: `Payment successful but no delivery partner available. Refund initiated.`,
             data: { order_id: orderId }
           });
-
-          // Trigger Refund API safely
-          // Note: We need payload for refund.
         }
       }
-
     } catch (err) {
-      console.error('[Shadowfax WebhookHandler] Error:', err);
+      console.error('[Shadowfax Webhook] Flow Error:', err);
     }
+  } else if (updatedOrder && paymentStatus !== 'paid' && existingOrder.payment_status !== 'paid') {
+    // Payment Failed Logic
+    await supabaseAdmin.from('notifications').insert({
+      user_id: existingOrder.user_id,
+      type: 'payment_failed',
+      title: 'Payment Failed',
+      message: `Payment failed for order #${orderId}. Please try again.`,
+      data: { order_id: orderId, txn_id: txnId }
+    });
   }
 
   // console.log(`[Paytm Webhook] Successfully processed ${orderId}`);
