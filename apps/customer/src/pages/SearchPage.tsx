@@ -4,6 +4,7 @@ import { VendorCard } from "../components/VendorCard";
 import { VendorSkeleton } from "../components/VendorSkeleton";
 import { useRouter } from "../components/Router";
 import { MapPin, ArrowLeft } from "lucide-react";
+import { Vendor } from "../types";
 
 export function SearchPage() {
   const { vendors, loading } = useVendors();
@@ -17,8 +18,10 @@ export function SearchPage() {
     setSearchQuery(q);
   }, []);
 
-  const handleVendorClick = (vendor: any) => {
-    navigate(`/vendor/${vendor.id}`);
+  const handleVendorClick = (vendor: Vendor, productId?: string) => {
+    const url = productId ? `/vendor/${vendor.id}?productId=${productId}` : `/vendor/${vendor.id}`;
+    // @ts-ignore
+    navigate(url as any, { state: { vendor, fromSearch: true, searchQuery } });
   };
 
   const filteredVendors = vendors.filter((vendor) => {
@@ -51,7 +54,7 @@ export function SearchPage() {
               className="p-2 -ml-2 rounded-full hover:bg-gray-200 transition-colors text-gray-700"
               aria-label="Go back"
             >
-              <ArrowLeft className="w-6 h-6" />
+               <ArrowLeft className="w-6 h-6" />
             </button>
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight" style={{ fontFamily: 'Poppins' }}>
               {loading ? (
@@ -80,11 +83,13 @@ export function SearchPage() {
           </div>
         ) : filteredVendors.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full">
-            {filteredVendors.map((vendor) => (
-              <div key={vendor.id} className="flex justify-center items-stretch w-full h-full">
-                <VendorCard vendor={vendor} onClick={handleVendorClick} />
-              </div>
-            ))}
+            {filteredVendors.map((vendor) => {
+              return (
+                <div key={vendor.id} className="flex justify-center items-stretch w-full h-full">
+                  <VendorCard vendor={vendor} onClick={handleVendorClick} />
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-2xl shadow-sm border border-gray-100">

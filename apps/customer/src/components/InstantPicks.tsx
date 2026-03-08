@@ -6,12 +6,14 @@ import { Product as GlobalProduct } from "../types";
 
 import { nodeApiService } from '../utils/nodeApi';
 import { toast } from 'sonner';
+import { useLocation } from 'react-router-dom';
 
 // Extended Product type for InstantPicks
 type Product = GlobalProduct & {
   action?: "add" | "reserve" | "soldout";
   review_count?: number; // From DB
   vendor?: any; // From DB join
+  allTags?: string[]; // Used for backward-compatible routing/filtering
 };
 
 interface InstantPicksProps {
@@ -27,7 +29,7 @@ const InstantPicksItem: React.FC<{ product: Product; isLast: boolean; noPadding:
 
   return (
     <React.Fragment>
-      <div className={`instant-picks-card${noPadding ? ' no-padding' : ''}`} style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+      <div id={`product-${product.id}`} className={`instant-picks-card${noPadding ? ' no-padding' : ''}`} style={{ display: 'flex', alignItems: 'center', width: '100%', scrollMarginTop: '120px', transition: 'background-color 1.5s ease', borderRadius: '12px', padding: '8px' }}>
         <div className="instant-picks-details" style={{ flex: 1, paddingRight: 24, minWidth: 0 }}>
           <div className="instant-picks-title">{product.name}</div>
           <div className="instant-picks-price">₹{product.price}</div>
@@ -96,6 +98,7 @@ const InstantPicksItem: React.FC<{ product: Product; isLast: boolean; noPadding:
 };
 
 const InstantPicks: React.FC<InstantPicksProps> = ({ noPadding = false, vendorId, disabled, isOpen = true }) => {
+  const location = useLocation();
   const [products, setProducts] = React.useState<Product[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -187,6 +190,25 @@ const InstantPicks: React.FC<InstantPicksProps> = ({ noPadding = false, vendorId
     loadProducts();
   }, [vendorId]);
 
+  React.useEffect(() => {
+    if (products.length > 0) {
+      const params = new URLSearchParams(window.location.search);
+      const targetId = params.get('productId');
+      if (targetId) {
+        setTimeout(() => {
+          const el = document.getElementById(`product-${targetId}`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.style.backgroundColor = '#E8F6F1';
+            setTimeout(() => {
+               el.style.backgroundColor = 'transparent';
+            }, 2500);
+          }
+        }, 300); // small delay to ensure rendering is complete
+      }
+    }
+  }, [products]);
+
   if (loading) {
     return (
       <div className={noPadding ? "mt-8 w-full" : "mt-8 mx-4"}>
@@ -216,25 +238,60 @@ const InstantPicks: React.FC<InstantPicksProps> = ({ noPadding = false, vendorId
 
   if (products.length === 0) return null;
 
+  const searchQuery = location.state?.searchQuery?.toLowerCase();
+  let matchedProducts: Product[] = [];
+  let regularProducts: Product[] = products;
+
+  if (searchQuery) {
+    matchedProducts = products.filter(p => 
+      p.name.toLowerCase().includes(searchQuery) || 
+      (p.description && p.description.toLowerCase().includes(searchQuery)) ||
+      (p.allTags && p.allTags.some((t: string) => t.toLowerCase().includes(searchQuery)))
+    );
+    regularProducts = products.filter(p => !matchedProducts.includes(p));
+  }
+
   return (
   <div className={noPadding ? "mt-8 -mr-4 lg:mr-0 w-[calc(100%+16px)] lg:w-full" : "mt-8 mx-4"}>
-    <h3
-      className="instant-picks-heading text-left font-medium tracking-tight w-full mb-3"
-    >
-      Pick Your Food
-    </h3>
-    <div className={`instant-picks-list${noPadding ? ' no-padding' : ''}`}>
-      {products.map((product, idx) => (
-        <InstantPicksItem 
-          key={product.id} 
-          product={product} 
-          isLast={idx === products.length - 1} 
-          noPadding={noPadding} 
-          disabled={disabled}
-          isOpen={isOpen}
-        />
-      ))}
-    </div>
+    {matchedProducts.length > 0 && (
+      <div className="mb-8">
+        <h3 className="instant-picks-heading text-left font-medium tracking-tight w-full mb-3" style={{ fontSize: '18px' }}>
+          Matches for "{location.state?.searchQuery}"
+        </h3>
+        <div className={`instant-picks-list${noPadding ? ' no-padding' : ''}`}>
+          {matchedProducts.map((product, idx) => (
+            <InstantPicksItem 
+              key={product.id} 
+              product={product} 
+              isLast={idx === matchedProducts.length - 1} 
+              noPadding={noPadding} 
+              disabled={disabled}
+              isOpen={isOpen}
+            />
+          ))}
+        </div>
+      </div>
+    )}
+
+    {regularProducts.length > 0 && (
+      <div>
+        <h3 className={`instant-picks-heading text-left font-medium tracking-tight w-full mb-3 ${matchedProducts.length > 0 ? 'mt-4 border-t border-gray-100 pt-6' : ''}`}>
+          {matchedProducts.length > 0 ? 'Full Menu' : 'Pick Your Food'}
+        </h3>
+        <div className={`instant-picks-list${noPadding ? ' no-padding' : ''}`}>
+          {regularProducts.map((product, idx) => (
+            <InstantPicksItem 
+              key={product.id} 
+              product={product} 
+              isLast={idx === regularProducts.length - 1} 
+              noPadding={noPadding} 
+              disabled={disabled}
+              isOpen={isOpen}
+            />
+          ))}
+        </div>
+      </div>
+    )}
   </div>
  );
 };

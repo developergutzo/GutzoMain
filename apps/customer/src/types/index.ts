@@ -39,6 +39,7 @@ export interface Vendor {
   // Opening Status
   isOpen?: boolean;
   nextOpenTime?: string;
+  isServiceable?: boolean;
 }
 
 export interface Product {

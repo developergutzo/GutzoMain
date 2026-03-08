@@ -21,7 +21,7 @@ import PlanCards from "./PlanCards";
 import InstantPicks from "./InstantPicks";
 import { useVendors } from "../hooks/useVendors";
 import { useCart } from "../contexts/CartContext";
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useLocation as useUserLocation } from '../contexts/LocationContext';
 import { Header } from "../components/Header";
 import WeeklyMealPlansSection from "../components/WeeklyMealPlansSection";
@@ -46,7 +46,7 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors
   // const { vendors, loading } = useVendors(); // Removed internal fetching
 
   const { addItem, getItemQuantity, isItemInCart, items: cartItems, totalItems } = useCart();
-  const { currentRoute, navigate } = useRouter();
+  const { currentRoute, navigate, goBack } = useRouter();
   const location = useLocation();
   const { location: userLocation, locationLabel, locationDisplay } = useUserLocation();
   const vendorFromState = location.state?.vendor;
@@ -185,7 +185,7 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors
   const handleShowCheckout = () => {
     // setShowCartPanel(false);
     // setShowCheckoutPanel(true);
-    navigate('/checkout', { from: 'vendor_details' });
+    navigate('/checkout', { state: { from: 'vendor_details' } });
   };
 
   const handlePaymentSuccess = (data: any) => {
@@ -210,7 +210,12 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors
   const handleClose = () => {
     setShowVendorDetails(false);
     setTimeout(() => {
-      navigate("/");
+      // If we navigated here from another page within the app (like search)
+      if (window.history.length > 2 || location.state?.fromSearch) {
+        goBack(); // This calls window.history.back() from useRouter
+      } else {
+        navigate("/");
+      }
     }, 180); // match exit animation duration
   };
 
