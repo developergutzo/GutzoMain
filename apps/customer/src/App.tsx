@@ -512,7 +512,7 @@ function AppContent() {
         onSearchChange={setSearchQuery}
         onShowLocationSheet={handleShowLocationSheet}
       />
-      {!isNoService && <Inspiration onOptionClick={setSelectedCategory} loading={loading} />}
+      {!isNoService && <Inspiration onOptionClick={(category) => navigate(`/search?q=${encodeURIComponent(category)}`)} loading={loading} />}
       {!isNoService && (
         <WeeklyMealPlansSection
           onMealPlanClick={plan => setSelectedMealPlan(plan)}
