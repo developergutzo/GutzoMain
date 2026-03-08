@@ -19,11 +19,15 @@ export function SearchBottomSheet({ isOpen, onClose, searchQuery, onSearchChange
   const { categories, loading: categoriesLoading } = useCategories();
 
   useEffect(() => {
-    if (isOpen && inputRef.current) {
-      // Small delay to ensure the sheet is fully opened
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 100);
+    if (isOpen) {
+      // Clear the search query each time the sheet opens
+      onSearchChange('');
+      if (inputRef.current) {
+        // Small delay to ensure the sheet is fully opened
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 100);
+      }
     }
   }, [isOpen]);
 
