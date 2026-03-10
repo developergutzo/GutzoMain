@@ -1200,10 +1200,10 @@ export function CheckoutPage() {
             {/* Fixed Footer (Mobile Only) */}
             <div
                 className="fixed bottom-0 left-0 right-0 bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.08)] z-50 rounded-t-2xl lg:hidden"
-                style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom))' }}
+                style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
             >
 
-                <div className="px-4 py-4">
+                <div className="px-4 pt-4 pb-2">
                     {(loadingFee || loadingAddresses) ? (
                         <div className="flex gap-4 items-center mb-2">
                             <div className="flex-1">
