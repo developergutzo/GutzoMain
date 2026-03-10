@@ -1,5 +1,4 @@
 import CartStrip from "./CartStrip";
-import { CartPanel } from "./CartPanel";
 import { LoginPanel } from "./auth/LoginPanel";
 import { ProfilePanel } from "./auth/ProfilePanel";
 import { useAuth } from "../contexts/AuthContext";
@@ -42,7 +41,6 @@ interface VendorDetailsPageProps {
 }
 
 const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors, loading }) => {
-  const [showCartPanel, setShowCartPanel] = useState(false);
   // const { vendors, loading } = useVendors(); // Removed internal fetching
 
   const { addItem, getItemQuantity, isItemInCart, items: cartItems, totalItems } = useCart();
@@ -57,6 +55,7 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors
   const [selectedMealPlan, setSelectedMealPlan] = useState<any | null>(null);
   const { isAuthenticated, user, login, logout } = useAuth();
   const [showLoginPanel, setShowLoginPanel] = useState(false);
+  const [returnToCheckout, setReturnToCheckout] = useState(false);
   const [showProfilePanel, setShowProfilePanel] = useState(false);
 
   const [showCheckoutPanel, setShowCheckoutPanel] = useState(false);
@@ -167,9 +166,23 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors
     try {
       await login(authData);
       setShowLoginPanel(false);
+      
+      if (returnToCheckout) {
+        setReturnToCheckout(false);
+        navigate('/checkout');
+      }
     } catch (error) {
       console.error("Login failed", error);
     }
+  };
+
+  const handleShowCart = () => {
+    if (!isAuthenticated) {
+      setReturnToCheckout(true);
+      setShowLoginPanel(true);
+      return;
+    }
+    navigate('/checkout');
   };
 
   const handleShowProfile = (content: 'profile' | 'orders' | 'address') => {
@@ -225,7 +238,7 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors
         {/* Always render header; use CSS for responsive visibility */}
         <div className="hidden lg:block">
           <Header
-            onShowCart={() => setShowCartPanel(true)}
+            onShowCart={handleShowCart}
             onShowLogin={handleShowLogin}
             onShowProfile={handleShowProfile}
             onLogout={handleLogout}
@@ -237,7 +250,7 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors
             margin: '0 auto',
             paddingLeft: window.innerWidth >= 1024 ? 0 : 16,
             paddingRight: window.innerWidth >= 1024 ? 0 : 16,
-            paddingBottom: (totalItems > 0 && !showCartPanel && !showCheckoutPanel) ? 120 : 40,
+            paddingBottom: (totalItems > 0 && !showCheckoutPanel) ? 120 : 40,
           }}
         >
           {/* Header Section: back arrow and vendor name, outside card */}
@@ -284,9 +297,9 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors
             isOpen={vendor.isOpen}
           />
         </div>
-        {(!showCartPanel && !showCheckoutPanel) && (
+        {(!showCheckoutPanel) && (
           <CartStrip
-            onShowCart={() => setShowCartPanel(true)}
+            onShowCart={handleShowCart}
             isOpen={
               cartItems.length > 0
                 ? (cartItems[0].vendorId === vendor.id
@@ -296,13 +309,6 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors
             }
           />
         )}
-        <CartPanel
-          isOpen={showCartPanel}
-          onClose={() => setShowCartPanel(false)}
-          isAuthenticated={isAuthenticated}
-          onShowLogin={handleShowLogin}
-          onShowCheckout={handleShowCheckout}
-        />
 
         <InstantOrderPanel
           isOpen={showCheckoutPanel}

@@ -285,6 +285,11 @@ function AppContent() {
     try {
       await login(authData);
       setShowLoginPanel(false);
+      
+      if (returnToCheckout) {
+        setReturnToCheckout(false);
+        navigate('/checkout');
+      }
     } catch (error) {
       // Keep the login panel open if authentication fails
     }
@@ -317,7 +322,13 @@ function AppContent() {
     }
   };
   const handleShowCart = () => {
-    setShowCartPanel(true);
+    if (!isAuthenticated) {
+      setReturnToCheckout(true);
+      setShowLoginPanel(true);
+      return;
+    }
+    navigate('/checkout');
+    // setShowCartPanel is bypassed to reduce friction per user request
   };
   const handleCloseCart = () => {
     setShowCartPanel(false);

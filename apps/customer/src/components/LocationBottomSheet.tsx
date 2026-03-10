@@ -530,9 +530,9 @@ export function LocationBottomSheet({ isOpen, onClose, onAddAddress, onEditAddre
 
       {/* Global Full Screen App Loader */}
       <LoadingScreen
-        isOpen={!!selectingAddressId || locationLoading}
+        isOpen={!!selectingAddressId}
         messages={[
-          locationLoading ? "Finding your spot..." : "Setting your location...",
+          "Setting your location...",
           "Checking kitchens nearby...",
           "Getting menus ready..."
         ]}
