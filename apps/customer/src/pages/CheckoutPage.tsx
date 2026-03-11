@@ -5,7 +5,7 @@ import { useRouter } from '../components/Router';
 import { useLocation as useUserLocation } from '../contexts/LocationContext';
 import { nodeApiService as apiService } from '../utils/nodeApi';
 import { DistanceService } from '../utils/distanceService';
-import { ArrowLeft, Plus, ChevronRight, FileText, Percent, X, ChevronDown, Share, UtensilsCrossed, Clock, MapPin, Phone, Calendar, Utensils } from 'lucide-react';
+import { ArrowLeft, Plus, ChevronRight, FileText, Percent, X, ChevronDown, Share, UtensilsCrossed, Clock, MapPin, Phone, Calendar, Utensils, Info } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { ImageWithFallback } from '../components/common/ImageWithFallback';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
@@ -99,6 +99,8 @@ export function CheckoutPage() {
     // const [showNoteSheet, setShowNoteSheet] = useState(false); // Managed internally by OrderNote
     const [orderNote, setOrderNote] = useState("");
     const [dontAddCutlery, setDontAddCutlery] = useState(false);
+    const [isMockPaymentModalOpen, setIsMockPaymentModalOpen] = useState(false);
+
     const [expandedBill, setExpandedBill] = useState(false);
     const [useMockPayment, setUseMockPayment] = useState(false);
     const [useMockShadowfax, setUseMockShadowfax] = useState(true);
@@ -353,8 +355,11 @@ export function CheckoutPage() {
     const effectiveDeliveryFee = useFreeFees ? 0 : deliveryFee;
     const effectivePlatformFee = useFreeFees ? 0 : PLATFORM_FEE;
 
-    const donation = isDonationChecked ? donationAmount : 0;
-    const grandTotal = itemTotal + effectiveDeliveryFee + effectivePlatformFee + donation;
+    const subTotal = itemTotal + effectiveDeliveryFee + effectivePlatformFee;
+    const taxes = 0; // Or calculate if you have tax logic
+    const grandTotal = subTotal + taxes + (isDonationChecked ? donationAmount : 0);
+
+    // Filter items to show normally in cartemTotal + effectiveDeliveryFee + effectivePlatformFee + donation;
     const savings = Math.round(grandTotal * 0.15);
 
     const handleQuantityChange = async (productId: string, newQty: number) => {
@@ -1054,70 +1059,86 @@ export function CheckoutPage() {
 
                                 {/* Expandable Details */}
                                 {expandedBill && (
-                                    <div className="mt-3 space-y-2 pt-2 border-t border-dashed border-gray-200 text-sm text-gray-600 animate-in slide-in-from-top-2 fade-in duration-200">
-                                        <div className="flex justify-between">
-                                            <span>Item Total</span>
-                                            <span>₹{itemTotal.toFixed(2)}</span>
-                                        </div>
-
-                                        {loadingFee ? (
-                                            <div className="flex justify-between items-center w-full">
-                                                <span>Delivery Partner Fee</span>
-                                                <span className="text-gray-400 animate-pulse text-xs font-semibold">Calculating...</span>
+                                    <div className="mt-3 text-sm animate-in slide-in-from-top-2 fade-in duration-200">
+                                        
+                                        {/* SECTION 1: Item Total */}
+                                        <div className="flex flex-col gap-1 pb-3">
+                                            <div className="flex justify-between font-medium text-gray-900">
+                                                <span>Item Total</span>
+                                                <span>₹{itemTotal.toFixed(2)}</span>
                                             </div>
-                                        ) : effectiveDeliveryFee > 0 ? (
-                                            <div className="flex justify-between">
-                                                <span>Delivery Partner Fee</span>
-                                                <span>₹{effectiveDeliveryFee.toFixed(2)}</span>
-                                            </div>
-                                        ) : (
-                                            <div className="flex justify-between text-green-600">
-                                                <span>Delivery Fee</span>
-                                                <span>FREE</span>
-                                            </div>
-                                        )}
-
-                                        <div className="flex justify-between">
-                                            <span>Platform Fee</span>
-                                            {effectivePlatformFee === 0 ? (
-                                                <span className="text-green-600 font-semibold">FREE</span>
-                                            ) : (
-                                                <span>₹{effectivePlatformFee.toFixed(2)}</span>
+                                            {savings > 0 && (
+                                                <div className="flex justify-between text-[13px] text-green-600 font-medium">
+                                                    <span>Item Discount</span>
+                                                    <span>-₹{savings.toFixed(2)}</span>
+                                                </div>
                                             )}
                                         </div>
 
+                                        {/* SECTION 2: Fees (Smaller Grey Text) */}
+                                        <div className="flex flex-col gap-2 py-3 border-t border-dashed border-gray-200 text-[13px] text-gray-500">
+                                            {/* Delivery Fee */}
+                                            {loadingFee ? (
+                                                <div className="flex justify-between items-center w-full">
+                                                    <span>Delivery Partner Fee</span>
+                                                    <span className="text-gray-400 animate-pulse font-medium">Calculating...</span>
+                                                </div>
+                                            ) : effectiveDeliveryFee > 0 ? (
+                                                <div className="flex justify-between">
+                                                    <span>Delivery Partner Fee</span>
+                                                    <span>₹{effectiveDeliveryFee.toFixed(2)}</span>
+                                                </div>
+                                            ) : (
+                                                <div className="flex justify-between text-green-600 font-medium">
+                                                    <span>Delivery Fee</span>
+                                                    <span>FREE</span>
+                                                </div>
+                                            )}
 
-
-                                        {isDonationChecked && (
+                                            {/* Platform Fee */}
                                             <div className="flex justify-between">
-                                                <span>Feeding India Donation</span>
-                                                <span>₹{donationAmount.toFixed(2)}</span>
+                                                <span>Platform Fee</span>
+                                                {effectivePlatformFee === 0 ? (
+                                                    <span className="text-green-600 font-medium">FREE</span>
+                                                ) : (
+                                                    <span>₹{effectivePlatformFee.toFixed(2)}</span>
+                                                )}
                                             </div>
-                                        )}
 
-                                        <div className="flex justify-between pt-2 mt-2 border-t border-gray-100 font-medium text-gray-800">
-                                            <span>Total Amount</span>
-                                            <div className="flex items-center gap-2">
-                                                <span
-                                                    className="text-gray-400 font-normal"
-                                                    style={{ textDecoration: 'line-through', textDecorationColor: '#9CA3AF' }}
-                                                >
-                                                    ₹{(grandTotal + savings).toFixed(2)}
-                                                </span>
-                                                <span className="font-bold text-gray-900">
-                                                    ₹{grandTotal.toFixed(2)}
-                                                </span>
+                                            {/* Taxes (Mocked visual or real if you map it. Below is standard gutzo style) */}
+                                            <div className="flex justify-between items-center">
+                                                <div className="flex items-center gap-1 cursor-help">
+                                                    <span>Taxes and Charges</span>
+                                                    <Info className="w-3.5 h-3.5 text-gray-400" />
+                                                </div>
+                                                <span>₹0.00</span>
                                             </div>
+
+                                            {isDonationChecked && (
+                                                <div className="flex justify-between">
+                                                    <span>Feeding India Donation</span>
+                                                    <span>₹{donationAmount.toFixed(2)}</span>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* SECTION 3: Final Payable */}
+                                        <div className="flex flex-col gap-1 pt-3 border-t-2 border-gray-100">
+                                            <div className="flex justify-between items-center font-extrabold text-gray-900 text-[16px]">
+                                                <span>Total Payable</span>
+                                                <span>₹{grandTotal.toFixed(2)}</span>
+                                            </div>
+                                            {savings > 0 && (
+                                                <div className="flex justify-end mt-1 mb-1">
+                                                    <span className="bg-[#E8F6F1] text-[#1BA672] px-2 py-1 rounded text-[11px] font-bold tracking-wide">
+                                                        You saved ₹{savings} on this order
+                                                    </span>
+                                                </div>
+                                            )}
+                                            <p className="text-xs font-semibold text-gray-500 mb-1 text-right">Incl. taxes and charges</p>
                                         </div>
                                     </div>
                                 )}
-
-                                <div className="mt-1.5">
-                                    <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[11px] font-bold">
-                                        You saved ₹{savings}
-                                    </span>
-                                </div>
-                                <p className="text-xs text-gray-500 mt-1.5">Incl. taxes and charges</p>
                             </div>
                         </div>
                     </div>
@@ -1153,9 +1174,16 @@ export function CheckoutPage() {
                             </div>
                         ) : (
                             <>
+                                {/* Loss Aversion Savings Banner */}
+                                {savings > 0 && (
+                                    <div className="w-full bg-[#E8F6F1] text-[#1BA672] font-semibold text-center py-2 px-3 rounded-t-lg text-sm border-b border-[#CDEBDD]">
+                                        🎉 ₹{savings} savings applied! Complete order to keep this discount.
+                                    </div>
+                                )}
+
                                 <button
-                                    className={`w-full text-white rounded-lg px-4 py-4 flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform relative overflow-hidden group ${isProcessing || (!!user && !isServiceable) ? 'cursor-not-allowed opacity-70' : ''
-                                        }`}
+                                    className={`w-full text-white rounded-lg px-4 py-4 flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all relative overflow-hidden group ${isProcessing || (!!user && !isServiceable) ? 'cursor-not-allowed opacity-70' : 'animate-pulse hover:animate-none hover:shadow-[0_0_15px_rgba(27,166,114,0.5)]'
+                                        } ${savings > 0 ? 'rounded-t-none' : ''}`}
                                     style={{ backgroundColor: isProcessing || (!!user && !isServiceable) ? '#9CA3AF' : '#1BA672' }}
                                     onClick={handlePlaceOrder}
                                     disabled={isProcessing || (!!user && !isServiceable)}
@@ -1277,9 +1305,16 @@ export function CheckoutPage() {
                                 </label>
                             </div>
 
+                            {/* Loss Aversion Savings Banner Mobile */}
+                            {savings > 0 && (
+                                <div className="w-full bg-[#E8F6F1] text-[#1BA672] font-semibold text-center py-2 px-3 rounded-t-lg text-xs leading-tight mx-auto border-b border-[#CDEBDD]">
+                                    🎉 ₹{savings} savings applied! Complete order to keep this discount.
+                                </div>
+                            )}
+
                             <button
-                                className={`w-full text-white rounded-lg px-4 py-4 flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform relative overflow-hidden group ${isProcessing || (!!user && !isServiceable) ? 'cursor-not-allowed opacity-70' : ''
-                                    }`}
+                                className={`w-full text-white rounded-lg px-4 py-4 flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all relative overflow-hidden group ${isProcessing || (!!user && !isServiceable) ? 'cursor-not-allowed opacity-70' : 'animate-pulse hover:animate-none hover:shadow-[0_0_15px_rgba(27,166,114,0.5)]'
+                                    } ${savings > 0 ? 'rounded-t-none' : ''}`}
                                 style={{ backgroundColor: isProcessing || (!!user && !isServiceable) ? '#9CA3AF' : '#1BA672' }}
                                 onClick={handlePlaceOrder}
                                 disabled={isProcessing || (!!user && !isServiceable)}
