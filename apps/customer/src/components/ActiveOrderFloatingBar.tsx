@@ -2,17 +2,21 @@ import React from 'react';
 import { Maximize2, Clock, CheckCircle, ChefHat, Bike, X } from 'lucide-react';
 import { useOrderTracking } from '../contexts/OrderTrackingContext';
 import { useRouter } from './Router';
+import { useNavigate } from 'react-router-dom';
 
 export function ActiveOrderFloatingBar() {
-  const { activeOrder, maximizeOrder, closeTracking, clearActiveOrder } = useOrderTracking();
+  const { activeOrder, activeOrders, maximizeOrder, closeTracking, clearActiveOrder } = useOrderTracking();
   const { currentRoute } = useRouter();
+  const navigate = useNavigate();
 
   // Poll storage for debug and fallback
   const [storageOrder, setStorageOrder] = React.useState<any>(null);
 
-  // 1. Priority: Context -> Storage
-  // If context has an order, use it. If not, fall back to storage (but verify it's not cancelled)
-  const order = activeOrder || storageOrder;
+  // 1. Priority: Context Array -> Context Single -> Storage
+  // We prefer activeOrders array if populated.
+  const displayOrders = activeOrders && activeOrders.length > 0 
+      ? activeOrders 
+      : (activeOrder ? [activeOrder] : (storageOrder ? [storageOrder] : []));
 
   // 2. Clear Storage if Context says Cancelled
   React.useEffect(() => {
@@ -88,7 +92,7 @@ export function ActiveOrderFloatingBar() {
         case 'picked_up':
             return {
                 title: 'Order Picked Up',
-                subtext: (order?.delivery_otp) ? `Sharing OTP: ${order.delivery_otp}` : 'Rider is on the way',
+                subtext: 'OTP required at delivery',
                 icon: <Bike size={14} className="text-[#1BA672]" />,
                 bg: 'bg-green-50',
                 text: 'text-[#1BA672]',
@@ -152,61 +156,108 @@ export function ActiveOrderFloatingBar() {
   if (isTrackingPage || isPartnerPage) return null;
 
   // Render even if delivered (per user request) -> actually hide it
-  if (order?.status && ['delivered', 'cancelled', 'rejected'].includes(order.status.toLowerCase())) return null;
+  const validOrders = displayOrders.filter(o => o && !['delivered', 'cancelled', 'rejected'].includes((o.status || '').toLowerCase()));
 
-  // Hide if no order
-  if (!order) return null;
+  // Hide if no valid orders
+  if (validOrders.length === 0) return null;
 
-  const config = getStatusConfig(order.status);
-
+  // Render Carousel or Single Card
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-sm z-[1000] transition-all duration-300 ease-in-out">
-        <div 
-          className="bg-white rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] flex overflow-hidden border border-gray-100"
-          style={{ height: '100px' }}
-        >
-                {/* Left Content Section */}
-                <div className="flex-1 p-4 flex flex-col justify-center gap-1" onClick={maximizeOrder}>
-                    <div className="flex flex-col">
-                        <h3 className="font-bold text-gray-900 text-sm leading-tight font-primary truncate pr-2">
-                             {order.vendorName || 'Active Order'}
-                        </h3>
-                        {order.orderNumber && (
-                            <span className="text-[10px] text-gray-500 font-medium">
-                                #{order.orderNumber}
-                            </span>
-                        )}
-                    </div>
-                    
-                    <div className="flex items-center gap-2 mt-1">
-                        <div className={`flex items-center gap-1.5 ${config.bg} px-2.5 py-1.5 rounded-md`}>
-                            {config.icon}
-                            <span className={`${config.text} font-bold text-xs uppercase tracking-wide`}>
-                                {config.label}
-                            </span>
+    <div className="fixed bottom-4 left-0 right-0 z-[1000] transition-all duration-300 ease-in-out">
+        
+        {validOrders.length > 1 && (
+            <div className="text-center mb-1.5 flex justify-center items-center gap-2">
+                <span className="bg-gray-900/80 backdrop-blur-sm text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                    {validOrders.length} Active Orders
+                </span>
+            </div>
+        )}
+
+        {/* Horizontal Swiper Container */}
+        <div className="flex overflow-x-auto snap-x snap-mandatory gap-3 px-4 pb-2 hide-scrollbar w-full">
+            {validOrders.map((ord, idx) => {
+                const config = getStatusConfig(ord.status);
+                
+                // If single order, take full standard width. If multiple, take 85% width to allow 'peeking'
+                const cardWidthClass = validOrders.length > 1 ? 'w-[85vw] max-w-[320px] shrink-0' : 'w-full max-w-sm mx-auto';
+                
+                return (
+                    <div 
+                        key={ord.orderId || idx}
+                        className={`snap-center ${cardWidthClass}`}
+                    >
+                        <div 
+                          className="bg-white rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] flex overflow-hidden border border-gray-100 h-[100px]"
+                        >
+                            {/* Left Content Section */}
+                            <div className="flex-1 p-4 flex flex-col justify-center gap-1 active:bg-gray-50 transition-colors" 
+                                 onClick={() => {
+                                     // Navigate using GZ Number if available, fallback to ID
+                                     const targetId = ord.orderNumber || ord.orderId;
+                                     if(targetId) navigate(`/tracking/${targetId}`);
+                                 }}>
+                                <div className="flex flex-col">
+                                    <h3 className="font-bold text-gray-900 text-sm leading-tight font-primary truncate pr-2">
+                                         {ord.vendorName || 'Active Order'}
+                                    </h3>
+                                    {ord.orderNumber && (
+                                        <span className="text-[10px] text-gray-500 font-medium tracking-wide">
+                                            #{ord.orderNumber}
+                                        </span>
+                                    )}
+                                </div>
+                                
+                                <div className="flex items-center gap-2 mt-1">
+                                    <div className={`flex items-center gap-1.5 ${config.bg} px-2.5 py-1.5 rounded-md`}>
+                                        {config.icon}
+                                        <span className={`${config.text} font-bold text-[10px] md:text-xs uppercase tracking-wide`}>
+                                            {config.label}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Right Action Buttons */}
+                            <div className="w-14 flex flex-col items-center justify-center border-l border-gray-100 bg-gray-50/50">
+                                {/* Only allow closing if it's the single legacy view, or handle per-order close if needed. For now, we omit close for multiples or route it through Context if needed. We'll keep maximize. */}
+                                {validOrders.length === 1 && (
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            closeTracking();
+                                        }}
+                                        className="w-8 h-8 rounded-full mb-1 flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                                    >
+                                        <X size={16} />
+                                    </button>
+                                )}
+                                <button 
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        const targetId = ord.orderNumber || ord.orderId;
+                                        if(targetId) navigate(`/tracking/${targetId}`);
+                                    }}
+                                    className={`w-8 h-8 rounded-full bg-white border border-gray-100 shadow-sm flex items-center justify-center text-[#1BA672] hover:bg-[#E8F6F1] transition-colors ${validOrders.length > 1 ? 'w-10 h-10' : ''}`}
+                                >
+                                    <Maximize2 size={16} />
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-
-                {/* Right Action Buttons */}
-                <div className="w-14 flex flex-col items-center justify-center border-l border-gray-100 bg-white">
-                    <button 
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            closeTracking();
-                        }}
-                        className="w-8 h-8 rounded-full mb-1 flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
-                    >
-                        <X size={16} />
-                    </button>
-                    <button 
-                        onClick={maximizeOrder}
-                        className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-[#1BA672] transition-colors"
-                    >
-                        <Maximize2 size={16} />
-                    </button>
-                </div>
+                );
+            })}
         </div>
+        
+        {/* Helper CSS to hide scrollbar but keep functionality */}
+        <style dangerouslySetInnerHTML={{__html: `
+            .hide-scrollbar::-webkit-scrollbar {
+                display: none;
+            }
+            .hide-scrollbar {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+        `}} />
     </div>
   );
 }

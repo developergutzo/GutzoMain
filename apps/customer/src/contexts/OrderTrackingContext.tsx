@@ -27,6 +27,7 @@ interface TrackingState {
 
 interface OrderTrackingContextType {
   activeOrder: TrackingState | null;
+  activeOrders: TrackingState[];
   startTracking: (orderId: string, initialData?: Partial<TrackingState>) => void;
   minimizeOrder: () => void;
   maximizeOrder: () => void;
@@ -56,6 +57,9 @@ export function OrderTrackingProvider({ children }: { children: ReactNode }) {
       return null;
     }
   });
+
+  const [activeOrders, setActiveOrders] = useState<TrackingState[]>([]);
+
   const router = useRouter();
   const { user } = useAuth(); // Fix: proper hook usage
 
@@ -65,85 +69,81 @@ export function OrderTrackingProvider({ children }: { children: ReactNode }) {
 
   // Persist to localStorage
   useEffect(() => {
-    console.log('Context: activeOrder changed:', activeOrder);
     if (activeOrder) {
       localStorage.setItem('activeOrder', JSON.stringify(activeOrder));
     } else {
-      console.log('Context: REMOVING activeOrder from localStorage (State is null)');
       localStorage.removeItem('activeOrder');
     }
   }, [activeOrder]);
 
-  // AUTO-RESTORE: If user is logged in but no activeOrder in context, find the latest live order
+  // AUTO-RESTORE: Find all live orders
   useEffect(() => {
     if (!user?.phone) return;
-    if (activeOrder) return; // Already tracking something
 
-    const restoreActiveOrder = async () => {
+    const fetchLiveOrders = async () => {
       try {
-        // We need to import dynamically to avoid circular deps if any
         const { nodeApiService } = await import('../utils/nodeApi');
         const res = await nodeApiService.getOrders(user.phone);
         if (res.success && res.data && res.data.length > 0) {
           // Sort by date desc
           const sorted = res.data.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-          const latest = sorted[0];
+          
+          const liveOrders: any[] = [];
 
-          // Check if it is "Live"
-          // Strict Check: Status is critical
-          if (!latest.status) {
-            console.error("Skipping invalid order (missing status):", latest.id);
-            return;
+          for (const order of sorted) {
+             if (!order.status) continue;
+             const status = order.status.toLowerCase();
+             const deliveryStatus = order.delivery_status ? order.delivery_status.toLowerCase() : null;
+             const paymentStatus = order.payment_status ? order.payment_status.toLowerCase() : null;
+
+             const isUnpaid = status === 'created' || paymentStatus === 'failed' || paymentStatus === 'pending';
+             const isLive = !isUnpaid && 
+               !['delivered', 'completed', 'cancelled', 'rejected'].includes(status) &&
+               (!deliveryStatus || !['delivered', 'completed'].includes(deliveryStatus));
+
+             if (isLive) {
+                 liveOrders.push(order);
+             }
           }
 
-          const status = latest.status.toLowerCase();
-          const deliveryStatus = latest.delivery_status ? latest.delivery_status.toLowerCase() : null;
-          const paymentStatus = latest.payment_status ? latest.payment_status.toLowerCase() : null;
+          // Convert backend orders to TrackingState
+          if (liveOrders.length > 0) {
+              const trackingStates: TrackingState[] = liveOrders.map(order => {
+                  const trackingId = order.order_number || order.id || order.order_id;
+                  const vName = order.vendor?.name || order.vendor_name || 'Gutzo Kitchen';
+                  const vLocation = order.vendor?.address || '';
+                  
+                  return {
+                      orderId: trackingId,
+                      status: order.status as OrderStatus || 'placed',
+                      startTime: new Date(order.created_at).getTime(),
+                      isMinimized: true,
+                      vendorName: vName,
+                      vendorLocation: vLocation,
+                      orderNumber: order.order_number
+                  };
+              });
 
-          // Skip 'created' orders — these are unpaid (payment pending or failed)
-          // Skip orders with failed payment status
-          const isUnpaid = status === 'created' || paymentStatus === 'failed' || paymentStatus === 'pending';
+              setActiveOrders(trackingStates);
 
-          const isLive = !isUnpaid &&
-            !['delivered', 'completed', 'cancelled', 'rejected'].includes(status) &&
-            (!deliveryStatus || !['delivered', 'completed'].includes(deliveryStatus));
-
-          if (isLive) {
-            const trackingId = latest.order_number || latest.id || latest.order_id;
-
-            // ZOMBIE CHECK: Verify with live API before restoring
-            // The DB might be stale ("searching_rider"), but Shadowfax might say "Cancelled" (or 404).
-            try {
-              const liveCheck = await nodeApiService.trackOrder(user.phone, trackingId);
-
-              if (liveCheck.success && liveCheck.data) {
-                const ls = (liveCheck.data.status || '').toLowerCase();
-                if (ls === 'cancelled' || ls === 'rejected' || ls === 'vendor_rejected') {
-                  console.warn('🛑 Auto-Restore Blocked: Order is CANCELLED in live system:', trackingId);
-                  return;
-                }
+              // Set the most recent as the primary activeOrder if none is explicitly focused
+              if (!activeOrder && trackingStates.length > 0) {
+                  startTracking(trackingStates[0].orderId!);
               }
-            } catch (e: any) {
-              // If 404, it is definitely dead/cancelled.
-              if (e.message && (e.message.includes('404') || e.message.includes('not found') || e.message.includes('No order'))) {
-                console.warn('🛑 Auto-Restore Blocked: Order not found (404) in live system:', trackingId);
-                return;
-              }
-              // For other errors (network?), we cautiously proceed or log.
-              // But for now, we assume if track fails, we shouldn't show a zombie "Searching" bar.
-            }
-
-            console.log('🔄 Auto-Restoring Active Order:', latest.order_number);
-            startTracking(trackingId);
+          } else {
+              setActiveOrders([]);
           }
         }
       } catch (e) {
-        console.error("Auto-restore failed:", e);
+        console.error("Auto-restore multiple orders failed:", e);
       }
     };
 
-    restoreActiveOrder();
-  }, [user?.phone]); // FIXED: Run only on mount/login, NOT when activeOrder changes (prevents zombie loop)
+    // Run immediately and then poll every 10s for new orders joining the array
+    fetchLiveOrders();
+    const interval = setInterval(fetchLiveOrders, 10000);
+    return () => clearInterval(interval);
+  }, [user?.phone, activeOrder]);
 
   const startTracking = useCallback((orderId: string, initialData?: Partial<TrackingState>) => {
     setActiveOrder({
@@ -344,6 +344,7 @@ export function OrderTrackingProvider({ children }: { children: ReactNode }) {
   return (
     <OrderTrackingContext.Provider value={{
       activeOrder,
+      activeOrders,
       startTracking,
       minimizeOrder,
       maximizeOrder,
