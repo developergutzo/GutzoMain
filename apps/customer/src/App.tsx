@@ -68,7 +68,7 @@ import { OrderTrackingProvider } from "./contexts/OrderTrackingContext";
 import { ActiveOrderFloatingBar } from "./components/ActiveOrderFloatingBar";
 import { SubscriptionDetailsSheet } from "./components/SubscriptionDetailsSheet";
 import { nodeApiService as apiService } from "./utils/nodeApi";
-import { DevPaymentButton } from "./components/DevPaymentButton";
+
 
 import { useMobileNavigation } from "./hooks/useMobileNavigation";
 
@@ -513,7 +513,7 @@ function AppContent() {
           }}
         />
       )}
-      <DevPaymentButton />
+
       <Header
         onShowLogin={handleShowLogin}
         onLogout={handleLogout}
