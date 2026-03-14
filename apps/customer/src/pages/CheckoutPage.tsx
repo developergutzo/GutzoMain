@@ -102,9 +102,9 @@ export function CheckoutPage() {
     const [isMockPaymentModalOpen, setIsMockPaymentModalOpen] = useState(false);
 
     const [expandedBill, setExpandedBill] = useState(false);
-    const [useMockPayment, setUseMockPayment] = useState(false);
+    const [useMockPayment, setUseMockPayment] = useState(true);
     const [useMockShadowfax, setUseMockShadowfax] = useState(true);
-    const [useFreeFees, setUseFreeFees] = useState(false);
+    const [useFreeFees, setUseFreeFees] = useState(true);
 
     // Constants
     const ITEMS_GST_RATE = 0.05;
