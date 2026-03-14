@@ -50,7 +50,7 @@ export function PartnerLoginPage() {
       if (response && response.success && response.data) {
         localStorage.setItem('vendor_data', JSON.stringify(response.data.vendor));
         toast.success(`Welcome back, ${response.data.vendor.name}!`);
-        window.location.reload();
+        navigate('/');
       }
     } catch (error: any) {
       if (error.message === 'Vendor not found' || error.status === 404) {
