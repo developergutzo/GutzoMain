@@ -216,15 +216,25 @@ router.post('/callback', asyncHandler(async (req, res) => {
   const bankTxnId = paytmParams.BANKTXNID;
   const txnAmount = paytmParams.TXNAMOUNT;
 
+  console.log('[Paytm Callback] Order ID:', orderId);
+  console.log('[Paytm Callback] Transaction Status:', txnStatus);
+  console.log('[Paytm Callback] Transaction ID:', txnId);
+  console.log('[Paytm Callback] Bank Transaction ID:', bankTxnId);
+  console.log('[Paytm Callback] Transaction Amount:', txnAmount);
+
   // Fetch existing order to check idempotency
-  const { data: existingOrder } = await supabaseAdmin
+  const { data: existingOrder, error: orderError } = await supabaseAdmin
     .from('orders')
-    .select('id, user_id, payment_status, total_amount, shadowfax_order_id')
+    .select('id, user_id, payment_status, total_amount')
     .eq('order_number', orderId)
     .single();
 
+  if (orderError) {
+    console.error(`[Paytm Callback] Supabase error for ${orderId}:`, orderError);
+  }
+
   if (!existingOrder) {
-    console.error(`[Paytm Callback] Order ${orderId} not found`);
+    console.error(`[Paytm Callback] Order ${orderId} not found. Error:`, orderError);
     return res.status(404).send('Order not found');
   }
 

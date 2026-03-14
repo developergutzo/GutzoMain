@@ -4,7 +4,7 @@ $root = Get-Location
 
 # 1. Start Node Backend (Debug Mode - attach VS Code debugger on port 9229)
 Write-Host "Starting Node Backend (Debug Mode)..."
-Start-Process pwsh -ArgumentList "-NoExit", "-Command", "cd '$root\nodebackend'; node --inspect src/server.js"
+Start-Process pwsh -ArgumentList "-NoExit", "-Command", "cd '$root\nodebackend'; npx nodemon --inspect src/server.js"
 
 # 2. Start Customer App
 Write-Host "Starting Customer App..."
