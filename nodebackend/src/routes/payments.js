@@ -304,10 +304,8 @@ router.post('/callback', asyncHandler(async (req, res) => {
         let sfResponse = null;
 
         // MOCK SHADOWFAX CHECK (Real Payment, Mock Delivery)
-        // Only bypass external API if specifically requested AND NOT configured to use Mock App server
-        // If USE_MOCK_SHADOWFAX is true, we WANT to hit the mock server (via utils/shadowfax.js)
-        const useMockServer = process.env.USE_MOCK_SHADOWFAX === 'true';
-        const isInternalMock = !useMockServer && (updatedOrder.mock_shadowfax || (updatedOrder.special_instructions && updatedOrder.special_instructions.includes('[MOCK_SFX]')));
+        // Relies solely on the checkbox sent from the frontend (mock_shadowfax field or [MOCK_SFX] tag)
+        const isInternalMock = updatedOrder.mock_shadowfax || (updatedOrder.special_instructions && updatedOrder.special_instructions.includes('[MOCK_SFX]'));
 
         if (isInternalMock) {
           console.log(`🛠️ [Mock Shadowfax] Triggering INTERNAL Mock Delivery (DB Only) for Order ${orderId}`);
@@ -606,8 +604,8 @@ router.post('/webhook', asyncHandler(async (req, res) => {
         let sfResponse = null;
 
         // MOCK SHADOWFAX CHECK
-        const useMockServer = process.env.USE_MOCK_SHADOWFAX === 'true';
-        const isInternalMock = !useMockServer && (updatedOrder.mock_shadowfax || (updatedOrder.special_instructions && updatedOrder.special_instructions.includes('[MOCK_SFX]')));
+        // Relies solely on the checkbox sent from the frontend (mock_shadowfax field or [MOCK_SFX] tag)
+        const isInternalMock = updatedOrder.mock_shadowfax || (updatedOrder.special_instructions && updatedOrder.special_instructions.includes('[MOCK_SFX]'));
 
         if (isInternalMock) {
           console.log(`🛠️ [Mock Shadowfax Webhook] Triggering INTERNAL Mock Delivery (DB Only) for Order ${orderId}`);
@@ -998,68 +996,91 @@ if (process.env.NODE_ENV === 'development') {
       data: { order_id: orderId }
     });
 
-    // Trigger Mock Shadowfax LOGIC if requested
-    // Trigger Mock Shadowfax LOGIC if requested
-    if (mockShadowfax && order) {
-      console.log(`🛠️ [Mock Payment] Triggering Shadowfax Logic for ${orderId} (via API)`);
+    // Shadowfax logic — behaviour depends on the mock checkbox
+    if (order) {
+      if (mockShadowfax) {
+        // INTERNAL MOCK: No real Shadowfax API call at all — DB only
+        console.log(`🛠️ [Mock Payment] Creating INTERNAL Mock Delivery (DB Only) for ${orderId}`);
+        try {
+          const mockSfId = `SFX_MOCK_${Date.now()}`;
+          const pickupOtp = '1234';
+          const deliveryOtp = '5678';
 
-      try {
-        const { createShadowfaxOrder } = await import('../utils/shadowfax.js');
-
-        // Fetch Vendor
-        const { data: vendor } = await supabaseAdmin
-          .from('vendors')
-          .select('*')
-          .eq('id', order.vendor_id)
-          .single();
-
-        if (vendor) {
-          // Parse address if needed
-          if (order.delivery_address && typeof order.delivery_address === 'string') {
-            try {
-              order.delivery_address = JSON.parse(order.delivery_address);
-            } catch (e) {
-              console.error("Failed to parse delivery_address JSON:", e);
-            }
-          }
-
-          const pickupOtp = Math.floor(1000 + Math.random() * 9000).toString();
-          const deliveryOtp = Math.floor(1000 + Math.random() * 9000).toString();
-
-          const sfResponse = await createShadowfaxOrder(order, vendor, { pickup_otp: pickupOtp, delivery_otp: deliveryOtp });
-
-          if (sfResponse && sfResponse.success) {
-            const shadowfaxId = sfResponse.data.sfx_order_id || sfResponse.data.flash_order_id || sfResponse.data.client_order_id || sfResponse.data.id;
-            console.log(`✅ [Mock Payment] Shadowfax Order Created: ${shadowfaxId}`);
-
-            await supabaseAdmin.from('deliveries').upsert({
-              order_id: order.id,
-              external_order_id: shadowfaxId,
-              partner_id: 'shadowfax',
+          await supabaseAdmin.from('deliveries').upsert({
+            order_id: order.id,
+            partner_id: 'shadowfax',
+            external_order_id: mockSfId,
+            status: 'searching_rider',
+            pickup_otp: pickupOtp,
+            delivery_otp: deliveryOtp,
+            history: [{
               status: 'searching_rider',
-              pickup_otp: pickupOtp,
-              delivery_otp: deliveryOtp,
-              history: [{
-                status: 'searching_rider',
-                timestamp: new Date().toISOString(),
-                note: 'Mock Order Created (Via Shadowfax API)'
-              }],
-              courier_request_payload: sfResponse.data
-            }, { onConflict: 'order_id' });
+              timestamp: new Date().toISOString(),
+              note: 'Mock Delivery Created (No Real Shadowfax API Call)'
+            }],
+            courier_request_payload: { mock: true, source: 'mock-payment-internal' }
+          }, { onConflict: 'order_id' });
 
-            await supabaseAdmin.from('orders').update({
-              shadowfax_order_id: shadowfaxId,
-              status: 'searching_rider'
-            }).eq('id', order.id);
+          await supabaseAdmin.from('orders').update({
+            shadowfax_order_id: mockSfId,
+            status: 'searching_rider'
+          }).eq('id', order.id);
 
-          } else {
-            console.error("❌ [Mock Payment] Failed to create Shadowfax order:", sfResponse);
-          }
-        } else {
-          console.error("❌ [Mock Payment] Vendor not found");
+          console.log(`✅ [Mock Payment] Internal Mock Delivery Created: ${mockSfId}`);
+        } catch (err) {
+          console.error('❌ [Mock Payment] Error creating mock delivery:', err);
         }
-      } catch (err) {
-        console.error("❌ [Mock Payment] Error triggering Shadowfax:", err);
+
+      } else {
+        // REAL SHADOWFAX: Only when mock checkbox is unchecked
+        console.log(`🚀 [Mock Payment] Triggering REAL Shadowfax for ${orderId}`);
+        try {
+          const { createShadowfaxOrder } = await import('../utils/shadowfax.js');
+
+          const { data: vendor } = await supabaseAdmin
+            .from('vendors')
+            .select('*')
+            .eq('id', order.vendor_id)
+            .single();
+
+          if (vendor) {
+            if (order.delivery_address && typeof order.delivery_address === 'string') {
+              try { order.delivery_address = JSON.parse(order.delivery_address); } catch (e) { }
+            }
+
+            const pickupOtp = Math.floor(1000 + Math.random() * 9000).toString();
+            const deliveryOtp = Math.floor(1000 + Math.random() * 9000).toString();
+
+            const sfResponse = await createShadowfaxOrder(order, vendor, { pickup_otp: pickupOtp, delivery_otp: deliveryOtp });
+
+            if (sfResponse && sfResponse.success) {
+              const shadowfaxId = sfResponse.data.sfx_order_id || sfResponse.data.flash_order_id || sfResponse.data.client_order_id || sfResponse.data.id;
+              console.log(`✅ [Mock Payment] Real Shadowfax Order Created: ${shadowfaxId}`);
+
+              await supabaseAdmin.from('deliveries').upsert({
+                order_id: order.id,
+                external_order_id: shadowfaxId,
+                partner_id: 'shadowfax',
+                status: 'searching_rider',
+                pickup_otp: pickupOtp,
+                delivery_otp: deliveryOtp,
+                history: [{ status: 'searching_rider', timestamp: new Date().toISOString(), note: 'Order Created (Real Shadowfax API)' }],
+                courier_request_payload: sfResponse.data
+              }, { onConflict: 'order_id' });
+
+              await supabaseAdmin.from('orders').update({
+                shadowfax_order_id: shadowfaxId,
+                status: 'searching_rider'
+              }).eq('id', order.id);
+            } else {
+              console.error('❌ [Mock Payment] Real Shadowfax failed:', sfResponse);
+            }
+          } else {
+            console.error('❌ [Mock Payment] Vendor not found');
+          }
+        } catch (err) {
+          console.error('❌ [Mock Payment] Error triggering real Shadowfax:', err);
+        }
       }
     }
 

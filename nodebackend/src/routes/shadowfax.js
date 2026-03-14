@@ -12,15 +12,9 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-// Shadowfax Config
-const USE_MOCK = process.env.USE_MOCK_SHADOWFAX === 'true';
-const MOCK_URL = process.env.MOCK_SHADOWFAX_URL || 'http://localhost:3002';
-const SHADOWFAX_BASE_URL = USE_MOCK ? MOCK_URL : process.env.SHADOWFAX_API_URL;
+// Shadowfax Config — always uses real API; mock decisions are per-order via the frontend checkbox
+const SHADOWFAX_BASE_URL = process.env.SHADOWFAX_API_URL;
 const SHADOWFAX_TOKEN = process.env.SHADOWFAX_API_TOKEN;
-
-if (USE_MOCK) {
-    console.log('🧪 [Shadowfax Route] MOCK MODE ENABLED - Routing to:', SHADOWFAX_BASE_URL);
-}
 
 /**
  * POST /api/shadowfax/create-order
