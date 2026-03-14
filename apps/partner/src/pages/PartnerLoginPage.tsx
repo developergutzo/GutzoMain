@@ -50,7 +50,10 @@ export function PartnerLoginPage() {
       if (response && response.success && response.data) {
         localStorage.setItem('vendor_data', JSON.stringify(response.data.vendor));
         toast.success(`Welcome back, ${response.data.vendor.name}!`);
-        navigate('/');
+        // Use full page navigation to force re-render with updated auth state.
+        // navigate('/') is a no-op when currentRoute is already '/', so the
+        // component tree wouldn't re-render to pick up the new vendor_data.
+        window.location.href = '/';
       }
     } catch (error: any) {
       if (error.message === 'Vendor not found' || error.status === 404) {
