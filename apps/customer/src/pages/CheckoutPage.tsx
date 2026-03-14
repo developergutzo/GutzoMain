@@ -1174,6 +1174,46 @@ export function CheckoutPage() {
                             </div>
                         ) : (
                             <>
+                                {/* Dev-Only Checkboxes (Desktop) */}
+                                <div className="flex items-center gap-2 mb-3 px-1">
+                                    <input
+                                        type="checkbox"
+                                        id="mockPaymentDesktop"
+                                        checked={useMockPayment}
+                                        onChange={(e) => setUseMockPayment(e.target.checked)}
+                                        className="w-4 h-4 text-orange-600 rounded focus:ring-orange-500"
+                                    />
+                                    <label htmlFor="mockPaymentDesktop" className="text-xs text-gray-600 font-medium cursor-pointer select-none">
+                                        Use Mock Payment (Dev Only)
+                                    </label>
+                                </div>
+
+                                <div className="flex items-center gap-2 mb-3 px-1">
+                                    <input
+                                        type="checkbox"
+                                        id="mockShadowfaxDesktop"
+                                        checked={useMockShadowfax}
+                                        onChange={(e) => setUseMockShadowfax(e.target.checked)}
+                                        className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                                    />
+                                    <label htmlFor="mockShadowfaxDesktop" className="text-xs text-gray-600 font-medium cursor-pointer select-none">
+                                        Mock Shadowfax Order
+                                    </label>
+                                </div>
+
+                                <div className="flex items-center gap-2 mb-3 px-1">
+                                    <input
+                                        type="checkbox"
+                                        id="freeFeeDesktop"
+                                        checked={useFreeFees}
+                                        onChange={(e) => setUseFreeFees(e.target.checked)}
+                                        className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
+                                    />
+                                    <label htmlFor="freeFeeDesktop" className="text-xs text-gray-600 font-medium cursor-pointer select-none">
+                                        Free Delivery &amp; Platform Fee (Dev Only)
+                                    </label>
+                                </div>
+
                                 {/* Loss Aversion Savings Banner */}
                                 {savings > 0 && (
                                     <div className="w-full bg-[#E8F6F1] text-[#1BA672] font-semibold text-center py-2 px-3 rounded-t-lg text-sm border-b border-[#CDEBDD]">
