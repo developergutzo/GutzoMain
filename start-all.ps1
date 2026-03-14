@@ -2,9 +2,9 @@ Write-Host "🚀 Starting Gutzo Services..." -ForegroundColor Green
 
 $root = Get-Location
 
-# 1. Start Node Backend
-Write-Host "Starting Node Backend..."
-Start-Process pwsh -ArgumentList "-NoExit", "-Command", "cd '$root\nodebackend'; npm run dev"
+# 1. Start Node Backend (Debug Mode - attach VS Code debugger on port 9229)
+Write-Host "Starting Node Backend (Debug Mode)..."
+Start-Process pwsh -ArgumentList "-NoExit", "-Command", "cd '$root\nodebackend'; node --inspect src/server.js"
 
 # 2. Start Customer App
 Write-Host "Starting Customer App..."

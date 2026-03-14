@@ -5,7 +5,8 @@ Write-Host "🛑 Stopping Gutzo Services..." -ForegroundColor Yellow
 # 3001: Partner App
 # 3002: Mock Shadowfax
 # 5000: Node Backend
-$ports = @(3000, 3001, 3002, 5000)
+# 9229: Node Debugger (--inspect)
+$ports = @(3000, 3001, 3002, 5000, 9229)
 
 foreach ($port in $ports) {
     # Find TCP connections on the specified port
