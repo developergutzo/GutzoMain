@@ -2522,10 +2522,10 @@
     {
       "shadowfax_id": "SFX_MOCK_1773305183965_4hucuqbaf",
       "client_order_id": "GZ202603121416THV1",
-      "status": "CREATED",
+      "status": "CANCELLED",
       "awb_number": "SFX_MOCK_1773305183965_4hucuqbaf",
       "created_at": "2026-03-12T08:46:23.966Z",
-      "updated_at": "2026-03-12T08:46:23.966Z",
+      "updated_at": "2026-03-15T17:22:30.113Z",
       "pickup_details": {
         "name": "Coimbatore Cafe, GK Nagar",
         "contact_number": "9790312308",
@@ -2560,14 +2560,51 @@
           "otp": "3307"
         }
       },
-      "rider_details": null,
+      "rider_details": {
+        "latitude": 11.052569447723258,
+        "longitude": 77.06680224137547,
+        "current_location": {
+          "latitude": 11.052569447723258,
+          "longitude": 77.06680224137547
+        }
+      },
       "history": [
         {
           "status": "CREATED",
           "timestamp": "2026-03-12T08:46:23.966Z",
           "note": "Order created via Mock API"
+        },
+        {
+          "status": "ALLOTTED",
+          "timestamp": "2026-03-15T17:20:12.831Z",
+          "note": "Status updated via UI to ALLOTTED"
+        },
+        {
+          "status": "ACCEPTED",
+          "timestamp": "2026-03-15T17:20:14.299Z",
+          "note": "Status updated via UI to ACCEPTED"
+        },
+        {
+          "status": "ARRIVED",
+          "timestamp": "2026-03-15T17:20:32.991Z",
+          "note": "Status updated via UI to ARRIVED"
+        },
+        {
+          "status": "COLLECTED",
+          "timestamp": "2026-03-15T17:20:34.165Z",
+          "note": "Status updated via UI to COLLECTED"
+        },
+        {
+          "status": "CANCELLED",
+          "timestamp": "2026-03-15T17:22:30.115Z",
+          "note": "Cancelled by Customer",
+          "meta": {
+            "cancelled_by": "sfx"
+          }
         }
-      ]
+      ],
+      "cancelled_by": "sfx",
+      "cancellation_reason": "Cancelled by Customer"
     }
   ]
 ]

@@ -102,9 +102,13 @@ export function CheckoutPage() {
     const [isMockPaymentModalOpen, setIsMockPaymentModalOpen] = useState(false);
 
     const [expandedBill, setExpandedBill] = useState(false);
-    const [useMockPayment, setUseMockPayment] = useState(true);
-    const [useMockShadowfax, setUseMockShadowfax] = useState(true);
+    // Dev Environment States
+    const [devEnvironment, setDevEnvironment] = useState<'full_mock' | 'mock_pay_real_del' | 'real_pay_mock_del' | 'production'>('full_mock');
     const [useFreeFees, setUseFreeFees] = useState(true);
+
+    // Derived states for payment and shadowfax from dropdown
+    const useMockPayment = devEnvironment === 'full_mock' || devEnvironment === 'mock_pay_real_del';
+    const useMockShadowfax = devEnvironment === 'full_mock' || devEnvironment === 'real_pay_mock_del';
 
     // Constants
     const ITEMS_GST_RATE = 0.05;
@@ -1175,44 +1179,37 @@ export function CheckoutPage() {
                         ) : (
                             <>
                                 {/* Dev-Only Checkboxes (Desktop) */}
-                                <div className="flex items-center gap-2 mb-3 px-1">
-                                    <input
-                                        type="checkbox"
-                                        id="mockPaymentDesktop"
-                                        checked={useMockPayment}
-                                        onChange={(e) => setUseMockPayment(e.target.checked)}
-                                        className="w-4 h-4 text-orange-600 rounded focus:ring-orange-500"
-                                    />
-                                    <label htmlFor="mockPaymentDesktop" className="text-xs text-gray-600 font-medium cursor-pointer select-none">
-                                        Use Mock Payment (Dev Only)
-                                    </label>
+                                <div className="flex flex-col gap-3 mb-3 px-1">
+                                    <div className="flex flex-col gap-1.5">
+                                        <label htmlFor="devEnvironmentDesktop" className="text-xs text-gray-600 font-bold uppercase tracking-wider">
+                                            Test Environment (Dev Only)
+                                        </label>
+                                        <select
+                                            id="devEnvironmentDesktop"
+                                            value={devEnvironment}
+                                            onChange={(e) => setDevEnvironment(e.target.value as any)}
+                                            className="w-full text-sm font-medium border border-gray-300 rounded-lg shadow-sm py-2 px-3 focus:ring-green-500 focus:border-green-500 bg-white cursor-pointer"
+                                        >
+                                            <option value="full_mock">Full Mock (Mock Pay, Mock Delivery)</option>
+                                            <option value="real_pay_mock_del">Real Payment, Mock Delivery</option>
+                                            <option value="mock_pay_real_del">Mock Payment, Real Delivery</option>
+                                            <option value="production">Full Production (Real Pay, Real Delivery)</option>
+                                        </select>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            id="freeFeeDesktop"
+                                            checked={useFreeFees}
+                                            onChange={(e) => setUseFreeFees(e.target.checked)}
+                                            className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
+                                        />
+                                        <label htmlFor="freeFeeDesktop" className="text-xs text-gray-600 font-medium cursor-pointer select-none">
+                                            Free Delivery &amp; Platform Fee (Dev Only)
+                                        </label>
+                                    </div>
                                 </div>
 
-                                <div className="flex items-center gap-2 mb-3 px-1">
-                                    <input
-                                        type="checkbox"
-                                        id="mockShadowfaxDesktop"
-                                        checked={useMockShadowfax}
-                                        onChange={(e) => setUseMockShadowfax(e.target.checked)}
-                                        className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
-                                    />
-                                    <label htmlFor="mockShadowfaxDesktop" className="text-xs text-gray-600 font-medium cursor-pointer select-none">
-                                        Mock Shadowfax Order
-                                    </label>
-                                </div>
-
-                                <div className="flex items-center gap-2 mb-3 px-1">
-                                    <input
-                                        type="checkbox"
-                                        id="freeFeeDesktop"
-                                        checked={useFreeFees}
-                                        onChange={(e) => setUseFreeFees(e.target.checked)}
-                                        className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
-                                    />
-                                    <label htmlFor="freeFeeDesktop" className="text-xs text-gray-600 font-medium cursor-pointer select-none">
-                                        Free Delivery &amp; Platform Fee (Dev Only)
-                                    </label>
-                                </div>
 
                                 {/* Loss Aversion Savings Banner */}
                                 {savings > 0 && (
@@ -1304,46 +1301,39 @@ export function CheckoutPage() {
                         </div>
                     ) : (
                         <>
-                            <div className="flex items-center gap-2 mb-3 px-1">
-                                <input
-                                    type="checkbox"
-                                    id="mockPaymentMobile"
-                                    checked={useMockPayment}
-                                    onChange={(e) => setUseMockPayment(e.target.checked)}
-                                    className="w-4 h-4 text-orange-600 rounded focus:ring-orange-500"
-                                />
-                                <label htmlFor="mockPaymentMobile" className="text-xs text-gray-600 font-medium cursor-pointer select-none">
-                                    Use Mock Payment (Dev Only)
-                                </label>
+                            <div className="flex flex-col gap-3 mb-3 px-1">
+                                <div className="flex flex-col gap-1.5">
+                                    <label htmlFor="devEnvironmentMobile" className="text-xs text-gray-600 font-bold uppercase tracking-wider">
+                                        Test Environment (Dev Only)
+                                    </label>
+                                    <select
+                                        id="devEnvironmentMobile"
+                                        value={devEnvironment}
+                                        onChange={(e) => setDevEnvironment(e.target.value as any)}
+                                        className="w-full text-sm font-medium border border-gray-300 rounded-lg shadow-sm py-2.5 px-3 focus:ring-green-500 focus:border-green-500 bg-white cursor-pointer"
+                                    >
+                                        <option value="full_mock">Full Mock (Mock Pay, Mock Delivery)</option>
+                                        <option value="real_pay_mock_del">Real Payment, Mock Delivery</option>
+                                        <option value="mock_pay_real_del">Mock Payment, Real Delivery</option>
+                                        <option value="production">Full Production (Real Pay, Real Delivery)</option>
+                                    </select>
+                                </div>
+
+                                {/* Free Fees Checkbox */}
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="checkbox"
+                                        id="freeFeeMobile"
+                                        checked={useFreeFees}
+                                        onChange={(e) => setUseFreeFees(e.target.checked)}
+                                        className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
+                                    />
+                                    <label htmlFor="freeFeeMobile" className="text-xs text-gray-600 font-medium cursor-pointer select-none">
+                                        Free Delivery &amp; Platform Fee (Dev Only)
+                                    </label>
+                                </div>
                             </div>
 
-                            {/* Mock Shadowfax Checkbox */}
-                            <div className="flex items-center gap-2 mb-3 px-1">
-                                <input
-                                    type="checkbox"
-                                    id="mockShadowfaxMobile"
-                                    checked={useMockShadowfax}
-                                    onChange={(e) => setUseMockShadowfax(e.target.checked)}
-                                    className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
-                                />
-                                <label htmlFor="mockShadowfaxMobile" className="text-xs text-gray-600 font-medium cursor-pointer select-none">
-                                    Mock Shadowfax Order
-                                </label>
-                            </div>
-
-                            {/* Free Fees Checkbox */}
-                            <div className="flex items-center gap-2 mb-3 px-1">
-                                <input
-                                    type="checkbox"
-                                    id="freeFeeMobile"
-                                    checked={useFreeFees}
-                                    onChange={(e) => setUseFreeFees(e.target.checked)}
-                                    className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
-                                />
-                                <label htmlFor="freeFeeMobile" className="text-xs text-gray-600 font-medium cursor-pointer select-none">
-                                    Free Delivery &amp; Platform Fee (Dev Only)
-                                </label>
-                            </div>
 
                             {/* Loss Aversion Savings Banner Mobile */}
                             {savings > 0 && (
