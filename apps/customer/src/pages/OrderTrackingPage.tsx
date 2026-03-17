@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
 import { Minimize2, Share2, Phone, AlertCircle } from 'lucide-react';
 import { OrderTrackingMap } from '../components/OrderTrackingMap';
 import { OrderTrackingTimelineSheet } from '../components/OrderTrackingTimelineSheet';
@@ -323,7 +322,72 @@ export function OrderTrackingPage() {
     }, []);
 
     if (loading) {
-        return <LoadingScreen isOpen={true} messages={["Finding your order...", "Connecting to kitchen...", "Tracking delivery..."]} />;
+        // Skeleton mirrors the exact structure of the real page so the transition
+        // feels instant. Vendor name is shown immediately from context (already
+        // known from the card the user just tapped) while the API call completes.
+        const skeletonVendorName = contextOrder?.vendorName || null;
+        return (
+            <div className="fixed inset-0 w-full h-full flex flex-col z-[100] overflow-hidden bg-gray-100">
+                {/* Green header skeleton — same height and shape as the real header */}
+                <div
+                    className="px-4 pt-3 pb-4 rounded-b-2xl z-30 shadow-md"
+                    style={{ backgroundColor: '#1BA672' }}
+                >
+                    {/* Top bar */}
+                    <div className="flex justify-between items-center mb-3">
+                        <div className="w-8 h-8 rounded-full bg-white/20" />
+                        <div className="text-white font-semibold text-sm opacity-90">
+                            {skeletonVendorName
+                                ? skeletonVendorName
+                                : <span className="inline-block w-32 h-4 rounded bg-white/30 animate-pulse" />}
+                        </div>
+                        <div className="w-8 h-8 rounded-full bg-white/20" />
+                    </div>
+                    {/* Status title */}
+                    <div className="text-center mb-3">
+                        <h1 className="text-white text-xl font-bold mb-3 tracking-wide">Finding your order...</h1>
+                        <div className="inline-flex items-center rounded-lg px-3 py-1.5 gap-2" style={{ backgroundColor: '#14885E' }}>
+                            <span className="inline-block w-12 h-4 rounded bg-white/30 animate-pulse" />
+                            <span className="w-1 h-1 bg-white rounded-full opacity-50" />
+                            <span className="text-white font-medium text-sm">On time</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Map placeholder — pulsing grey tile grid mimics a real map */}
+                <div className="flex-1 w-full relative overflow-hidden bg-gray-200">
+                    {/* Faint grid lines to suggest a map */}
+                    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 0.35 }}>
+                        <defs>
+                            <pattern id="map-grid" width="60" height="60" patternUnits="userSpaceOnUse">
+                                <path d="M 60 0 L 0 0 0 60" fill="none" stroke="#9CA3AF" strokeWidth="0.8" />
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#map-grid)" />
+                    </svg>
+                    {/* Centre pulse dot — stands in for the map pin */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-full bg-[#1BA672]/30 flex items-center justify-center animate-pulse">
+                            <div className="w-5 h-5 rounded-full" style={{ backgroundColor: '#1BA672' }} />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Bottom sheet stub — same rounded-top shape as the real timeline sheet */}
+                <div className="bg-white rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.08)] px-4 pt-4 pb-6">
+                    <div className="w-10 h-1 rounded-full bg-gray-200 mx-auto mb-4" />
+                    <div className="flex items-center gap-3 py-3">
+                        <div className="w-8 h-8 rounded-full bg-gray-100 animate-pulse" />
+                        <div className="flex-1">
+                            <div className="h-4 w-40 bg-gray-100 rounded animate-pulse mb-2" />
+                            <div className="h-3 w-24 bg-gray-100 rounded animate-pulse" />
+                        </div>
+                    </div>
+                    <div className="h-px bg-gray-100 my-2" />
+                    <div className="h-4 w-48 bg-gray-100 rounded animate-pulse mt-3" />
+                </div>
+            </div>
+        );
     }
 
     if (notFound || !localOrder) {

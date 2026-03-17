@@ -2,12 +2,10 @@ import React from 'react';
 import { Maximize2, Clock, CheckCircle, ChefHat, Bike, X } from 'lucide-react';
 import { useOrderTracking } from '../contexts/OrderTrackingContext';
 import { useRouter } from './Router';
-import { useNavigate } from 'react-router-dom';
 
 export function ActiveOrderFloatingBar() {
   const { activeOrder, activeOrders, maximizeOrder, closeTracking, clearActiveOrder } = useOrderTracking();
-  const { currentRoute } = useRouter();
-  const navigate = useNavigate();
+  const { currentRoute, navigate } = useRouter();
 
   // Poll storage for debug and fallback
   const [storageOrder, setStorageOrder] = React.useState<any>(null);
@@ -163,21 +161,27 @@ export function ActiveOrderFloatingBar() {
 
   // Render Carousel or Single Card
   return (
-    <div className="fixed bottom-4 left-0 right-0 z-[1000] transition-all duration-300 ease-in-out">
+    <div
+      className="fixed bottom-0 left-0 right-0 z-[1000] transition-all duration-300 ease-in-out border-t"
+      style={{
+        backgroundColor: 'rgba(255, 255, 255, 0.97)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        borderColor: '#E0E0E0',
+        boxShadow: '0 -6px 24px rgba(0, 0, 0, 0.10)',
+        paddingTop: '14px',
+        paddingBottom: '14px',
+      }}
+    >
 
-        {/* Global container — constrains to page layout, provides anchor for the FAB badge */}
-        <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Global container — constrains to page layout, flex-col so label + carousel stack */}
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-2">
 
-          {/* FAB count badge — absolute inside relative container, so it moves with centered cards on desktop */}
+          {/* Section label — only shown for 3+ orders; now always legible on the white bar */}
           {validOrders.length >= 3 && (
-            <div
-              className="absolute -top-3 right-0 z-20 w-6 h-6 rounded-full flex items-center justify-center shadow-md"
-              style={{ backgroundColor: 'var(--brand-green)' }}
-            >
-              <span className="text-white text-[10px] font-bold leading-none">
-                {validOrders.length}
-              </span>
-            </div>
+            <p style={{ fontSize: '11px', fontWeight: 600, color: '#1A1A1A', letterSpacing: '0.08em', textTransform: 'uppercase', margin: 0 }}>
+              Active Orders ({validOrders.length})
+            </p>
           )}
 
           {/*
@@ -189,7 +193,7 @@ export function ActiveOrderFloatingBar() {
           */}
           <div
             className={[
-              'aof-carousel flex overflow-x-auto snap-x snap-mandatory gap-3 pb-2 hide-scrollbar w-full',
+              'aof-carousel flex overflow-x-auto snap-x snap-mandatory gap-3 hide-scrollbar w-full',
               validOrders.length === 1 ? 'justify-center' : '',
             ].join(' ')}
           >
