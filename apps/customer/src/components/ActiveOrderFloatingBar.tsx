@@ -164,25 +164,42 @@ export function ActiveOrderFloatingBar() {
   // Render Carousel or Single Card
   return (
     <div className="fixed bottom-4 left-0 right-0 z-[1000] transition-all duration-300 ease-in-out">
-        
-        {validOrders.length > 1 && (
-            <div className="text-center mb-1.5 flex justify-center items-center gap-2">
-                <span className="bg-gray-900/80 backdrop-blur-sm text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
-                    {validOrders.length} Active Orders
-                </span>
-            </div>
-        )}
 
-        {/* Global container — aligns cards with header logo and user area */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Horizontal Swiper Container */}
-        <div className="flex justify-center overflow-x-auto snap-x snap-mandatory gap-3 pb-2 hide-scrollbar w-full">
+        {/* Global container — constrains to page layout, provides anchor for the FAB badge */}
+        <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+          {/* FAB count badge — absolute inside relative container, so it moves with centered cards on desktop */}
+          {validOrders.length >= 3 && (
+            <div
+              className="absolute -top-3 right-0 z-20 w-6 h-6 rounded-full flex items-center justify-center shadow-md"
+              style={{ backgroundColor: 'var(--brand-green)' }}
+            >
+              <span className="text-white text-[10px] font-bold leading-none">
+                {validOrders.length}
+              </span>
+            </div>
+          )}
+
+          {/*
+            Carousel alignment:
+            - Mobile: justify-start (flex-start) — first card always reachable, no left-clip
+            - Desktop (768px+): justify-center — cards balanced in the container
+            'aof-carousel' class handles the responsive breakpoint via the inline <style> below,
+            since this project uses a pre-compiled CSS and md: Tailwind utilities are not available.
+          */}
+          <div
+            className={[
+              'aof-carousel flex overflow-x-auto snap-x snap-mandatory gap-3 pb-2 hide-scrollbar w-full',
+              validOrders.length === 1 ? 'justify-center' : '',
+            ].join(' ')}
+          >
             {validOrders.map((ord, idx) => {
                 const config = getStatusConfig(ord.status);
                 
-                // If single order, take full standard width. If multiple, take 85% width to allow 'peeking'
-                // Multiple: peek effect (fixed vw width). Single: fill container width up to a comfortable max.
-                const cardWidthClass = validOrders.length > 1 ? 'w-[85vw] max-w-[320px] shrink-0' : 'w-full max-w-sm lg:max-w-none mx-auto';
+                // Carousel: fixed vw width to allow peek-next. Single: fills container (uncapped on desktop).
+                const cardWidthClass = validOrders.length > 1
+                  ? 'w-[85vw] max-w-[340px] shrink-0'
+                  : 'w-full max-w-sm lg:max-w-none mx-auto';
                 
                 return (
                     <div 
@@ -249,10 +266,10 @@ export function ActiveOrderFloatingBar() {
                     </div>
                 );
             })}
-        </div>
+          </div>{/* end carousel */}
         </div>{/* end global container */}
         
-        {/* Helper CSS to hide scrollbar but keep functionality */}
+        {/* Component-scoped styles: scrollbar hiding + responsive carousel alignment */}
         <style dangerouslySetInnerHTML={{__html: `
             .hide-scrollbar::-webkit-scrollbar {
                 display: none;
@@ -260,6 +277,16 @@ export function ActiveOrderFloatingBar() {
             .hide-scrollbar {
                 -ms-overflow-style: none;
                 scrollbar-width: none;
+            }
+            /* Multi-order carousel: start on mobile so first card is never clipped;
+               center on desktop now that all cards fit without overflowing. */
+            .aof-carousel {
+                justify-content: flex-start;
+            }
+            @media (min-width: 768px) {
+                .aof-carousel {
+                    justify-content: center;
+                }
             }
         `}} />
     </div>
