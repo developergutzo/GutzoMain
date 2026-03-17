@@ -173,13 +173,16 @@ export function ActiveOrderFloatingBar() {
             </div>
         )}
 
+        {/* Global container — aligns cards with header logo and user area */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Horizontal Swiper Container */}
-        <div className="flex overflow-x-auto snap-x snap-mandatory gap-3 px-4 pb-2 hide-scrollbar w-full">
+        <div className="flex justify-center overflow-x-auto snap-x snap-mandatory gap-3 pb-2 hide-scrollbar w-full">
             {validOrders.map((ord, idx) => {
                 const config = getStatusConfig(ord.status);
                 
                 // If single order, take full standard width. If multiple, take 85% width to allow 'peeking'
-                const cardWidthClass = validOrders.length > 1 ? 'w-[85vw] max-w-[320px] shrink-0' : 'w-full max-w-sm mx-auto';
+                // Multiple: peek effect (fixed vw width). Single: fill container width up to a comfortable max.
+                const cardWidthClass = validOrders.length > 1 ? 'w-[85vw] max-w-[320px] shrink-0' : 'w-full max-w-sm lg:max-w-none mx-auto';
                 
                 return (
                     <div 
@@ -247,6 +250,7 @@ export function ActiveOrderFloatingBar() {
                 );
             })}
         </div>
+        </div>{/* end global container */}
         
         {/* Helper CSS to hide scrollbar but keep functionality */}
         <style dangerouslySetInnerHTML={{__html: `
