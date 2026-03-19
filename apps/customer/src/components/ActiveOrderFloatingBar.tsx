@@ -159,26 +159,31 @@ export function ActiveOrderFloatingBar() {
   // Hide if no valid orders
   if (validOrders.length === 0) return null;
 
+  const showBackgroundAndLabel = validOrders.length >= 3;
+
   // Render Carousel or Single Card
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 z-[1000] transition-all duration-300 ease-in-out border-t"
+      className={`fixed bottom-0 left-0 right-0 z-[1000] transition-all duration-300 ease-in-out ${showBackgroundAndLabel ? 'border-t' : ''}`}
       style={{
-        backgroundColor: 'rgba(255, 255, 255, 0.97)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-        borderColor: '#E0E0E0',
-        boxShadow: '0 -6px 24px rgba(0, 0, 0, 0.10)',
+        ...(showBackgroundAndLabel ? {
+          backgroundColor: 'rgba(255, 255, 255, 0.97)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          borderColor: '#E0E0E0',
+          boxShadow: '0 -6px 24px rgba(0, 0, 0, 0.10)',
+        } : {}),
         paddingTop: '14px',
         paddingBottom: '14px',
+        pointerEvents: showBackgroundAndLabel ? 'auto' : 'none',
       }}
     >
 
         {/* Global container — constrains to page layout, flex-col so label + carousel stack */}
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-2">
 
-          {/* Section label — only shown for 3+ orders; now always legible on the white bar */}
-          {validOrders.length >= 3 && (
+          {/* Section label — only shown for 3+ orders */}
+          {showBackgroundAndLabel && (
             <p style={{ fontSize: '11px', fontWeight: 600, color: '#1A1A1A', letterSpacing: '0.08em', textTransform: 'uppercase', margin: 0 }}>
               Active Orders ({validOrders.length})
             </p>
@@ -209,6 +214,7 @@ export function ActiveOrderFloatingBar() {
                     <div 
                         key={ord.orderId || idx}
                         className={`snap-center ${cardWidthClass}`}
+                        style={{ pointerEvents: 'auto' }}
                     >
                         <div 
                           className="bg-white rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] flex overflow-hidden border border-gray-100 h-[100px]"
