@@ -1032,6 +1032,17 @@ if (process.env.NODE_ENV === 'development') {
           }).eq('id', order.id);
 
           console.log(`✅ [Mock Payment] Internal Mock Delivery Created: ${mockSfId}`);
+ 
+          // Sync with local Shadowfax Mock Dashboard for visibility
+          console.log(`📡 [Mock Payment] Syncing with local Shadowfax Mock Dashboard...`);
+          const { createShadowfaxOrder } = await import('../utils/shadowfax.js');
+          const { data: vendor } = await supabaseAdmin.from('vendors').select('*').eq('id', order.vendor_id).single();
+          if (vendor) {
+            if (order.delivery_address && typeof order.delivery_address === 'string') {
+                try { order.delivery_address = JSON.parse(order.delivery_address); } catch (e) { }
+            }
+            await createShadowfaxOrder(order, vendor, { pickup_otp: pickupOtp, delivery_otp: deliveryOtp });
+          }
         } catch (err) {
           console.error('❌ [Mock Payment] Error creating mock delivery:', err);
         }

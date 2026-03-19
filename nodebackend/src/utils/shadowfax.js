@@ -1,11 +1,15 @@
 import fetch from 'node-fetch';
 
-// Always use the real Shadowfax API — mock decisions are controlled per-order via the frontend checkbox
-const SHADOWFAX_API_URL = process.env.SHADOWFAX_API_URL;
-const SHADOWFAX_API_TOKEN = process.env.SHADOWFAX_API_TOKEN;
+const SHADOWFAX_REAL_URL = process.env.SHADOWFAX_API_URL;
+
+const SHADOWFAX_API_TOKEN = process.env.SHADOWFAX_API_TOKEN || "mock_token";
 
 export const createShadowfaxOrder = async (order, vendor, otps = {}) => {
-    if (!SHADOWFAX_API_TOKEN) {
+    // Determine API URL based on order's mock flag (from CheckoutPage's devEnvironment)
+    const isMock = order.mock_shadowfax || (order.special_instructions && order.special_instructions.includes('[MOCK_SFX]'));
+    const SHADOWFAX_API_URL = isMock ? "http://localhost:3002" : SHADOWFAX_REAL_URL;
+ 
+    if (!SHADOWFAX_API_TOKEN && !isMock) {
         console.warn("⚠️ SHADOWFAX_API_TOKEN missing. Skipping delivery creation.");
         return { success: false, error: "SHADOWFAX_TOKEN_MISSING" };
     }
