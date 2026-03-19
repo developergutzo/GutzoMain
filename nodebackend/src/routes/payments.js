@@ -336,6 +336,21 @@ router.post('/callback', asyncHandler(async (req, res) => {
 
           console.log("✅ Internal Mock Delivery Created.");
           deliverySuccess = true;
+ 
+          // Sync with local Shadowfax Mock Dashboard for visibility
+          try {
+            console.log(`📡 [Mock Shadowfax Callback] Syncing with local Dashboard...`);
+            const { createShadowfaxOrder } = await import('../utils/shadowfax.js');
+            const vendor = updatedOrder.vendor;
+            if (vendor) {
+              if (updatedOrder.delivery_address && typeof updatedOrder.delivery_address === 'string') {
+                try { updatedOrder.delivery_address = JSON.parse(updatedOrder.delivery_address); } catch (e) { }
+              }
+              await createShadowfaxOrder(updatedOrder, vendor, { pickup_otp: pickupOtp, delivery_otp: deliveryOtp });
+            }
+          } catch (syncErr) {
+            console.error("❌ [Mock Shadowfax Callback] Sync Error:", syncErr.message);
+          }
 
         } else {
           // REAL SHADOWFAX
@@ -636,6 +651,21 @@ router.post('/webhook', asyncHandler(async (req, res) => {
 
           console.log("✅ Internal Mock Delivery Created via Webhook.");
           deliverySuccess = true;
+ 
+          // Sync with local Shadowfax Mock Dashboard for visibility
+          try {
+            console.log(`📡 [Mock Shadowfax Webhook] Syncing with local Dashboard...`);
+            const { createShadowfaxOrder } = await import('../utils/shadowfax.js');
+            const vendor = updatedOrder.vendor;
+            if (vendor) {
+              if (updatedOrder.delivery_address && typeof updatedOrder.delivery_address === 'string') {
+                try { updatedOrder.delivery_address = JSON.parse(updatedOrder.delivery_address); } catch (e) { }
+              }
+              await createShadowfaxOrder(updatedOrder, vendor, { pickup_otp: pickupOtp, delivery_otp: deliveryOtp });
+            }
+          } catch (syncErr) {
+            console.error("❌ [Mock Shadowfax Webhook] Sync Error:", syncErr.message);
+          }
 
         } else {
           // REAL SHADOWFAX
