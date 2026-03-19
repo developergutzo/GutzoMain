@@ -41,9 +41,10 @@ interface Order {
 
 
 
-export function OrderManager({ vendorId }: { vendorId: string }) {
+export function OrderManager({ vendorId, isDashboard = false }: { vendorId: string, isDashboard?: boolean }) {
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
+    const [tab, setTab] = useState<'active' | 'history'>(isDashboard ? 'active' : 'active');
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({ 'Today': true });
 
     const toggleGroup = (group: string) => {
@@ -65,14 +66,17 @@ export function OrderManager({ vendorId }: { vendorId: string }) {
     };
 
     const ordersRef = useRef<Order[]>([]); // Track previous orders to detect *new* ones during polling
-
     const fetchOrders = async () => {
         try {
             // Don't set loading true on background refreshes to avoid flickering
             if (orders.length === 0) setLoading(true);
 
             // Show only orders where payment is successful (confirmed/paid) OR newly placed
-            const response = await nodeApiService.getVendorOrders(vendorId, 'placed,confirmed,paid,preparing,ready');
+            const statuses = tab === 'active' 
+                ? 'placed,confirmed,paid,preparing,ready,searching_rider,handover_pending,allotted,accepted,arrived,reached_location'
+                : 'collected,picked_up,on_way,customer_door_step,arrived_at_drop,delivered,completed,cancelled,rejected';
+                
+            const response = await nodeApiService.getVendorOrders(vendorId, statuses);
             // console.log('📦 Orders API Response:', response);
 
             const newOrders = response?.data?.orders || [];
@@ -106,16 +110,22 @@ export function OrderManager({ vendorId }: { vendorId: string }) {
         fetchOrders();
 
         // POLBACK: Poll every 30 seconds as a reliable fallback
-        const pollInterval = setInterval(() => {
-            console.log('🔄 Polling for new orders...');
-            fetchOrders();
-        }, 30000);
+        // Only poll for ACTIVE orders to save resources
+        let pollInterval: any = null;
+        if (tab === 'active') {
+            pollInterval = setInterval(() => {
+                console.log('🔄 Polling for new orders...');
+                fetchOrders();
+            }, 30000);
+        }
 
         return () => {
-            console.log('🔌 Disconnecting Polling...');
-            clearInterval(pollInterval);
+            if (pollInterval) {
+                console.log('🔌 Disconnecting Polling...');
+                clearInterval(pollInterval);
+            }
         };
-    }, [vendorId]);
+    }, [vendorId, tab]);
 
     const getStatusBadge = (status: string) => {
         switch (status) {
@@ -130,18 +140,50 @@ export function OrderManager({ vendorId }: { vendorId: string }) {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <div>
-                    <h2 className="text-xl font-bold text-gray-900">Incoming Orders</h2>
-                    <p className="text-sm text-gray-500">View and manage customer orders</p>
+            {!isDashboard && (
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h2 className="text-xl font-bold text-gray-900">{tab === 'active' ? 'Incoming Orders' : 'Order History'}</h2>
+                        <p className="text-sm text-gray-500">
+                            {tab === 'active' ? 'View and manage customer orders' : 'View all completed and cancelled orders'}
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg self-stretch sm:self-auto">
+                        <Button 
+                            variant={tab === 'active' ? 'default' : 'ghost'} 
+                            size="sm" 
+                            onClick={() => setTab('active')}
+                            className={`flex-1 sm:flex-none ${tab === 'active' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                            style={tab === 'active' ? { backgroundColor: 'white' } : {}}
+                        >
+                            Active
+                        </Button>
+                        <Button 
+                            variant={tab === 'history' ? 'default' : 'ghost'} 
+                            size="sm" 
+                            onClick={() => setTab('history')}
+                            className={`flex-1 sm:flex-none ${tab === 'history' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                            style={tab === 'history' ? { backgroundColor: 'white' } : {}}
+                        >
+                            History
+                        </Button>
+                        <div className="w-px h-4 bg-gray-300 mx-1 hidden sm:block"></div>
+                        <Button variant="ghost" size="icon" onClick={fetchOrders} disabled={loading} className="text-gray-500">
+                            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                        </Button>
+                    </div>
                 </div>
-                <div className="flex gap-2">
-                    <Button variant="outline" onClick={fetchOrders} disabled={loading} className="gap-2">
+            )}
+
+            {isDashboard && (
+                <div className="flex justify-between items-center mb-2">
+                    <h2 className="text-xl font-bold text-gray-900">Incoming Orders</h2>
+                    <Button variant="ghost" size="sm" onClick={fetchOrders} disabled={loading} className="text-[#1BA672] gap-2">
                         <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                         Refresh
                     </Button>
                 </div>
-            </div>
+            )}
 
             {loading && orders.length === 0 ? (
                 <div className="space-y-4">
@@ -149,9 +191,11 @@ export function OrderManager({ vendorId }: { vendorId: string }) {
                 </div>
             ) : orders.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 bg-white border border-dashed rounded-xl">
-                    <img src="https://cdn-icons-png.flaticon.com/512/10839/10839485.png" alt="Empty" className="w-24 h-24 opacity-20 mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900">No Active Orders</h3>
-                    <p className="text-gray-500 text-sm max-w-sm text-center">New orders will appear here automatically. Make sure your kitchen status is "Online".</p>
+                    <img src={tab === 'active' ? "https://cdn-icons-png.flaticon.com/512/10839/10839485.png" : "https://cdn-icons-png.flaticon.com/512/3503/3503694.png"} alt="Empty" className="w-24 h-24 opacity-20 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900">{tab === 'active' ? 'No Active Orders' : 'No Order History'}</h3>
+                    <p className="text-gray-500 text-sm max-w-sm text-center">
+                        {tab === 'active' ? 'New orders will appear here automatically. Make sure your kitchen status is "Online".' : 'You haven\'t completed or cancelled any orders yet.'}
+                    </p>
                 </div>
             ) : (
                 <div className="space-y-8">

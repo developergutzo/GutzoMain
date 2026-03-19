@@ -195,7 +195,7 @@ function getStatusLabel(status) {
 // Assign rider to order
 async function assignRider(orderId) {
     try {
-        const response = await fetch(`${API_BASE} /api/orders / ${orderId}/assign-rider`, {
+        const response = await fetch(`${API_BASE}/api/orders/${orderId}/assign-rider`, {
             method: 'POST'
         });
 

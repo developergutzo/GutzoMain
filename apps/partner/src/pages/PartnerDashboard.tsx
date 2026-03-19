@@ -112,6 +112,7 @@ export function PartnerDashboard() {
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'orders', label: 'Orders', icon: ShoppingBag },
     { id: 'menu', label: 'Menu', icon: UtensilsCrossed },
     { id: 'meal-plans', label: 'Meal Plans', icon: CalendarDays },
     { id: 'gst', label: 'GST', icon: ReceiptText },
@@ -198,16 +199,17 @@ export function PartnerDashboard() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <StatsCard label="Total Rating" value={vendor.rating} icon={Star} color="text-yellow-500" />
-                  <StatsCard label="Total Orders" value={vendor.total_orders || 0} icon={ShoppingBag} color="text-blue-500" />
+                  <StatsCard label="Total Orders" value={vendor.total_orders || 0} icon={ShoppingBag} color="text-blue-500" onClick={() => setActiveTab('orders')} />
                   <StatsCard label="Menu Items" value="Manage" icon={UtensilsCrossed} color="text-orange-500" onClick={() => setActiveTab('menu')} />
                 </div>
 
                 <div className="mt-8 border-t border-gray-100 pt-8">
-                  <OrderManager vendorId={vendor.id} />
+                  <OrderManager vendorId={vendor.id} isDashboard={true} />
                 </div>
               </div>
             )}
-
+ 
+            {activeTab === 'orders' && <OrderManager vendorId={vendor.id} />}
             {activeTab === 'menu' && <MenuManager vendorId={vendor.id} />}
             {activeTab === 'meal-plans' && <MealPlansManager vendorId={vendor.id} />}
             {activeTab === 'profile' && <ProfileManager vendorId={vendor.id} initialData={vendor} onUpdate={refreshProfile} />}
