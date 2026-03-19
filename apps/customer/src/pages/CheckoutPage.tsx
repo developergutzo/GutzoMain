@@ -1231,7 +1231,7 @@ export function CheckoutPage() {
                                 )}
 
                                 <button
-                                    className={`w-full text-white rounded-lg px-4 py-4 flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all relative overflow-hidden group ${isProcessing || (!!user && !isServiceable) ? 'cursor-not-allowed opacity-70' : 'animate-pulse hover:animate-none hover:shadow-[0_0_15px_rgba(27,166,114,0.5)]'
+                                    className={`w-full text-white rounded-lg px-4 py-4 flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all relative overflow-hidden group ${isProcessing || (!!user && !isServiceable) ? 'cursor-not-allowed opacity-70' : 'hover:animate-none hover:shadow-[0_0_15px_rgba(27,166,114,0.5)]'
                                         } ${savings > 0 ? 'rounded-t-none' : ''}`}
                                     style={{ backgroundColor: isProcessing || (!!user && !isServiceable) ? '#9CA3AF' : '#1BA672' }}
                                     onClick={handlePlaceOrder}
@@ -1355,7 +1355,7 @@ export function CheckoutPage() {
                             )}
 
                             <button
-                                className={`w-full text-white rounded-lg px-4 py-4 flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all relative overflow-hidden group ${isProcessing || (!!user && !isServiceable) ? 'cursor-not-allowed opacity-70' : 'animate-pulse hover:animate-none hover:shadow-[0_0_15px_rgba(27,166,114,0.5)]'
+                                className={`w-full text-white rounded-lg px-4 py-4 flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all relative overflow-hidden group ${isProcessing || (!!user && !isServiceable) ? 'cursor-not-allowed opacity-70' : 'hover:animate-none hover:shadow-[0_0_15px_rgba(27,166,114,0.5)]'
                                     } ${savings > 0 ? 'rounded-t-none' : ''}`}
                                 style={{ backgroundColor: isProcessing || (!!user && !isServiceable) ? '#9CA3AF' : '#1BA672' }}
                                 onClick={handlePlaceOrder}
