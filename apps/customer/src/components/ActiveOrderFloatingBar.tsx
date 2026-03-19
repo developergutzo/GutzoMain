@@ -147,11 +147,8 @@ export function ActiveOrderFloatingBar() {
     }
   };
 
-  // Hide on tracking page and partner dashboard
-  const isTrackingPage = currentRoute.startsWith('/tracking/') || window.location.pathname.includes('/tracking/');
-  const isPartnerPage = currentRoute.startsWith('/partner/') || window.location.pathname.includes('/partner/');
-  
-  if (isTrackingPage || isPartnerPage) return null;
+  // Keep only in home page per user request, hide on other pages (e.g., vendor, checkout, tracking)
+  if (currentRoute !== '/' && window.location.pathname !== '/') return null;
 
   // Render even if delivered (per user request) -> actually hide it
   const validOrders = displayOrders.filter(o => o && !['delivered', 'cancelled', 'rejected'].includes((o.status || '').toLowerCase()));
