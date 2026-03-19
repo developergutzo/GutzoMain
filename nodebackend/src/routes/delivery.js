@@ -84,36 +84,36 @@ router.get('/track/:orderId', async (req, res) => {
         // Let's assume orderId param is EITHER. We need to find the delivery record.
         // First find order UUID if it's a number
         let orderUUID = orderId;
+        let ord = null;
         
         // Quick check if orderId is likely a UUID
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId);
 
         if (!isUUID) {
              // It's already the order number (GZ...)
-             const { data: ord } = await createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY)
-                .from('orders').select('id, order_number').eq('order_number', orderId).single();
+             const response = await createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY)
+                .from('orders').select('id, order_number, mock_shadowfax').eq('order_number', orderId).single();
+             ord = response.data;
              if (ord) {
                  orderUUID = ord.id;
-                 // It is the order number, so use it directly
              }
              else return res.status(404).json({ success: false, message: 'Order not found' });
         } else {
              // It is a UUID, fetch the order_number
-             const { data: ord } = await createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY)
-                .from('orders').select('order_number').eq('id', orderId).single();
+             const response = await createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY)
+                .from('orders').select('id, order_number, mock_shadowfax').eq('id', orderId).single();
+             ord = response.data;
              if (!ord) return res.status(404).json({ success: false, message: 'Order UUID not found' });
              // Update orderId param to be the number for tracking
-             // Actually, let's just define a trackingId variable
              orderId = ord.order_number; 
         }
 
         // 2. Call Shadowfax Tracking
         const { trackShadowfaxOrder } = await import('../utils/shadowfax.js');
         
-        // Empirically Proven: Shadowfax Staging API expects Client Order ID (GZ...), NOT sfx_order_id
-        const trackingId = isUUID ? (await createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY).from('orders').select('order_number').eq('id', orderUUID).single()).data?.order_number : orderId;
+        const trackingId = orderId;
         
-        const trackingInfo = await trackShadowfaxOrder(trackingId);
+        const trackingInfo = await trackShadowfaxOrder(trackingId, ord?.mock_shadowfax);
 
         if (!trackingInfo) {
             return res.status(500).json({ success: false, message: 'Failed to fetch tracking info' });

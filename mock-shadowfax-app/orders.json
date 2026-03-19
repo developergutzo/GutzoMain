@@ -1,3 +1,87 @@
 [
-
+  [
+    "SFX_MOCK_1773952985628_l2p231bia",
+    {
+      "shadowfax_id": "SFX_MOCK_1773952985628_l2p231bia",
+      "client_order_id": "GZ202603200213FUH6",
+      "status": "COLLECTED",
+      "awb_number": "SFX_MOCK_1773952985628_l2p231bia",
+      "created_at": "2026-03-19T20:43:05.628Z",
+      "updated_at": "2026-03-19T21:57:14.751Z",
+      "pickup_details": {
+        "name": "Coimbatore Cafe, SITRA",
+        "contact_number": "8903589068",
+        "address": "164/165, Avinashi Rd, Coimbatore, Tamil Nadu 641004",
+        "latitude": 11.0383350227169,
+        "longitude": 77.0381654512353
+      },
+      "drop_details": {
+        "contact_number": "+919003802398",
+        "address": "3328+XVJ, Teachers Colony, Chinniyampalayam, Coimbatore, Tamil Nadu 641062, India",
+        "city": "Coimbatore",
+        "state": "Tamil Nadu",
+        "latitude": 11.0525166,
+        "longitude": 77.0671836
+      },
+      "order_details": {
+        "order_id": "GZ202603200213FUH6",
+        "actual_order_value": 90,
+        "paid": true,
+        "is_prepaid": true,
+        "cash_to_be_collected": 0,
+        "payment_mode": "prepaid",
+        "delivery_charge_to_be_collected_from_customer": 0
+      },
+      "validations": {
+        "pickup": {
+          "is_otp_required": true,
+          "otp": "1234"
+        },
+        "drop": {
+          "is_otp_required": true,
+          "otp": "5678"
+        }
+      },
+      "rider_details": {
+        "latitude": 11.05247158931184,
+        "longitude": 77.06687905021667,
+        "current_location": {
+          "latitude": 11.05247158931184,
+          "longitude": 77.06687905021667
+        }
+      },
+      "history": [
+        {
+          "status": "CREATED",
+          "timestamp": "2026-03-19T20:43:05.628Z",
+          "note": "Order created via Mock API"
+        },
+        {
+          "status": "ALLOTTED",
+          "timestamp": "2026-03-19T21:44:42.950Z",
+          "note": "Status updated via UI to ALLOTTED"
+        },
+        {
+          "status": "ACCEPTED",
+          "timestamp": "2026-03-19T21:44:56.853Z",
+          "note": "Status updated via UI to ACCEPTED"
+        },
+        {
+          "status": "ACCEPTED",
+          "timestamp": "2026-03-19T21:44:57.911Z",
+          "note": "Status updated via UI to ACCEPTED"
+        },
+        {
+          "status": "ARRIVED",
+          "timestamp": "2026-03-19T21:45:09.094Z",
+          "note": "Status updated via UI to ARRIVED"
+        },
+        {
+          "status": "COLLECTED",
+          "timestamp": "2026-03-19T21:45:17.202Z",
+          "note": "Status updated via UI to COLLECTED"
+        }
+      ]
+    }
+  ]
 ]

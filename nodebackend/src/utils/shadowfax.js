@@ -105,7 +105,7 @@ export const createShadowfaxOrder = async (order, vendor, otps = {}) => {
         }
     };
 
-    console.log("🚚 Sending Shadowfax Payload:", JSON.stringify(payload, null, 2));
+    //console.log("🚚 Sending Shadowfax Payload:", JSON.stringify(payload, null, 2));
 
 
     try {
@@ -156,7 +156,8 @@ export const createShadowfaxOrder = async (order, vendor, otps = {}) => {
     }
 };
 
-export const trackShadowfaxOrder = async (flashOrderId) => {
+export const trackShadowfaxOrder = async (flashOrderId, isMock = false) => {
+    const SHADOWFAX_API_URL = isMock ? "http://localhost:3002" : SHADOWFAX_REAL_URL;
     if (!SHADOWFAX_API_TOKEN || !flashOrderId) return null;
 
     try {
@@ -202,7 +203,8 @@ export const trackShadowfaxOrder = async (flashOrderId) => {
     }
 };
 
-export const cancelShadowfaxOrder = async (flashOrderId, reason = "Vendor Rejected") => {
+export const cancelShadowfaxOrder = async (flashOrderId, reason = "Vendor Rejected", isMock = false) => {
+    const SHADOWFAX_API_URL = isMock ? "http://localhost:3002" : SHADOWFAX_REAL_URL;
     if (!SHADOWFAX_API_TOKEN || !flashOrderId) return null;
 
     const payload = {

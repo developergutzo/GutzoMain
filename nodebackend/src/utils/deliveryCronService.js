@@ -41,6 +41,7 @@ async function syncActiveOrders() {
                 status,
                 vendor_id,
                 user_id,
+                mock_shadowfax,
                 delivery:deliveries(
                     id,
                     external_order_id,
@@ -95,7 +96,7 @@ async function syncActiveOrders() {
                 }
 
                 // 3. Call Shadowfax tracking API
-                const trackingInfo = await trackShadowfaxOrder(delivery.external_order_id);
+                const trackingInfo = await trackShadowfaxOrder(delivery.external_order_id, order.mock_shadowfax);
 
                 if (!trackingInfo || !trackingInfo.status) {
                     console.warn(`[Delivery Cron] ⚠️ No tracking info for ${order.order_number}`);
@@ -223,8 +224,8 @@ async function syncActiveOrders() {
 
                         // Sending cancel request to Shadowfax:
                         import('./shadowfax.js').then(({ cancelShadowfaxOrder }) => {
-                            cancelShadowfaxOrder(delivery.external_order_id, "Rider Unassigned/Dropped - System Auto Cancel")
-                                .then(res => console.log('Reverted/Cancelled Shadowfax Order:', res));
+                            cancelShadowfaxOrder(delivery.external_order_id, "Rider Unassigned/Dropped - System Auto Cancel", order.mock_shadowfax)
+                                .then(res => console.log(`[Cron] Cancelled ${order.mock_shadowfax ? 'MOCK' : 'REAL'} Shadowfax Order:`, res));
                         });
                     }
                 }
