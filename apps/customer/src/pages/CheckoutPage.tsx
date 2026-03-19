@@ -364,8 +364,11 @@ export function CheckoutPage() {
     const effectivePlatformFee = useFreeFees ? 0 : PLATFORM_FEE;
 
     const subTotal = itemTotal + effectiveDeliveryFee + effectivePlatformFee;
-    const taxes = 0; // Or calculate if you have tax logic
-    const grandTotal = subTotal + taxes + (isDonationChecked ? donationAmount : 0);
+    const itemGST = itemTotal * 0.05;
+    const feeGST = (effectiveDeliveryFee + effectivePlatformFee) * 0.18;
+    const includedTaxes = Number((itemGST + feeGST).toFixed(2));
+
+    const grandTotal = subTotal + (isDonationChecked ? donationAmount : 0);
 
     // Calculate actual Gutzo savings based on original_price
     const savings = displayItems.reduce((sum, item) => {
@@ -421,7 +424,7 @@ export function CheckoutPage() {
                 // Send dynamic fees
                 delivery_fee: effectiveDeliveryFee,
                 platform_fee: effectivePlatformFee,
-                taxes: 0,
+                taxes: includedTaxes,
                 discount_amount: 0,
                 tip_amount: isDonationChecked ? donationAmount : 0
             };
@@ -1125,14 +1128,7 @@ export function CheckoutPage() {
                                                 )}
                                             </div>
 
-                                            {/* Taxes (Mocked visual or real if you map it. Below is standard gutzo style) */}
-                                            <div className="flex justify-between items-center">
-                                                <div className="flex items-center gap-1 cursor-help">
-                                                    <span>Taxes and Charges</span>
-                                                    <Info className="w-3.5 h-3.5 text-gray-400" />
-                                                </div>
-                                                <span>₹0.00</span>
-                                            </div>
+
 
                                             {isDonationChecked && (
                                                 <div className="flex justify-between">
@@ -1155,7 +1151,7 @@ export function CheckoutPage() {
                                                     </span>
                                                 </div>
                                             )}
-                                            <p className="text-xs font-semibold text-gray-500 mb-1 text-right">Incl. taxes and charges</p>
+                                            <p className="text-xs font-semibold text-gray-500 mb-1 text-right">Includes ₹{includedTaxes.toFixed(2)} taxes</p>
                                         </div>
                                     </div>
                                 )}
