@@ -130,13 +130,17 @@ export function CheckoutPage() {
                 const productIds = cartItems.map((item) => item.productId);
                 const result = await apiService.getProductsByIds(productIds);
                 const products = result.data || [];
-                const priceMap: Record<string, number> = {};
-                products.forEach((prod: any) => {
-                    priceMap[prod.id] = prod.price;
+                const priceMap: Record<string, { price: number, original_price?: number }> = {};
+                products.forEach((wrapper: any) => {
+                    const prod = wrapper.product || wrapper;
+                    if (prod && prod.id) {
+                        priceMap[prod.id] = { price: prod.price, original_price: prod.original_price };
+                    }
                 });
                 const updated = cartItems.map((item) => ({
                     ...item,
-                    price: priceMap[item.productId] !== undefined ? priceMap[item.productId] : item.price,
+                    price: priceMap[item.productId]?.price !== undefined ? priceMap[item.productId].price : item.price,
+                    original_price: priceMap[item.productId]?.original_price !== undefined ? priceMap[item.productId].original_price : (item as any).original_price,
                 }));
                 setSyncedItems(updated);
             } catch (err) {
@@ -363,8 +367,14 @@ export function CheckoutPage() {
     const taxes = 0; // Or calculate if you have tax logic
     const grandTotal = subTotal + taxes + (isDonationChecked ? donationAmount : 0);
 
-    // Filter items to show normally in cartemTotal + effectiveDeliveryFee + effectivePlatformFee + donation;
-    const savings = Math.round(grandTotal * 0.15);
+    // Calculate actual Gutzo savings based on original_price
+    const savings = displayItems.reduce((sum, item) => {
+        const itemOriginal = (item as any).original_price;
+        if (itemOriginal && itemOriginal > item.price) {
+            return sum + ((itemOriginal - item.price) * item.quantity);
+        }
+        return sum;
+    }, 0);
 
     const handleQuantityChange = async (productId: string, newQty: number) => {
         if (newQty <= 0) return removeItem(productId);
@@ -897,7 +907,9 @@ export function CheckoutPage() {
                                             {/* Footer: Price & Quantity */}
                                             <div className="flex items-center justify-between mt-5 pt-3 border-t border-gray-50">
                                                 <div className="flex flex-col">
-                                                    <span className="text-[16px] text-gray-400 font-bold" style={{ textDecoration: 'line-through', textDecorationColor: '#6B7280', textDecorationThickness: '2px' }}>₹{(item.price * item.quantity * 1.2).toFixed(0)}</span>
+                                                    {(item as any).original_price && (item as any).original_price > item.price ? (
+                                                        <span className="text-[16px] text-gray-400 font-bold" style={{ textDecoration: 'line-through', textDecorationColor: '#6B7280', textDecorationThickness: '2px' }}>₹{((item as any).original_price * item.quantity).toFixed(0)}</span>
+                                                    ) : null}
                                                     <span className="text-[18px] font-extrabold text-[#1BA672]">
                                                         ₹{(item.price * item.quantity).toFixed(0)}
                                                         <span className="text-gray-400 text-[11px] font-semibold ml-1">/ plan</span>
@@ -947,7 +959,9 @@ export function CheckoutPage() {
                                         </div>
                                         {/* Price */}
                                         <div className="flex justify-end items-center gap-1 mt-1">
-                                            <span className="text-xs font-semibold" style={{ color: '#9CA3AF', textDecoration: 'line-through' }}>₹{(item.price * item.quantity * 1.2).toFixed(0)}</span>
+                                            {(item as any).original_price && (item as any).original_price > item.price ? (
+                                                <span className="text-xs font-semibold" style={{ color: '#9CA3AF', textDecoration: 'line-through' }}>₹{((item as any).original_price * item.quantity).toFixed(0)}</span>
+                                            ) : null}
                                             <span className="text-sm font-semibold text-gray-900">₹{(item.price * item.quantity).toFixed(2)}</span>
                                         </div>
                                     </div>
@@ -1046,12 +1060,14 @@ export function CheckoutPage() {
                                             <span className="text-sm text-gray-400 font-medium animate-pulse">Calculating...</span>
                                         ) : (
                                             <>
-                                                <span
-                                                    className="text-sm text-gray-400 font-medium"
-                                                    style={{ textDecoration: 'line-through', textDecorationColor: '#9CA3AF' }}
-                                                >
-                                                    ₹{(grandTotal + savings).toFixed(2)}
-                                                </span>
+                                                {savings > 0 && (
+                                                    <span
+                                                        className="text-sm text-gray-400 font-medium"
+                                                        style={{ textDecoration: 'line-through', textDecorationColor: '#9CA3AF' }}
+                                                    >
+                                                        ₹{(grandTotal + savings).toFixed(2)}
+                                                    </span>
+                                                )}
                                                 <span className="font-bold text-gray-900 text-[15px]">₹{grandTotal.toFixed(2)}</span>
                                             </>
                                         )}
@@ -1073,7 +1089,7 @@ export function CheckoutPage() {
                                             </div>
                                             {savings > 0 && (
                                                 <div className="flex justify-between text-[13px] text-green-600 font-medium">
-                                                    <span>Item Discount</span>
+                                                    <span>Gutzo Savings</span>
                                                     <span>-₹{savings.toFixed(2)}</span>
                                                 </div>
                                             )}

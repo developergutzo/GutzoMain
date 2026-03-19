@@ -32,7 +32,18 @@ const InstantPicksItem: React.FC<{ product: Product; isLast: boolean; noPadding:
       <div id={`product-${product.id}`} className={`instant-picks-card${noPadding ? ' no-padding' : ''}`} style={{ display: 'flex', alignItems: 'center', width: '100%', scrollMarginTop: '120px', transition: 'background-color 1.5s ease', borderRadius: '12px', padding: '8px' }}>
         <div className="instant-picks-details" style={{ flex: 1, paddingRight: 24, minWidth: 0 }}>
           <div className="instant-picks-title">{product.name}</div>
-          <div className="instant-picks-price">₹{product.price}</div>
+          <div className="instant-picks-price" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {(product as any).original_price && (product as any).original_price > product.price ? (
+              <>
+                <span style={{ fontSize: '13px', color: '#9CA3AF', textDecoration: 'line-through', fontWeight: 600 }}>
+                  ₹{(product as any).original_price}
+                </span>
+                <span style={{ fontSize: '15px', color: '#1A1A1A', fontWeight: 700 }}>₹{product.price}</span>
+              </>
+            ) : (
+              <span>₹{product.price}</span>
+            )}
+          </div>
           <div className="instant-picks-rating">
             <StarIcon size={16} color="#43A047" className="instant-picks-star" />
             <span className="instant-picks-rating-value">{product.rating}</span>

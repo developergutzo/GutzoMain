@@ -42,6 +42,8 @@ interface Product {
   name: string;
   description: string;
   price: number;
+  original_price?: number;
+  discount_pct?: number;
   image_url: string;
   is_veg: boolean;
   is_available: boolean;
@@ -334,7 +336,9 @@ function ProductForm({ vendorId, product, products = [], categories, onClose, on
         id: product?.id || uuidv4(), // Generate ID if new
         name: product?.name || '',
         description: cleanDescription,
-        price: product?.price || '',
+        price: product?.original_price || product?.price || '', // UI input models the original price now if we want to show it. Wait. The user said: "Discount Input Logic. The discount field should sit right next to the Price input... User types discount, Final Price updates below it." So "Price" input is the Original Price!
+        original_price: product?.original_price || product?.price || '',
+        discount_pct: product?.discount_pct || 0,
         image_url: product?.image_url || '',
         is_veg: product?.is_veg ?? true,
         is_available: product?.is_available ?? true,
@@ -386,13 +390,20 @@ function ProductForm({ vendorId, product, products = [], categories, onClose, on
                 finalDescription = `${finalDescription.trim()} [TAGS:${uniqueTags.join(',')}]`;
             }
 
+            // Calculate final price based on original_price and discount
+            const orig = Number(formData.original_price);
+            const disc = Number(formData.discount_pct);
+            const finalP = Math.round(orig * (1 - disc / 100));
+
             // Create payload WITHOUT diet_tags to avoid backend 500 error
             // We store tags in the description instead
-            const { diet_tags, meal_types, ...rest } = formData;
+            const { diet_tags, meal_types, price, ...rest } = formData;
             const payload = { 
                 ...rest, 
                 description: finalDescription,
-                price: Number(formData.price), 
+                original_price: orig,
+                discount_pct: disc,
+                price: finalP, 
                 image_url: finalImageUrl 
             };
 
@@ -454,29 +465,72 @@ function ProductForm({ vendorId, product, products = [], categories, onClose, on
                 {formData.diet_tags?.includes('Type:Instant') && (
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                        <Label htmlFor="price">Price (₹)</Label>
-                        <Input id="price" type="number" required={formData.diet_tags?.includes('Type:Instant')} value={formData.price} onChange={e => setFormData(prev => ({ ...prev, price: e.target.value }))} placeholder="120" />
+                        <Label htmlFor="original_price">Price (₹)</Label>
+                        <Input 
+                            id="original_price" 
+                            type="number" 
+                            required={formData.diet_tags?.includes('Type:Instant')} 
+                            value={formData.original_price} 
+                            onChange={e => setFormData(prev => ({ ...prev, original_price: e.target.value }))} 
+                            placeholder="120" 
+                        />
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="category">Category</Label>
-                        <Select 
-                            value={formData.category} 
-                            onValueChange={(val) => setFormData(prev => ({ ...prev, category: val }))}
-                        >
-                            <SelectTrigger id="category">
-                                <SelectValue placeholder="Select Category" />
-                            </SelectTrigger>
-                            <SelectContent className="max-h-60">
-                                {categories.map((cat) => (
-                                    <SelectItem key={cat.id} value={cat.name}>
-                                        {cat.name}
-                                    </SelectItem>
-                                ))}
-                                {/* Fallback or Custom option if needed? For now strict select */}
-                                {categories.length === 0 && <SelectItem value="Main Course">Main Course</SelectItem>}
-                            </SelectContent>
-                        </Select>
+                    <div className="space-y-2 relative">
+                        <Label htmlFor="discount_pct">Discount (%)</Label>
+                        <div className="relative">
+                            <Input 
+                                id="discount_pct" 
+                                type="number" 
+                                min="0" 
+                                max="100" 
+                                value={formData.discount_pct} 
+                                onChange={e => {
+                                    let val = parseFloat(e.target.value);
+                                    if (isNaN(val)) val = 0;
+                                    if (val > 100) val = 100;
+                                    if (val < 0) val = 0;
+                                    setFormData(prev => ({ ...prev, discount_pct: val }));
+                                }} 
+                            />
+                            <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-gray-400 font-medium">
+                                %
+                            </div>
+                        </div>
                     </div>
+                </div>
+                )}
+                {formData.diet_tags?.includes('Type:Instant') && (
+                    <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 flex items-center justify-between">
+                        <span className="text-sm font-semibold text-gray-600">Final Offer Price:</span>
+                        <span className="text-lg font-bold text-[#1BA672]">
+                            ₹{Math.round(Number(formData.original_price || 0) * (1 - Number(formData.discount_pct || 0) / 100))}
+                        </span>
+                    </div>
+                )}
+                {formData.discount_pct === 100 && (
+                    <p className="text-orange-500 text-xs font-semibold px-1">Giving this away for free? 😅</p>
+                )}
+
+                {formData.diet_tags?.includes('Type:Instant') && (
+                <div className="space-y-2">
+                    <Label htmlFor="category">Category</Label>
+                    <Select 
+                        value={formData.category} 
+                        onValueChange={(val) => setFormData(prev => ({ ...prev, category: val }))}
+                    >
+                        <SelectTrigger id="category">
+                            <SelectValue placeholder="Select Category" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-60">
+                            {categories.map((cat) => (
+                                <SelectItem key={cat.id} value={cat.name}>
+                                    {cat.name}
+                                </SelectItem>
+                            ))}
+                            {/* Fallback or Custom option if needed? For now strict select */}
+                            {categories.length === 0 && <SelectItem value="Main Course">Main Course</SelectItem>}
+                        </SelectContent>
+                    </Select>
                 </div>
                 )}
 

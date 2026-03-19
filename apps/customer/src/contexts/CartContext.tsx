@@ -26,6 +26,7 @@ export interface CartItem {
   addons?: any[];
   specialInstructions?: string;
   metadata?: any;
+  original_price?: number;
 }
 
 interface CartState {
@@ -243,6 +244,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
           vendorId: vendor.id,
           name: product.name,
           price: product.price,
+          original_price: (product as any).original_price,
           quantity,
           metadata,
           vendor: {
@@ -423,6 +425,7 @@ const transformCartFromAPI = (apiCart: any): { items: CartItem[]; totalItems: nu
       // Fresh product data from products table
       name: item.name || item.product?.name,
       price: item.price || item.product?.price,
+      original_price: item.original_price || item.product?.original_price,
       quantity: item.quantity,
       vendor: {
         id: item.vendorId || item.vendor_id,
