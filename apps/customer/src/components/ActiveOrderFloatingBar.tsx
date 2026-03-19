@@ -2,10 +2,13 @@ import React from 'react';
 import { Maximize2, Clock, CheckCircle, ChefHat, Bike, X } from 'lucide-react';
 import { useOrderTracking } from '../contexts/OrderTrackingContext';
 import { useRouter } from './Router';
+import { useCart } from '../contexts/CartContext';
 
 export function ActiveOrderFloatingBar() {
   const { activeOrder, activeOrders, maximizeOrder, closeTracking, clearActiveOrder } = useOrderTracking();
   const { currentRoute, navigate } = useRouter();
+  const { items: cartItems } = useCart();
+  const hasCartItems = cartItems.length > 0;
 
   // Poll storage for debug and fallback
   const [storageOrder, setStorageOrder] = React.useState<any>(null);
@@ -161,8 +164,10 @@ export function ActiveOrderFloatingBar() {
   // Render Carousel or Single Card
   return (
     <div
-      className={`fixed bottom-0 left-0 right-0 z-[1000] transition-all duration-300 ease-in-out ${showBackgroundAndLabel ? 'border-t' : ''}`}
+      className={`fixed left-0 right-0 z-[1000] transition-all duration-300 ease-in-out ${showBackgroundAndLabel ? 'border-t' : ''}`}
       style={{
+        // Push up above VendorCartStrip when cart has items
+        bottom: hasCartItems ? '90px' : '0px',
         ...(showBackgroundAndLabel ? {
           backgroundColor: 'rgba(255, 255, 255, 0.97)',
           backdropFilter: 'blur(12px)',
