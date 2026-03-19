@@ -500,11 +500,14 @@ function ProductForm({ vendorId, product, products = [], categories, onClose, on
                 </div>
                 )}
                 {formData.diet_tags?.includes('Type:Instant') && (
-                    <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 flex items-center justify-between">
-                        <span className="text-sm font-semibold text-gray-600">Final Offer Price:</span>
-                        <span className="text-lg font-bold text-[#1BA672]">
-                            ₹{Math.round(Number(formData.original_price || 0) * (1 - Number(formData.discount_pct || 0) / 100))}
-                        </span>
+                    <div className="flex flex-col gap-1.5">
+                        <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 flex items-center justify-between">
+                            <span className="text-sm font-semibold text-gray-600">Final Offer Price:</span>
+                            <span className="text-lg font-bold text-[#1BA672]">
+                                ₹{Math.round(Number(formData.original_price || 0) * (1 - Number(formData.discount_pct || 0) / 100))}
+                            </span>
+                        </div>
+                        <p className="text-[11px] text-gray-500 font-medium px-1 text-right">Includes 5% GST</p>
                     </div>
                 )}
                 {formData.discount_pct === 100 && (
