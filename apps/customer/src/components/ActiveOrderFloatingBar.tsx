@@ -251,18 +251,6 @@ export function ActiveOrderFloatingBar() {
 
                             {/* Right Action Buttons */}
                             <div className="w-14 flex flex-col items-center justify-center border-l border-gray-100 bg-gray-50/50">
-                                {/* Only allow closing if it's the single legacy view, or handle per-order close if needed. For now, we omit close for multiples or route it through Context if needed. We'll keep maximize. */}
-                                {validOrders.length === 1 && (
-                                    <button 
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            closeTracking();
-                                        }}
-                                        className="w-8 h-8 rounded-full mb-1 flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
-                                    >
-                                        <X size={16} />
-                                    </button>
-                                )}
                                 <button 
                                     onClick={(e) => {
                                         e.stopPropagation();
