@@ -986,7 +986,12 @@ if (process.env.NODE_ENV === 'development') {
       payment_method: 'mock',
       payment_id: 'MOCK_' + Date.now()
     }).eq('order_number', orderId).select().single();
-
+    
+    if (!order) {
+      console.error(`❌ [Mock Payment] Order not found: ${orderId}`);
+      throw new ApiError(404, `Order ${orderId} not found`);
+    }
+ 
     // Notify
     await supabaseAdmin.from('notifications').insert({
       user_id: order.user_id,

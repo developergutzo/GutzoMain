@@ -120,7 +120,8 @@ export const schemas = {
     platform_fee: Joi.number().min(0),
     packaging_fee: Joi.number().min(0),
     taxes: Joi.number().min(0),
-    discount_amount: Joi.number().min(0)
+    discount_amount: Joi.number().min(0),
+    mock_shadowfax: Joi.boolean()
   }),
 
   // ========== SUBSCRIPTION ==========
