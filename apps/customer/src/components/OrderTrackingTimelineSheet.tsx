@@ -79,6 +79,42 @@ export function OrderTrackingTimelineSheet({ status, driver, vendorName, deliver
                 )}
             </div>
 
+            {/* Delivered: Rating & Success UI */}
+            {status === 'delivered' && (
+                <div className="bg-green-50 rounded-2xl p-6 mb-6 text-center border border-green-100 shadow-sm animate-in fade-in zoom-in duration-500">
+                    <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border border-green-50 text-3xl">
+                        🎉
+                    </div>
+                    <h2 className="text-xl font-bold text-gray-900 mb-1">Delivered Successfully!</h2>
+                    <p className="text-sm text-gray-600 mb-6">Hope you enjoy your meal from {vendorName || "the restaurant"}</p>
+                    
+                    <div className="space-y-4">
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Rate your experience</p>
+                        <div className="flex justify-center gap-3">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                                <button 
+                                    key={star}
+                                    className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white transition-colors text-[#1BA672]"
+                                >
+                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor" />
+                                    </svg>
+                                </button>
+                            ))}
+                        </div>
+                        
+                        <div className="pt-4">
+                            <button 
+                                onClick={onGoHome}
+                                className="w-full bg-[#1BA672] text-white font-bold py-3.5 rounded-xl shadow-[0_4px_12px_rgba(27,166,114,0.3)] active:scale-95 transition-all"
+                            >
+                                Done
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Cancelled: Go to Home Button */}
             {isCancelled && (
                 <div className="mb-6">

@@ -7,8 +7,7 @@ let selectedOrder = null;
 
 // Status progression map (Happy Path)
 const STATUS_FLOW = {
-    'CREATED': 'ALLOTTED',
-    'ALLOTTED': 'ACCEPTED',
+    'CREATED': 'ACCEPTED',
     'ACCEPTED': 'ARRIVED',
     'ARRIVED': 'COLLECTED',
     'COLLECTED': 'CUSTOMER_DOOR_STEP',
@@ -124,37 +123,56 @@ function renderOrders() {
 function renderActionButtons(order) {
     const buttons = [];
 
-    // Accept Order (CREATED -> ALLOTTED)
-    if (order.status === 'CREATED') {
+    // Standard Progression Buttons
+    const progression = ['ACCEPTED', 'ARRIVED', 'COLLECTED', 'CUSTOMER_DOOR_STEP', 'DELIVERED'];
+    const nextStatus = STATUS_FLOW[order.status];
+
+    progression.forEach(status => {
+        const isNext = (status === nextStatus);
+        const isCurrent = (status === order.status);
+        const isPast = order.history.some(h => h.status === status) && !isCurrent;
+        
+        let btnClass = 'btn-secondary';
+        let disabledAttr = '';
+        let labelSuffix = '';
+
+        if (isNext) {
+            btnClass = 'btn-primary';
+        } else if (isCurrent || isPast) {
+            btnClass = 'btn-success';
+            disabledAttr = 'disabled';
+            labelSuffix = ' ✓';
+        } else {
+            disabledAttr = 'disabled';
+            btnClass = 'btn-disabled';
+        }
+
+        const label = getStatusLabel(status);
+        
+        // Special Case: ACCEPTED calls assignRider if current status is CREATED
+        const clickAction = (status === 'ACCEPTED' && order.status === 'CREATED') 
+            ? `assignRider('${order.shadowfax_id}')` 
+            : `updateStatus('${order.shadowfax_id}', '${status}')`;
+
         buttons.push(`
-            <button class="btn btn-primary" onclick="assignRider('${order.shadowfax_id}')">
-                👤 Accept & Assign Rider
+            <button class="btn ${btnClass}" ${disabledAttr} onclick="${clickAction}">
+                ${label}${labelSuffix}
             </button>
         `);
-    }
+    });
 
-    // Progress to next status
-    if (STATUS_FLOW[order.status]) {
-        const nextStatus = STATUS_FLOW[order.status];
-        const label = getStatusLabel(nextStatus);
-
-        // Primary Action
-        buttons.push(`
-            <button class="btn btn-secondary" onclick="updateStatus('${order.shadowfax_id}', '${nextStatus}')">
-                ${label}
-            </button>
-        `);
-    }
+    // New Line for Secondary/Admin Actions
+    buttons.push('<div style="width: 100%; height: 8px;"></div>');
 
     // RTS Option (Available after Pickup)
-    const rtsActiveStatuses = ['COLLECTED', 'CUSTOMER_DOOR_STEP'];
-    if (rtsActiveStatuses.includes(order.status)) {
-        buttons.push(`
-            <button class="btn btn-warning" onclick="updateStatus('${order.shadowfax_id}', 'RTS_INITIATED')" style="background-color: #f59e0b; color: white; border: none;">
-                🔄 Initiate RTS
-            </button>
-        `);
-    }
+    // const rtsActiveStatuses = ['COLLECTED', 'CUSTOMER_DOOR_STEP'];
+    // if (rtsActiveStatuses.includes(order.status)) {
+    //     buttons.push(`
+    //         <button class="btn btn-warning" onclick="updateStatus('${order.shadowfax_id}', 'RTS_INITIATED')" style="background-color: #f59e0b; color: white; border: none;">
+    //             🔄 RTS
+    //         </button>
+    //     `);
+    // }
 
     // Cancel button (if not delivered/cancelled/rts_completed)
     if (!['DELIVERED', 'CANCELLED', 'RTS_COMPLETED'].includes(order.status)) {
@@ -168,8 +186,8 @@ function renderActionButtons(order) {
     // Map Button (Location Simulation)
     if (!['CANCELLED', 'REJECTED'].includes(order.status)) {
         buttons.push(`
-            <button class="btn" onclick="openLocationModal('${order.shadowfax_id}')" style="background-color: #3b82f6; color: white; border: none; margin-left: 5px;">
-                📍 Update Location
+            <button class="btn" onclick="openLocationModal('${order.shadowfax_id}')" style="background-color: #3b82f6; color: white; border: none;">
+                📍 Map
             </button>
         `);
     }
@@ -180,14 +198,13 @@ function renderActionButtons(order) {
 // Get friendly status label
 function getStatusLabel(status) {
     const labels = {
-        'ALLOTTED': '✅ Assign Rider',
-        'ACCEPTED': '👍 Mark Accepted',
-        'ARRIVED': '📍 Arrived at Store',
-        'COLLECTED': '📦 Mark Picked Up',
-        'CUSTOMER_DOOR_STEP': '🚪 At Customer Door',
-        'DELIVERED': '✅ Mark Delivered',
-        'RTS_INITIATED': '🔄 Initiate RTS',
-        'RTS_COMPLETED': '✅ Complete RTS'
+        'ACCEPTED': 'Accepted',
+        'ARRIVED': 'Arrived',
+        'COLLECTED': 'Collected',
+        'CUSTOMER_DOOR_STEP': 'Doorstep',
+        'DELIVERED': 'Delivered',
+        'RTS_INITIATED': 'RTS',
+        'RTS_COMPLETED': 'RTS done'
     };
     return labels[status] || status;
 }

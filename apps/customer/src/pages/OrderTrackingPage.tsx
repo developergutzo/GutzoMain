@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../contexts/AuthContext';
 import { nodeApiService } from '../utils/nodeApi';
+import { supabase } from '../utils/supabase/client';
 import { LoadingScreen } from '../components/common/LoadingScreen';
 
 export function OrderTrackingPage() {
@@ -146,9 +147,26 @@ export function OrderTrackingPage() {
     // Live Tracking State
     const [liveTracking, setLiveTracking] = useState<any>(null);
 
-    // Poll for LIVE Shadowfax Status
+    // Poll for LIVE Shadowfax Status + BROADCAST LISTENER
     useEffect(() => {
         if (!orderId) return;
+
+        // A. BROADCAST LISTENER (Instant)
+        const channel = supabase.channel('delivery-updates')
+            .on('broadcast', { event: 'status-update' }, (payload: any) => {
+                const data = payload.payload;
+                if (data.order_id === orderId || data.order_number === orderId) {
+                    console.log('📡 Realtime Status Broadcast Received:', data);
+                    setLiveTracking((prev: any) => ({
+                        ...prev,
+                        status: data.status,
+                        rider_details: data.rider_details || prev?.rider_details
+                    }));
+                }
+            })
+            .subscribe();
+
+        // B. POLLING FALLBACK (Reliability)
         const fetchLiveTracking = async () => {
             try {
                 const url = `${nodeApiService.baseUrl}/api/delivery/track/${orderId}`;
@@ -156,8 +174,6 @@ export function OrderTrackingPage() {
                 if (res.ok) {
                     const data = await res.json();
                     if (data.success && data.data) {
-                        console.log('🔴 Live Tracking Data:', data.data);
-                        console.log('📍 Driver Location:', data.data.rider_details?.current_location);
                         setLiveTracking(data.data);
                     }
                 }
@@ -165,9 +181,14 @@ export function OrderTrackingPage() {
                 console.error('Live tracking fetch error:', e);
             }
         };
+
         fetchLiveTracking();
-        const interval = setInterval(fetchLiveTracking, 10000); // 10s polling
-        return () => clearInterval(interval);
+        const interval = setInterval(fetchLiveTracking, 15000); // Increased to 15s since we have realtime
+
+        return () => {
+            clearInterval(interval);
+            supabase.removeChannel(channel);
+        };
     }, [orderId]);
 
     // Locations (Dynamic with strict No-Fallback)
@@ -438,8 +459,8 @@ export function OrderTrackingPage() {
                         {getStatusText(displayStatus)}
                     </h1>
 
-                    {/* Time Pill - Hidden if Cancelled */}
-                    {displayStatus !== 'cancelled' && (
+                    {/* Time Pill - Hidden if Cancelled or Delivered */}
+                    {displayStatus !== 'cancelled' && displayStatus !== 'delivered' && (
                         <div className="inline-flex items-center rounded-lg px-3 py-1.5 gap-2" style={{ backgroundColor: '#14885E' }}>
                             <span className="text-white font-semibold text-base">{eta}</span>
                             <span className="w-1 h-1 bg-white rounded-full opacity-50"></span>

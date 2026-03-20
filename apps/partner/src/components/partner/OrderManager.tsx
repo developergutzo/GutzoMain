@@ -4,6 +4,7 @@ import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { RefreshCw, ChefHat, Check, X, Clock, MapPin, ChevronDown, ChevronRight } from 'lucide-react';
 import { nodeApiService } from '../../utils/nodeApi';
+import { supabase } from '../../utils/supabase/client';
 import { toast } from 'sonner';
 
 interface OrderItem {
@@ -71,9 +72,9 @@ export function OrderManager({ vendorId, isDashboard = false }: { vendorId: stri
             // Don't set loading true on background refreshes to avoid flickering
             if (orders.length === 0) setLoading(true);
 
-            // Show only orders where payment is successful (confirmed/paid) OR newly placed
+            // EXCLUDE: searching_rider, placed, paid (Wait for ACCEPTED/confirmed)
             const statuses = tab === 'active' 
-                ? 'placed,confirmed,paid,preparing,ready,searching_rider,handover_pending,allotted,accepted,arrived,reached_location'
+                ? 'confirmed,preparing,ready,handover_pending,allotted,accepted,arrived,reached_location'
                 : 'collected,picked_up,on_way,customer_door_step,arrived_at_drop,delivered,completed,cancelled,rejected';
                 
             const response = await nodeApiService.getVendorOrders(vendorId, statuses);
@@ -86,7 +87,7 @@ export function OrderManager({ vendorId, isDashboard = false }: { vendorId: stri
             if (ordersRef.current.length > 0) {
                 const previousIds = new Set(ordersRef.current.map(o => o.id));
                 const hasNewConfirmedOrder = newOrders.some((o: Order) =>
-                    !previousIds.has(o.id) && ['placed', 'confirmed', 'paid'].includes(o.status)
+                    !previousIds.has(o.id) && ['confirmed'].includes(o.status)
                 );
 
                 if (hasNewConfirmedOrder) {
@@ -106,24 +107,40 @@ export function OrderManager({ vendorId, isDashboard = false }: { vendorId: stri
     };
 
     useEffect(() => {
+        // A. REALTIME LISTENER
+        const channel = supabase.channel('delivery-updates')
+            .on('broadcast', { event: 'status-update' }, (payload: any) => {
+                const data = payload.payload;
+                console.log('📡 Realtime Order Broadcast Received:', data);
+                
+                if (data.status === 'ARRIVED') {
+                    toast.info(`Driver arrived for #${data.order_number}!`, {
+                        description: `Handover OTP: ${data.pickup_otp || '---'}`,
+                        duration: 10000,
+                    });
+                }
+                
+                // Simple refresh for now to avoid complex merge
+                fetchOrders();
+            })
+            .subscribe();
+
         // Initial fetch
         fetchOrders();
 
-        // POLBACK: Poll every 30 seconds as a reliable fallback
-        // Only poll for ACTIVE orders to save resources
+        // B. POLBACK: Poll every 60 seconds as a reliable fallback
+        // Increased interval since we have realtime
         let pollInterval: any = null;
         if (tab === 'active') {
             pollInterval = setInterval(() => {
-                console.log('🔄 Polling for new orders...');
+                console.log('🔄 Polling for new orders (Fallback)...');
                 fetchOrders();
-            }, 30000);
+            }, 60000);
         }
 
         return () => {
-            if (pollInterval) {
-                console.log('🔌 Disconnecting Polling...');
-                clearInterval(pollInterval);
-            }
+            if (pollInterval) clearInterval(pollInterval);
+            supabase.removeChannel(channel);
         };
     }, [vendorId, tab]);
 
@@ -302,56 +319,60 @@ export function OrderManager({ vendorId, isDashboard = false }: { vendorId: stri
                                                                 </div>
                                                             </div>
                                                         ))}
-                                                    </div>
-
-                                                    {/* Action Buttons */}
+                                                                                               {/* Action Buttons */}
                                                     <div className="flex justify-end gap-3">
-                                                        {['placed', 'paid', 'confirmed', 'searching_rider'].includes(order.status) ? (
-                                                            <>
-                                                                <Button
-                                                                    onClick={async (e) => {
-                                                                        e.stopPropagation();
-                                                                        try {
-                                                                            // 1. Update status to 'preparing'
-                                                                            await nodeApiService.updateVendorOrderStatus(vendorId, order.id, 'preparing');
-                                                                            toast.success("Order marked as preparing");
-
-                                                                            fetchOrders();
-                                                                        } catch (e) { toast.error("Failed to update status"); }
-                                                                    }}
-                                                                    className="bg-gutzo-primary hover:bg-gutzo-primary-hover text-white gap-2">
-                                                                    <ChefHat className="w-4 h-4" /> Start Preparing
-                                                                </Button>
-                                                            </>
-                                                        ) : order.status === 'preparing' ? (
-                                                            <>
-                                                                <Button
-                                                                    onClick={async (e) => {
-                                                                        e.stopPropagation();
-                                                                        try {
-                                                                            await nodeApiService.updateVendorOrderStatus(vendorId, order.id, 'ready');
-                                                                            toast.success("Order marked as ready for delivery");
-                                                                            fetchOrders();
-                                                                        } catch (e) { toast.error("Failed to update status"); }
-                                                                    }}
-                                                                    className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
-                                                                    <Check className="w-4 h-4" /> Ready for Delivery
-                                                                </Button>
-                                                                <Button
-                                                                    onClick={async (e) => {
-                                                                        e.stopPropagation();
-                                                                        try {
-                                                                            await nodeApiService.updateVendorOrderStatus(vendorId, order.id, 'ready');
-                                                                            toast.success("Order marked as ready");
-                                                                            fetchOrders();
-                                                                        } catch (e) { toast.error("Failed to update status"); }
-                                                                    }}
-                                                                    className="bg-green-600 hover:bg-green-700 text-white gap-2">
-                                                                    <Check className="w-4 h-4" /> Food Prepared
-                                                                </Button>
-                                                            </>
-                                                        ) : null}
+                                                        {(() => {
+                                                            const delObj = Array.isArray(order.delivery) ? order.delivery[0] : order.delivery;
+                                                            const sfStatus = delObj?.status;
+                                                            
+                                                            // If status is 'searching_rider' (placed in our system), or if it's 'accepted' in Shadowfax
+                                                            if (['placed', 'paid', 'confirmed', 'searching_rider'].includes(order.status)) {
+                                                                const label = sfStatus === 'accepted' ? 'Accept Order' : 'Start Preparing';
+                                                                return (
+                                                                    <Button
+                                                                        onClick={async (e) => {
+                                                                            e.stopPropagation();
+                                                                            try {
+                                                                                await nodeApiService.updateVendorOrderStatus(vendorId, order.id, 'preparing');
+                                                                                toast.success(`Order marked as ${label.toLowerCase()}`);
+                                                                                fetchOrders();
+                                                                            } catch (e) { toast.error("Failed to update status"); }
+                                                                        }}
+                                                                        className="bg-gutzo-primary hover:bg-gutzo-primary-hover text-white gap-2">
+                                                                        <ChefHat className="w-4 h-4" /> {label}
+                                                                    </Button>
+                                                                );
+                                                            } else if (order.status === 'preparing') {
+                                                                // Show "Food Prepared" or "Ready"
+                                                                return (
+                                                                    <div className="flex gap-2">
+                                                                        <Button
+                                                                            onClick={async (e) => {
+                                                                                e.stopPropagation();
+                                                                                try {
+                                                                                    await nodeApiService.updateVendorOrderStatus(vendorId, order.id, 'ready');
+                                                                                    toast.success("Order marked as ready for delivery");
+                                                                                    fetchOrders();
+                                                                                } catch (e) { toast.error("Failed to update status"); }
+                                                                            }}
+                                                                            className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
+                                                                            <Check className="w-4 h-4" /> Ready for Delivery
+                                                                        </Button>
+                                                                    </div>
+                                                                );
+                                                            } else if (order.status === 'ready' && sfStatus === 'reached_location') {
+                                                                // Driver arrived, waiting for handover/OTP
+                                                                return (
+                                                                    <div className="bg-yellow-50 border border-yellow-200 px-4 py-2 rounded-lg flex items-center gap-2 animate-pulse">
+                                                                        <span className="text-yellow-700 font-bold text-sm">Driver at Location - Handover Food</span>
+                                                                        <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                                                                    </div>
+                                                                );
+                                                            }
+                                                            return null;
+                                                        })()}
                                                     </div>
+          </div>
                                                 </CardContent>
                                             </Card>
                                         ))}

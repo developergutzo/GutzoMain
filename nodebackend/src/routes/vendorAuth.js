@@ -394,12 +394,32 @@ router.get('/:id/orders', asyncHandler(async (req, res) => {
     query = query.in('status', statuses);
   }
 
-  const { data: orders, error } = await query;
+  const { data: rawOrders, error } = await query;
+
+  const fs = await import('fs');
+  const path = await import('path');
+  const logFile = path.resolve('shadowfax_debug.log');
+  fs.appendFileSync(logFile, `\n📦 [Vendor Orders Debug] Fetching for Vendor: ${id}\nRaw Count: ${rawOrders?.length || 0}\nData: ${JSON.stringify(rawOrders?.map(o => ({ id: o.order_number, status: o.status, del: o.delivery?.[0]?.status })), null, 2)}\n`);
 
   if (error) {
     console.error('❌ Vendor Orders Error:', error);
     throw new ApiError(500, `Failed to fetch vendor orders: ${error.message}`);
   }
+
+  console.log(`📦 [Vendor Orders Debug] Raw Orders (count: ${rawOrders.length}):`, JSON.stringify(rawOrders.map(o => ({ id: o.order_number, status: o.status, del: o.delivery?.[0]?.status })), null, 2));
+
+  // FILTER: Only show orders that are either:
+  // 1. Not Shadowfax orders (no delivery record)
+  // 2. Shadowfax orders that have been ACCEPTED or further 
+  // (Filter out those searching for rider: CREATED, searching_rider, pending)
+  const orders = rawOrders.filter(order => {
+    const delivery = Array.isArray(order.delivery) ? order.delivery[0] : order.delivery;
+    const isSearching = delivery && ['CREATED', 'searching_rider', 'pending'].includes(delivery.status);
+    // console.log(`🔍 [Filter Debug] Order ${order.order_number}: status=${order.status}, del=${delivery?.status}, isSearching=${isSearching}`);
+    return !isSearching;
+  });
+
+  console.log(`📦 [Vendor Orders Debug] Screened Orders:`, orders.length);
 
   successResponse(res, { orders });
 }));

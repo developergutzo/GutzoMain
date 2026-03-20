@@ -263,6 +263,18 @@ body {
     cursor: not-allowed;
 }
 
+.btn-disabled {
+    background: #e5e7eb;
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+.btn-success {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
 /* Modal */
 .modal {
     display: none;

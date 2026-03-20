@@ -70,8 +70,9 @@ export function OrderManager({ vendorId }: { vendorId: string }) {
       // Don't set loading true on background refreshes to avoid flickering
       if (orders.length === 0) setLoading(true);
       
-      // Show only orders where payment is successful (confirmed/paid)
-      const response = await nodeApiService.getVendorOrders(vendorId, 'confirmed,paid,preparing,ready');
+      // Show only orders where they are confirmed by rider or in preparation
+      // EXCLUDE: searching_rider, placed, paid (Wait for ACCEPTED/confirmed)
+      const response = await nodeApiService.getVendorOrders(vendorId, 'confirmed,preparing,ready,handover_pending,allotted,accepted,arrived,reached_location');
       // console.log('📦 Orders API Response:', response);
       
       const newOrders = response?.data?.orders || [];
@@ -81,7 +82,7 @@ export function OrderManager({ vendorId }: { vendorId: string }) {
       if (ordersRef.current.length > 0) {
           const previousIds = new Set(ordersRef.current.map(o => o.id));
           const hasNewConfirmedOrder = newOrders.some((o: Order) => 
-              !previousIds.has(o.id) && ['confirmed', 'paid'].includes(o.status)
+              !previousIds.has(o.id) && o.status === 'confirmed'
           );
           
           if (hasNewConfirmedOrder) {

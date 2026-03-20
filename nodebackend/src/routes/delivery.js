@@ -137,7 +137,6 @@ router.get('/track/:orderId', async (req, res) => {
              if (sfStatus === 'ARRIVED') internalStatus = 'reached_location';
              else if (sfStatus === 'COLLECTED') internalStatus = 'picked_up';
              else if (sfStatus === 'CUSTOMER_DOOR_STEP') internalStatus = 'arrived_at_drop';
-             else if (sfStatus === 'ALLOTTED') internalStatus = 'allotted';
              else if (sfStatus === 'DELIVERED') internalStatus = 'delivered';
 
              // Check for Drift (Database Status vs Real API Status)
@@ -178,10 +177,9 @@ router.get('/track/:orderId', async (req, res) => {
                      orderPayload.status = 'completed'; 
                  } else if (sfStatus === 'COLLECTED') {
                      orderPayload.status = 'on_way'; 
-                 } else if (sfStatus === 'ALLOTTED' && (delivery.status === 'searching_rider' || delivery.status === 'created')) {
-                     // Special Case: Vendor needs to know driver is assigned to start cooking/release food
-                     // Only if we are moving TO allotted FROM searching
-                     orderPayload.status = 'placed'; 
+                 } else if (sfStatus === 'ACCEPTED' && (delivery.status === 'searching_rider' || delivery.status === 'created')) {
+                     // Special Case: Vendor needs to know driver is assigned
+                     orderPayload.status = 'confirmed'; 
                      
                      // Trigger Vendor Notification (Re-using existing logic)
                      const { data: fullOrder } = await supabase

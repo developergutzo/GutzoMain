@@ -190,7 +190,7 @@ export const trackShadowfaxOrder = async (flashOrderId, isMock = false) => {
         };
 
         // Conditional Logging per user request
-        const activeStatuses = ['ALLOTTED', 'PICKED_UP', 'DELIVERED', 'REACHED_LOCATION', 'ARRIVED_AT_DROP'];
+        const activeStatuses = ['ACCEPTED', 'ALLOTTED', 'PICKED_UP', 'DELIVERED', 'REACHED_LOCATION', 'ARRIVED_AT_DROP'];
         if (data.status && activeStatuses.includes(data.status.toUpperCase())) {
             console.log(`🚴 Shadowfax Live Tracking for ${flashOrderId} [${data.status}]:`, JSON.stringify(data, null, 2));
             console.log(`📍 Rider Location: lat=${data.rider_latitude}, lng=${data.rider_longitude}`);

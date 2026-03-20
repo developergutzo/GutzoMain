@@ -22,7 +22,6 @@ const mapShadowfaxStatus = (apiStatus) => {
     if (status === 'ARRIVED') return 'reached_location';
     if (status === 'COLLECTED') return 'picked_up';
     if (status === 'CUSTOMER_DOOR_STEP') return 'arrived_at_drop';
-    if (status === 'ALLOTTED') return 'allotted';
     if (status === 'DELIVERED') return 'delivered';
     return apiStatus.toLowerCase();
 };
@@ -147,8 +146,9 @@ async function syncActiveOrders() {
                     orderUpdatePayload.status = 'completed';
                 } else if (apiStatus === 'COLLECTED') {
                     orderUpdatePayload.status = 'on_way';
-                } else if (apiStatus === 'ALLOTTED' && (dbStatus === 'searching_rider' || dbStatus === 'created')) {
-                    orderUpdatePayload.status = 'placed';
+                } else if (apiStatus === 'ACCEPTED' && (dbStatus === 'searching_rider' || dbStatus === 'created')) {
+                    // When rider accepts, move order to confirmed so it shows up for vendor
+                    orderUpdatePayload.status = 'confirmed';
                 }
 
                 if (Object.keys(orderUpdatePayload).length > 0) {
@@ -162,7 +162,7 @@ async function syncActiveOrders() {
                 }
 
                 // 7. Trigger notifications
-                if (apiStatus === 'ALLOTTED' && (dbStatus === 'searching_rider' || dbStatus === 'created')) {
+                if (apiStatus === 'ACCEPTED' && (dbStatus === 'searching_rider' || dbStatus === 'created')) {
                     // Rider allocated - notify vendor
                     if (order.vendor) {
                         console.log(`[Delivery Cron] 📧 Notifying vendor for ${order.order_number}`);
@@ -187,7 +187,7 @@ async function syncActiveOrders() {
                             sendVendorPush(order.vendor.id, 'Order Update 🔔', msg);
                         });
                     }
-                } else if (dbStatus === 'allotted' && (apiStatus === 'SEARCHING_RIDER' || apiStatus === 'PENDING' || apiStatus === 'CANCELLED')) {
+                } else if (dbStatus === 'accepted' && (apiStatus === 'SEARCHING_RIDER' || apiStatus === 'PENDING' || apiStatus === 'CANCELLED')) {
                     // Reverse scenario: Order was ALLOTTED but now is SEARCHING (Rider cancelled/unassigned)
                     console.log(`[Delivery Cron] ⚠️ Rider UN-ASSIGNED for ${order.order_number}. Cancelling old assignment if needed.`);
 

@@ -392,7 +392,7 @@ app.post('/api/orders/:orderId/assign-rider', (req, res) => {
         const riderNames = ['Rajesh Kumar', 'Amit Singh', 'Priya Sharma', 'Vikram Patel'];
         const randomName = riderNames[Math.floor(Math.random() * riderNames.length)];
 
-        order.status = 'ALLOTTED';
+        order.status = 'ACCEPTED';
         order.updated_at = timestamp();
         order.rider_details = {
             name: randomName,
@@ -402,14 +402,14 @@ app.post('/api/orders/:orderId/assign-rider', (req, res) => {
         };
 
         order.history.push({
-            status: 'ALLOTTED',
+            status: 'ACCEPTED',
             timestamp: timestamp(),
-            note: `Rider ${randomName} assigned`
+            note: `Order accepted by rider ${randomName}`
         });
         saveData();
         sendWebhook(order);
 
-        console.log(`👤 [Mock Shadowfax] Rider Assigned: ${orderId} → ${randomName}`);
+        console.log(`👤 [Mock Shadowfax] Order Accepted: ${orderId} by ${randomName}`);
 
         res.json({
             success: true,
