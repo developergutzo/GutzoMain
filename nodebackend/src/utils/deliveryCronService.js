@@ -149,6 +149,8 @@ async function syncActiveOrders() {
                 } else if (apiStatus === 'ACCEPTED' && (dbStatus === 'searching_rider' || dbStatus === 'created')) {
                     // When rider accepts, move order to confirmed so it shows up for vendor
                     orderUpdatePayload.status = 'confirmed';
+                } else if (apiStatus === 'CANCELLED') {
+                    orderUpdatePayload.status = 'cancelled';
                 }
 
                 if (Object.keys(orderUpdatePayload).length > 0) {

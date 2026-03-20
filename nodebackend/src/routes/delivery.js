@@ -177,6 +177,8 @@ router.get('/track/:orderId', async (req, res) => {
                      orderPayload.status = 'completed'; 
                  } else if (sfStatus === 'COLLECTED') {
                      orderPayload.status = 'on_way'; 
+                 } else if (sfStatus === 'CANCELLED') {
+                     orderPayload.status = 'cancelled';
                  } else if (sfStatus === 'ACCEPTED' && (delivery.status === 'searching_rider' || delivery.status === 'created')) {
                      // Special Case: Vendor needs to know driver is assigned
                      orderPayload.status = 'confirmed'; 
