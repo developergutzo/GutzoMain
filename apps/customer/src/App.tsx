@@ -470,8 +470,8 @@ function AppContent() {
   if (typeof currentRoute === 'string' && currentRoute.startsWith('/vendor/')) {
     return <VendorDetailsPage onShowCart={handleShowCart} vendors={vendors} loading={loading} />;
   }
-  if (typeof currentRoute === 'string' && currentRoute.startsWith('/tracking/')) {
-    return <OrderTrackingPage />;
+  if (typeof currentRoute === 'string' && currentRoute.startsWith('/vendor/')) {
+    return <VendorDetailsPage onShowCart={handleShowCart} vendors={vendors} loading={loading} />;
   }
   // Added /checkout to the route list
   if (typeof currentRoute === 'string' && ['/search', '/T&C', '/refund_policy', '/privacy_policy', '/payment-status', '/phonepe-soon', '/contact', '/about', '/checkout'].includes(currentRoute)) {
@@ -493,6 +493,7 @@ function AppContent() {
   }
   return (
     <div className="min-h-screen bg-gray-50 relative overflow-x-hidden flex flex-col">
+      {typeof currentRoute === 'string' && currentRoute.startsWith('/tracking/') && <OrderTrackingPage />}
       <div className="sm:hidden">
         <AddToHomeScreenPrompt
           onAddToHomeScreen={handleAddToHomeScreen}

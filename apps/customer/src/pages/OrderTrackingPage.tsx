@@ -11,6 +11,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { nodeApiService } from '../utils/nodeApi';
 import { supabase } from '../utils/supabase/client';
 import { LoadingScreen } from '../components/common/LoadingScreen';
+import { AnimatePresence } from 'framer-motion';
 
 export function OrderTrackingPage() {
     const { currentRoute, navigate: routerNavigate } = useRouter();
@@ -199,8 +200,15 @@ export function OrderTrackingPage() {
                 lng: Number(localOrder.vendor.longitude)
             };
         }
+        // Fallback to live tracking pickup location
+        if (liveTracking?.pickup_details?.latitude && liveTracking?.pickup_details?.longitude) {
+            return {
+                lat: Number(liveTracking.pickup_details.latitude),
+                lng: Number(liveTracking.pickup_details.longitude)
+            };
+        }
         return null;
-    }, [localOrder?.vendor?.latitude, localOrder?.vendor?.longitude]);
+    }, [localOrder?.vendor?.latitude, localOrder?.vendor?.longitude, liveTracking?.pickup_details]);
 
     const userLocation = useMemo(() => {
         try {
@@ -216,11 +224,18 @@ export function OrderTrackingPage() {
                     };
                 }
             }
+            // Fallback to live tracking drop location
+            if (liveTracking?.drop_details?.latitude && liveTracking?.drop_details?.longitude) {
+                return {
+                    lat: Number(liveTracking.drop_details.latitude),
+                    lng: Number(liveTracking.drop_details.longitude)
+                };
+            }
         } catch (e) {
             console.error("Error parsing delivery address:", e);
         }
         return null;
-    }, [localOrder?.delivery_address]);
+    }, [localOrder?.delivery_address, liveTracking?.drop_details]);
 
     // 1. Extract DB Delivery
     const activeDelivery = localOrder?.delivery && localOrder.delivery.length > 0 ? localOrder.delivery[0] : null;
@@ -283,20 +298,7 @@ export function OrderTrackingPage() {
     } else if (rawStatus === 'searching_rider' || deliveryStatus === 'searching_rider' || deliveryStatus === 'created') {
         displayStatus = 'searching_rider';
     } else if (['picked_up', 'driver_assigned', 'rider_assigned', 'allotted', 'accepted', 'arrived', 'out_for_delivery', 'on_way', 'reached_location', 'delivered', 'completed', 'collected', 'customer_door_step'].includes(deliveryStatus)) {
-
-        // Map Raw Shadowfax statuses to Frontend Display Statuses
-        if (['driver_assigned', 'rider_assigned', 'allotted', 'accepted', 'arrived'].includes(deliveryStatus)) {
-            displayStatus = 'driver_assigned';
-        } else if (deliveryStatus === 'collected') {
-            displayStatus = 'picked_up';
-        } else if (deliveryStatus === 'customer_door_step') {
-            displayStatus = 'arrived_at_drop';
-        } else {
-            displayStatus = deliveryStatus;
-        }
-
-        if (deliveryStatus === 'on_way') displayStatus = 'on_way';
-        if (deliveryStatus === 'delivered') displayStatus = 'delivered';
+        displayStatus = deliveryStatus;
     } else {
         // Standard Order Status Fallback
         if (rawStatus === 'placed' || rawStatus === 'confirmed' || rawStatus === 'paid') {
@@ -307,22 +309,34 @@ export function OrderTrackingPage() {
         else displayStatus = rawStatus || 'preparing';
     }
 
-    // Mapped Text
+    // Mapped Text (Iterative Header Titles)
     const getStatusText = (s: string) => {
-        switch (s) {
+        const str = s.toLowerCase();
+        switch (str) {
             case 'searching_rider': return 'Finding Delivery Partner...';
-            case 'placed': return 'Waiting for restaurant confirmation';
-            case 'preparing': return 'Kitchen Accepted • Preparing Food';
-            case 'ready': return 'Food is Ready • Waiting for Pickup';
-            case 'picked_up': return 'Order Picked Up';
-            case 'driver_assigned': return 'Driver Assigned';
+            case 'placed': return 'Finding Delivery Partner...';
+            case 'accepted':
+            case 'driver_assigned':
+            case 'rider_assigned':
+            case 'allotted':
+                return 'Driver Assigned';
+            case 'arrived':
+            case 'reached_location':
+                return 'Driver at Vendor';
+            case 'collected':
+            case 'picked_up':
+                return 'Out for Delivery';
             case 'on_way':
-            case 'reached_location': return 'Order on the way';
-            case 'arrived_at_drop': return 'Valet at Doorstep';
-            case 'delivered': return 'Order Delivered';
+                return 'Out for Delivery';
+            case 'customer_door_step':
+            case 'arrived_at_drop':
+                return 'Driver is Here!';
+            case 'delivered':
+            case 'completed':
+                return 'Order Delivered';
             case 'cancelled': return 'Order Cancelled';
             case 'rejected': return 'Order Rejected';
-            default: return s; // Fallback
+            default: return 'Order Status';
         }
     };
 
@@ -411,7 +425,7 @@ export function OrderTrackingPage() {
         );
     }
 
-    if (notFound || !localOrder) {
+    if (notFound || (!localOrder && !liveTracking)) {
         return (
             <div className="flex flex-col items-center justify-center h-screen bg-gray-50 p-6 text-center">
                 <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4">
@@ -434,59 +448,80 @@ export function OrderTrackingPage() {
             className="fixed inset-0 w-full h-full bg-gray-50 flex flex-col z-[100] overflow-hidden"
         >
             {/* Top Green Header Section - Dynamic Color */}
-            <div className="px-4 pt-3 pb-4 rounded-b-2xl z-30 shadow-md relative" style={{ backgroundColor: displayStatus === 'cancelled' ? '#ef4444' : '#1BA672' }}>
-                {/* Top Bar */}
-                <div className="flex justify-between items-center mb-3">
-                    {displayStatus === 'cancelled' ? (
-                        <div className="w-8 h-8" /> // Empty placeholder
-                    ) : (
-                        <button onClick={handleMinimize} className="text-white p-1.5 hover:bg-white/10 rounded-full transition-colors relative z-50">
-                            <Minimize2 size={20} />
-                        </button>
-                    )}
+            <AnimatePresence>
+                {displayStatus !== 'delivered' && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: -50 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                        transition={{ duration: 0.3 }}
+                        className="px-4 pt-3 pb-4 rounded-b-2xl z-30 shadow-md relative" 
+                        style={{ backgroundColor: displayStatus === 'cancelled' ? '#ef4444' : '#1BA672' }}
+                    >
+                        {/* Top Bar */}
+                        <div className="flex justify-between items-center mb-3">
+                            {displayStatus === 'cancelled' ? (
+                                <div className="w-8 h-8" /> // Empty placeholder
+                            ) : (
+                                <button onClick={handleMinimize} className="text-white p-1.5 hover:bg-white/10 rounded-full transition-colors relative z-50">
+                                    <Minimize2 size={20} />
+                                </button>
+                            )}
 
-                    <div className="text-white font-semibold text-sm opacity-90">
-                        {localOrder?.vendor?.name || contextOrder?.vendorName}
-                    </div>
-                    <button className="text-white p-1.5">
-                        <Share2 size={18} />
-                    </button>
-                </div>
-
-                {/* Status Title */}
-                <div className="text-center mb-3">
-                    <h1 className="text-white text-xl font-bold mb-3 tracking-wide">
-                        {getStatusText(displayStatus)}
-                    </h1>
-
-                    {/* Time Pill - Hidden if Cancelled or Delivered */}
-                    {displayStatus !== 'cancelled' && displayStatus !== 'delivered' && (
-                        <div className="inline-flex items-center rounded-lg px-3 py-1.5 gap-2" style={{ backgroundColor: '#14885E' }}>
-                            <span className="text-white font-semibold text-base">{eta}</span>
-                            <span className="w-1 h-1 bg-white rounded-full opacity-50"></span>
-                            <span className="text-white font-medium text-sm">On time</span>
+                            <div className="text-white font-semibold text-sm opacity-90">
+                                {localOrder?.vendor?.name || liveTracking?.pickup_details?.name || contextOrder?.vendorName || "Track Order"}
+                            </div>
+                            <button className="text-white p-1.5">
+                                <Share2 size={18} />
+                            </button>
                         </div>
-                    )}
-                </div>
-            </div>
+
+                        {/* Status Title */}
+                        <div className="text-center mb-3">
+                            <h1 className="text-white text-xl font-bold mb-3 tracking-wide">
+                                {getStatusText(displayStatus)}
+                            </h1>
+
+                            {/* Time Pill - Hidden if Cancelled or Delivered */}
+                            {displayStatus !== 'cancelled' && (
+                                <div className="inline-flex items-center rounded-lg px-3 py-1.5 gap-2" style={{ backgroundColor: '#14885E' }}>
+                                    <span className="text-white font-semibold text-base">{eta}</span>
+                                    <span className="w-1 h-1 bg-white rounded-full opacity-50"></span>
+                                    <span className="text-white font-medium text-sm">On time</span>
+                                </div>
+                            )}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Map Container - Full Height */}
-            <div className="flex-1 w-full h-full relative bg-gray-100 z-10">
-                <OrderTrackingMap
-                    storeLocation={storeLocation}
-                    userLocation={userLocation}
-                    driverLocation={mergedDelivery?.rider_location || driverLoc}
-                    status={displayStatus as any}
-                    onDurationUpdate={handleDurationUpdate}
-                />
-            </div>
+            <AnimatePresence>
+                {displayStatus !== 'delivered' && (
+                    <motion.div 
+                        initial={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ duration: 0.4, ease: "easeIn" }}
+                        className="flex-1 w-full h-full relative bg-gray-100 z-10"
+                    >
+                        <OrderTrackingMap
+                            storeLocation={storeLocation}
+                            userLocation={userLocation}
+                            driverLocation={mergedDelivery?.rider_location || driverLoc}
+                            status={displayStatus as any}
+                            onDurationUpdate={handleDurationUpdate}
+                        />
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Bottom Sheet UI */}
             <OrderTrackingTimelineSheet
                 status={displayStatus === 'searching_rider' ? 'searching_rider' : (displayStatus as any)}
-                vendorName={localOrder?.vendor?.name || contextOrder?.vendorName}
+                vendorStatus={localOrder?.status}
+                vendorName={localOrder?.vendor?.name || liveTracking?.pickup_details?.name || contextOrder?.vendorName || "Active Order"}
                 deliveryOtp={mergedDelivery?.delivery_otp || activeDelivery?.delivery_otp || localOrder?.delivery_otp || contextOrder?.delivery_otp}
-                driver={displayStatus === 'picked_up' || displayStatus === 'on_way' || displayStatus === 'delivered' || displayStatus === 'driver_assigned' ? {
+                driver={(mergedDelivery?.rider_name || activeDelivery?.rider_name) ? {
                     name: mergedDelivery?.rider_name || activeDelivery?.rider_name || contextOrder?.rider_name,
                     phone: mergedDelivery?.rider_phone || activeDelivery?.rider_phone || contextOrder?.rider_phone || ""
                 } : undefined}
