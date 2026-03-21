@@ -139,25 +139,6 @@ export function OrderTrackingTimelineSheet({ status, vendorStatus, driver, vendo
         transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
         className="fixed inset-0 z-[200] flex flex-col items-center justify-center p-6 text-center overflow-hidden"
       >
-        {/* Absolute Container to escape flex-center */}
-        <div className="absolute inset-0 pointer-events-none z-[220]">
-          {/* Close Icon - Fixed at Top Right */}
-          <motion.button
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 0.8, scale: 1 }}
-            transition={{ delay: 0.8 }}
-            whileHover={{ opacity: 1, scale: 1.05, backgroundColor: 'rgba(0,0,0,0.3)' }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleDismiss}
-            className="absolute pointer-events-auto w-10 h-10 flex items-center justify-center bg-black/20 backdrop-blur-xl rounded-full border border-white/10 text-white cursor-pointer transition-colors"
-            style={{ zIndex: 9999, top: 48, right: 32, left: 'auto', position: 'absolute' }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </motion.button>
-        </div>
         {/* Layer 2: Success Green - Expanding from center */}
         <motion.div 
           initial={{ scale: 0, opacity: 0 }}
@@ -259,6 +240,29 @@ export function OrderTrackingTimelineSheet({ status, vendorStatus, driver, vendo
         
         <div className="mt-8 opacity-0">.</div>
 
+        {/* Close Icon - High-Priority Interaction Layer */}
+        <motion.button
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 0.8, scale: 1 }}
+          transition={{ delay: 0.8 }}
+          whileHover={{ opacity: 1, scale: 1.05, backgroundColor: 'rgba(0,0,0,0.4)' }}
+          whileTap={{ scale: 0.95 }}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDismiss();
+          }}
+          className="absolute z-[300] w-12 h-12 flex items-center justify-center bg-black/20 backdrop-blur-xl rounded-full border border-white/20 text-white cursor-pointer transition-all"
+          style={{ 
+            top: 48, 
+            right: 32, 
+            position: 'absolute' 
+          }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </motion.button>
       </motion.div>
     );
   }
