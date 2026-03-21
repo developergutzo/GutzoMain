@@ -364,6 +364,13 @@ export function OrderTrackingTimelineSheet({ status, vendorStatus, driver, vendo
                        </div>
 
                        <div className="flex items-center gap-3">
+                          {deliveryOtp && (['accepted', 'arrived', 'picked_up', 'on_way', 'customer_door_step', 'arrived_at_drop', 'driver_assigned', 'allotted'].includes(displayStatus)) && (
+                             <div className="bg-white px-2.5 py-1 rounded-lg border border-blue-200">
+                                <p className="text-[8px] text-blue-600 font-bold text-center mb-0.5">OTP</p>
+                                <p className="font-mono font-black text-sm tracking-widest text-gray-900">{deliveryOtp}</p>
+                             </div>
+                          )}
+
                           {sfConfig.showCall && driver?.phone && (
                              <button 
                                onClick={() => window.open(`tel:${driver.phone}`)}
@@ -371,13 +378,6 @@ export function OrderTrackingTimelineSheet({ status, vendorStatus, driver, vendo
                              >
                                 <Phone size={18} stroke="#1BA672" />
                              </button>
-                          )}
-                          
-                          {deliveryOtp && (['accepted', 'arrived', 'picked_up', 'on_way', 'customer_door_step', 'arrived_at_drop', 'driver_assigned', 'allotted'].includes(displayStatus)) && (
-                             <div className="bg-white px-2.5 py-1 rounded-lg border border-blue-200">
-                                <p className="text-[8px] text-blue-600 font-bold text-center mb-0.5">OTP</p>
-                                <p className="font-mono font-black text-sm tracking-widest text-gray-900">{deliveryOtp}</p>
-                             </div>
                           )}
                        </div>
                     </div>

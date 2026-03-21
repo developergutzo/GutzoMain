@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { Minimize2, Share2, Phone, AlertCircle } from 'lucide-react';
+import { Minimize2, Share2, Phone, AlertCircle, X } from 'lucide-react';
 import { OrderTrackingMap } from '../components/OrderTrackingMap';
 import { OrderTrackingTimelineSheet } from '../components/OrderTrackingTimelineSheet';
 import { useOrderTracking } from '../contexts/OrderTrackingContext';
@@ -475,9 +475,18 @@ export function OrderTrackingPage() {
                             <div className="text-white font-semibold text-sm opacity-90">
                                 {localOrder?.vendor?.name || liveTracking?.pickup_details?.name || contextOrder?.vendorName || "Track Order"}
                             </div>
-                            <button className="text-white p-1.5">
-                                <Share2 size={18} />
-                            </button>
+                            {displayStatus === 'cancelled' ? (
+                                <button 
+                                  onClick={() => routerNavigate('/')} 
+                                  className="text-white p-1.5 hover:bg-white/10 rounded-full transition-colors relative z-50 mt-2 mr-2"
+                                >
+                                    <X size={20} />
+                                </button>
+                            ) : (
+                                <button className="text-white p-1.5 opacity-60">
+                                    <Share2 size={18} />
+                                </button>
+                            )}
                         </div>
 
                         {/* Status Title */}
