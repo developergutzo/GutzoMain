@@ -563,16 +563,25 @@ router.post('/:id/rate', asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Rating must be between 1 and 5');
   }
 
-  const { data: order, error } = await supabaseAdmin
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+  let query = supabaseAdmin
     .from('orders')
-    .select('*')
-    .eq('id', id)
+    .select('*');
+
+  if (isUUID) {
+    query = query.eq('id', id);
+  } else {
+    query = query.eq('order_number', id);
+  }
+
+  const { data: order, error } = await query
     .eq('user_id', req.user.id)
     .single();
 
   if (error || !order) throw new ApiError(404, 'Order not found');
 
-  if (order.status !== 'delivered') {
+  if (order.status !== 'delivered' && order.status !== 'completed') {
     throw new ApiError(400, 'Can only rate delivered orders');
   }
 
@@ -583,7 +592,7 @@ router.post('/:id/rate', asyncHandler(async (req, res) => {
       feedback,
       feedback_at: new Date().toISOString()
     })
-    .eq('id', id)
+    .eq('id', order.id)
     .select()
     .single();
 

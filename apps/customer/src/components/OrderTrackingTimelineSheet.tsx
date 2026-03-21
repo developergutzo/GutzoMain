@@ -1,6 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Phone, Utensils, ChevronRight, ShoppingBag, User } from 'lucide-react';
+import { Phone, Utensils, ChevronRight, ShoppingBag, User, Loader2 } from 'lucide-react';
 import { useState, useMemo } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { nodeApiService } from '../utils/nodeApi';
 
 interface OrderTrackingTimelineSheetProps {
   status: 'created' | 'placed' | 'preparing' | 'ready' | 'picked_up' | 'on_way' | 'delivered' | 'driver_assigned' | 'searching_rider' | 'arrived_at_drop' | 'cancelled' | 'rejected' | string;
@@ -21,6 +23,7 @@ import { useOrderTracking } from '../contexts/OrderTrackingContext';
 
 export function OrderTrackingTimelineSheet({ status, vendorStatus, driver, vendorName, deliveryOtp, orderId, onGoHome, vendorPhone }: OrderTrackingTimelineSheetProps) {
   const { activeOrder } = useOrderTracking();
+  const { user } = useAuth();
   
   const isCancelled = status.toLowerCase() === 'cancelled' || status.toLowerCase() === 'rejected';
   const isDelivered = status.toLowerCase() === 'delivered' || status.toLowerCase() === 'completed';
@@ -121,10 +124,30 @@ export function OrderTrackingTimelineSheet({ status, vendorStatus, driver, vendo
   const vConfig = getVendorConfig(displayStatus);
 
   const [isDismissing, setIsDismissing] = useState(false);
-
   const [rating, setRating] = useState(0);
+  const [feedback, setFeedback] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleDismiss = () => {
+  const handleDismiss = async () => {
+    if (isDismissing || isSubmitting) return;
+
+    // Submit rating if available and we have an orderId
+    const effectiveOrderId = orderId || activeOrder?.orderId;
+    if (rating > 0 && effectiveOrderId && user?.phone) {
+      setIsSubmitting(true);
+      try {
+        await nodeApiService.rateOrder(user.phone, effectiveOrderId, {
+          rating,
+          feedback: feedback.trim()
+        });
+      } catch (error) {
+        console.error("Failed to submit rating:", error);
+        // We continue to dismiss anyway to not trap the user
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+
     setIsDismissing(true);
     setTimeout(() => {
       onGoHome?.();
@@ -221,7 +244,10 @@ export function OrderTrackingTimelineSheet({ status, vendorStatus, driver, vendo
           <div className="relative mb-6">
             <textarea 
               placeholder="Share your feedback..."
-              className="w-full p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-[#1BA672]/10 focus:border-[#1BA672] transition-all resize-none placeholder:text-gray-500 placeholder:font-normal text-gray-800"
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
+              disabled={isSubmitting}
+              className="w-full p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-[#1BA672]/10 focus:border-[#1BA672] transition-all resize-none placeholder:text-gray-500 placeholder:font-normal text-gray-800 disabled:opacity-50"
               rows={3}
             />
           </div>
@@ -229,12 +255,15 @@ export function OrderTrackingTimelineSheet({ status, vendorStatus, driver, vendo
           <motion.button 
             onClick={handleDismiss}
             initial={false}
-            animate={{ scale: rating > 0 ? [1, 1.02, 1] : 1 }}
+            animate={{ scale: (rating > 0 && !isSubmitting) ? [1, 1.02, 1] : 1 }}
             transition={{ duration: 0.3 }}
             style={{ backgroundColor: '#1BA672' }}
-            className="w-full hover:brightness-95 active:brightness-90 text-white font-bold py-4 rounded-xl shadow-xl shadow-green-900/10 active:scale-[0.98] transition-all text-sm uppercase tracking-wider h-[56px] flex items-center justify-center"
+            disabled={isSubmitting}
+            className="w-full hover:brightness-95 active:brightness-90 text-white font-bold py-4 rounded-xl shadow-xl shadow-green-900/10 active:scale-[0.98] transition-all text-sm uppercase tracking-wider h-[56px] flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            Submit
+            {isSubmitting ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : "Submit"}
           </motion.button>
         </motion.div>
         
