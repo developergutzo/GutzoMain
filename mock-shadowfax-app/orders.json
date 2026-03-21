@@ -1,13 +1,13 @@
 [
   [
-    "SFX_MOCK_1774002922306_m42lgvpdo",
+    "SFX_MOCK_1774073661253_tddpq5bt2",
     {
-      "shadowfax_id": "SFX_MOCK_1774002922306_m42lgvpdo",
-      "client_order_id": "GZ202603201605MCAV",
-      "status": "DELIVERED",
-      "awb_number": "SFX_MOCK_1774002922306_m42lgvpdo",
-      "created_at": "2026-03-20T10:35:22.306Z",
-      "updated_at": "2026-03-20T10:40:42.122Z",
+      "shadowfax_id": "SFX_MOCK_1774073661253_tddpq5bt2",
+      "client_order_id": "GZ2026032111440JFM",
+      "status": "CUSTOMER_DOOR_STEP",
+      "awb_number": "SFX_MOCK_1774073661253_tddpq5bt2",
+      "created_at": "2026-03-21T06:14:21.253Z",
+      "updated_at": "2026-03-21T06:23:19.022Z",
       "pickup_details": {
         "name": "Coimbatore Cafe, SITRA",
         "contact_number": "8903589068",
@@ -24,7 +24,7 @@
         "longitude": 77.0671836
       },
       "order_details": {
-        "order_id": "GZ202603201605MCAV",
+        "order_id": "GZ2026032111440JFM",
         "actual_order_value": 90,
         "paid": true,
         "is_prepaid": true,
@@ -43,512 +43,40 @@
         }
       },
       "rider_details": {
-        "name": "Vikram Patel",
-        "contact_number": "+917011308021",
+        "name": "Amit Singh",
+        "contact_number": "+919130083354",
         "latitude": 11.0525166,
         "longitude": 77.0671836,
         "current_location": {
-          "latitude": 11.054787648984318,
-          "longitude": 77.06375035086832
+          "latitude": 11.042551818790699,
+          "longitude": 77.04304032782305
         }
       },
       "history": [
         {
           "status": "CREATED",
-          "timestamp": "2026-03-20T10:35:22.306Z",
+          "timestamp": "2026-03-21T06:14:21.253Z",
           "note": "Order created via Mock API"
         },
         {
           "status": "ACCEPTED",
-          "timestamp": "2026-03-20T10:35:43.800Z",
-          "note": "Order accepted by rider Vikram Patel"
+          "timestamp": "2026-03-21T06:14:37.122Z",
+          "note": "Order accepted by rider Amit Singh"
         },
         {
           "status": "ARRIVED",
-          "timestamp": "2026-03-20T10:37:27.968Z",
+          "timestamp": "2026-03-21T06:22:12.673Z",
           "note": "Status updated via UI to ARRIVED"
         },
         {
           "status": "COLLECTED",
-          "timestamp": "2026-03-20T10:38:06.601Z",
+          "timestamp": "2026-03-21T06:22:45.395Z",
           "note": "Status updated via UI to COLLECTED"
         },
         {
           "status": "CUSTOMER_DOOR_STEP",
-          "timestamp": "2026-03-20T10:40:16.574Z",
+          "timestamp": "2026-03-21T06:23:19.022Z",
           "note": "Status updated via UI to CUSTOMER_DOOR_STEP"
-        },
-        {
-          "status": "DELIVERED",
-          "timestamp": "2026-03-20T10:40:42.122Z",
-          "note": "Status updated via UI to DELIVERED"
-        }
-      ]
-    }
-  ],
-  [
-    "SFX_MOCK_1774003318686_dk1w9xhzk",
-    {
-      "shadowfax_id": "SFX_MOCK_1774003318686_dk1w9xhzk",
-      "client_order_id": "GZ2026032016118PLJ",
-      "status": "DELIVERED",
-      "awb_number": "SFX_MOCK_1774003318686_dk1w9xhzk",
-      "created_at": "2026-03-20T10:41:58.686Z",
-      "updated_at": "2026-03-20T10:44:06.322Z",
-      "pickup_details": {
-        "name": "Coimbatore Cafe, SITRA",
-        "contact_number": "8903589068",
-        "address": "164/165, Avinashi Rd, Coimbatore, Tamil Nadu 641004",
-        "latitude": 11.0383350227169,
-        "longitude": 77.0381654512353
-      },
-      "drop_details": {
-        "contact_number": "+919003802398",
-        "address": "3328+XVJ, Teachers Colony, Chinniyampalayam, Coimbatore, Tamil Nadu 641062, India",
-        "city": "Coimbatore",
-        "state": "Tamil Nadu",
-        "latitude": 11.0525166,
-        "longitude": 77.0671836
-      },
-      "order_details": {
-        "order_id": "GZ2026032016118PLJ",
-        "actual_order_value": 90,
-        "paid": true,
-        "is_prepaid": true,
-        "cash_to_be_collected": 0,
-        "payment_mode": "prepaid",
-        "delivery_charge_to_be_collected_from_customer": 0
-      },
-      "validations": {
-        "pickup": {
-          "is_otp_required": true,
-          "otp": "1234"
-        },
-        "drop": {
-          "is_otp_required": true,
-          "otp": "5678"
-        }
-      },
-      "rider_details": {
-        "name": "Vikram Patel",
-        "contact_number": "+919959817399",
-        "latitude": 11.0525166,
-        "longitude": 77.0671836
-      },
-      "history": [
-        {
-          "status": "CREATED",
-          "timestamp": "2026-03-20T10:41:58.686Z",
-          "note": "Order created via Mock API"
-        },
-        {
-          "status": "ACCEPTED",
-          "timestamp": "2026-03-20T10:42:12.488Z",
-          "note": "Order accepted by rider Vikram Patel"
-        },
-        {
-          "status": "ARRIVED",
-          "timestamp": "2026-03-20T10:43:26.850Z",
-          "note": "Status updated via UI to ARRIVED"
-        },
-        {
-          "status": "COLLECTED",
-          "timestamp": "2026-03-20T10:43:30.136Z",
-          "note": "Status updated via UI to COLLECTED"
-        },
-        {
-          "status": "CUSTOMER_DOOR_STEP",
-          "timestamp": "2026-03-20T10:43:56.880Z",
-          "note": "Status updated via UI to CUSTOMER_DOOR_STEP"
-        },
-        {
-          "status": "DELIVERED",
-          "timestamp": "2026-03-20T10:44:06.322Z",
-          "note": "Status updated via UI to DELIVERED"
-        }
-      ]
-    }
-  ],
-  [
-    "SFX_MOCK_1774003482572_odzrw2lgl",
-    {
-      "shadowfax_id": "SFX_MOCK_1774003482572_odzrw2lgl",
-      "client_order_id": "GZ202603201614VSGS",
-      "status": "CANCELLED",
-      "awb_number": "SFX_MOCK_1774003482572_odzrw2lgl",
-      "created_at": "2026-03-20T10:44:42.572Z",
-      "updated_at": "2026-03-20T10:48:40.484Z",
-      "pickup_details": {
-        "name": "Coimbatore Cafe, SITRA",
-        "contact_number": "8903589068",
-        "address": "164/165, Avinashi Rd, Coimbatore, Tamil Nadu 641004",
-        "latitude": 11.0383350227169,
-        "longitude": 77.0381654512353
-      },
-      "drop_details": {
-        "contact_number": "+919003802398",
-        "address": "3328+XVJ, Teachers Colony, Chinniyampalayam, Coimbatore, Tamil Nadu 641062, India",
-        "city": "Coimbatore",
-        "state": "Tamil Nadu",
-        "latitude": 11.0525166,
-        "longitude": 77.0671836
-      },
-      "order_details": {
-        "order_id": "GZ202603201614VSGS",
-        "actual_order_value": 90,
-        "paid": true,
-        "is_prepaid": true,
-        "cash_to_be_collected": 0,
-        "payment_mode": "prepaid",
-        "delivery_charge_to_be_collected_from_customer": 0
-      },
-      "validations": {
-        "pickup": {
-          "is_otp_required": true,
-          "otp": "1234"
-        },
-        "drop": {
-          "is_otp_required": true,
-          "otp": "5678"
-        }
-      },
-      "rider_details": {
-        "name": "Rajesh Kumar",
-        "contact_number": "+919144063507",
-        "latitude": 11.040619521859705,
-        "longitude": 77.04069256782533,
-        "current_location": {
-          "latitude": 11.040619521859705,
-          "longitude": 77.04069256782533
-        }
-      },
-      "history": [
-        {
-          "status": "CREATED",
-          "timestamp": "2026-03-20T10:44:42.572Z",
-          "note": "Order created via Mock API"
-        },
-        {
-          "status": "ACCEPTED",
-          "timestamp": "2026-03-20T10:44:50.763Z",
-          "note": "Order accepted by rider Rajesh Kumar"
-        },
-        {
-          "status": "ARRIVED",
-          "timestamp": "2026-03-20T10:45:58.369Z",
-          "note": "Status updated via UI to ARRIVED"
-        },
-        {
-          "status": "COLLECTED",
-          "timestamp": "2026-03-20T10:46:17.250Z",
-          "note": "Status updated via UI to COLLECTED"
-        },
-        {
-          "status": "CANCELLED",
-          "timestamp": "2026-03-20T10:48:40.484Z",
-          "note": "Cancelled by Customer",
-          "meta": {
-            "cancelled_by": "sfx"
-          }
-        }
-      ],
-      "cancelled_by": "sfx",
-      "cancellation_reason": "Cancelled by Customer"
-    }
-  ],
-  [
-    "SFX_MOCK_1774009527386_3gtpn96y3",
-    {
-      "shadowfax_id": "SFX_MOCK_1774009527386_3gtpn96y3",
-      "client_order_id": "GZ202603201755W28X",
-      "status": "DELIVERED",
-      "awb_number": "SFX_MOCK_1774009527386_3gtpn96y3",
-      "created_at": "2026-03-20T12:25:27.386Z",
-      "updated_at": "2026-03-20T12:26:56.149Z",
-      "pickup_details": {
-        "name": "Coimbatore Cafe, SITRA",
-        "contact_number": "8903589068",
-        "address": "164/165, Avinashi Rd, Coimbatore, Tamil Nadu 641004",
-        "latitude": 11.0383350227169,
-        "longitude": 77.0381654512353
-      },
-      "drop_details": {
-        "contact_number": "+919003802398",
-        "address": "3328+XVJ, Teachers Colony, Chinniyampalayam, Coimbatore, Tamil Nadu 641062, India",
-        "city": "Coimbatore",
-        "state": "Tamil Nadu",
-        "latitude": 11.0525166,
-        "longitude": 77.0671836
-      },
-      "order_details": {
-        "order_id": "GZ202603201755W28X",
-        "actual_order_value": 90,
-        "paid": true,
-        "is_prepaid": true,
-        "cash_to_be_collected": 0,
-        "payment_mode": "prepaid",
-        "delivery_charge_to_be_collected_from_customer": 0
-      },
-      "validations": {
-        "pickup": {
-          "is_otp_required": true,
-          "otp": "1234"
-        },
-        "drop": {
-          "is_otp_required": true,
-          "otp": "5678"
-        }
-      },
-      "rider_details": {
-        "name": "Rajesh Kumar",
-        "contact_number": "+917496499614",
-        "latitude": 11.0525166,
-        "longitude": 77.0671836
-      },
-      "history": [
-        {
-          "status": "CREATED",
-          "timestamp": "2026-03-20T12:25:27.386Z",
-          "note": "Order created via Mock API"
-        },
-        {
-          "status": "ACCEPTED",
-          "timestamp": "2026-03-20T12:25:34.630Z",
-          "note": "Order accepted by rider Rajesh Kumar"
-        },
-        {
-          "status": "ARRIVED",
-          "timestamp": "2026-03-20T12:26:15.267Z",
-          "note": "Status updated via UI to ARRIVED"
-        },
-        {
-          "status": "COLLECTED",
-          "timestamp": "2026-03-20T12:26:32.541Z",
-          "note": "Status updated via UI to COLLECTED"
-        },
-        {
-          "status": "CUSTOMER_DOOR_STEP",
-          "timestamp": "2026-03-20T12:26:41.889Z",
-          "note": "Status updated via UI to CUSTOMER_DOOR_STEP"
-        },
-        {
-          "status": "DELIVERED",
-          "timestamp": "2026-03-20T12:26:56.149Z",
-          "note": "Status updated via UI to DELIVERED"
-        }
-      ]
-    }
-  ],
-  [
-    "SFX_MOCK_1774009662644_f8rr3izs3",
-    {
-      "shadowfax_id": "SFX_MOCK_1774009662644_f8rr3izs3",
-      "client_order_id": "GZ202603201757LF86",
-      "status": "CANCELLED",
-      "awb_number": "SFX_MOCK_1774009662644_f8rr3izs3",
-      "created_at": "2026-03-20T12:27:42.644Z",
-      "updated_at": "2026-03-20T12:29:23.552Z",
-      "pickup_details": {
-        "name": "Coimbatore Cafe, SITRA",
-        "contact_number": "8903589068",
-        "address": "164/165, Avinashi Rd, Coimbatore, Tamil Nadu 641004",
-        "latitude": 11.0383350227169,
-        "longitude": 77.0381654512353
-      },
-      "drop_details": {
-        "contact_number": "+919003802398",
-        "address": "3328+XVJ, Teachers Colony, Chinniyampalayam, Coimbatore, Tamil Nadu 641062, India",
-        "city": "Coimbatore",
-        "state": "Tamil Nadu",
-        "latitude": 11.0525166,
-        "longitude": 77.0671836
-      },
-      "order_details": {
-        "order_id": "GZ202603201757LF86",
-        "actual_order_value": 90,
-        "paid": true,
-        "is_prepaid": true,
-        "cash_to_be_collected": 0,
-        "payment_mode": "prepaid",
-        "delivery_charge_to_be_collected_from_customer": 0
-      },
-      "validations": {
-        "pickup": {
-          "is_otp_required": true,
-          "otp": "1234"
-        },
-        "drop": {
-          "is_otp_required": true,
-          "otp": "5678"
-        }
-      },
-      "rider_details": {
-        "name": "Vikram Patel",
-        "contact_number": "+919935319258",
-        "latitude": 11.0383350227169,
-        "longitude": 77.0381654512353
-      },
-      "history": [
-        {
-          "status": "CREATED",
-          "timestamp": "2026-03-20T12:27:42.644Z",
-          "note": "Order created via Mock API"
-        },
-        {
-          "status": "ACCEPTED",
-          "timestamp": "2026-03-20T12:27:50.688Z",
-          "note": "Order accepted by rider Vikram Patel"
-        },
-        {
-          "status": "ARRIVED",
-          "timestamp": "2026-03-20T12:27:58.236Z",
-          "note": "Status updated via UI to ARRIVED"
-        },
-        {
-          "status": "CANCELLED",
-          "timestamp": "2026-03-20T12:29:23.552Z",
-          "note": "Cancelled by Customer",
-          "meta": {
-            "cancelled_by": "sfx"
-          }
-        }
-      ],
-      "cancelled_by": "sfx",
-      "cancellation_reason": "Cancelled by Customer"
-    }
-  ],
-  [
-    "SFX_MOCK_1774009811490_01a03j04v",
-    {
-      "shadowfax_id": "SFX_MOCK_1774009811490_01a03j04v",
-      "client_order_id": "GZ202603201800XPEF",
-      "status": "DELIVERED",
-      "awb_number": "SFX_MOCK_1774009811490_01a03j04v",
-      "created_at": "2026-03-20T12:30:11.490Z",
-      "updated_at": "2026-03-20T12:31:45.693Z",
-      "pickup_details": {
-        "name": "Coimbatore Cafe, SITRA",
-        "contact_number": "8903589068",
-        "address": "164/165, Avinashi Rd, Coimbatore, Tamil Nadu 641004",
-        "latitude": 11.0383350227169,
-        "longitude": 77.0381654512353
-      },
-      "drop_details": {
-        "contact_number": "+919003802398",
-        "address": "3328+XVJ, Teachers Colony, Chinniyampalayam, Coimbatore, Tamil Nadu 641062, India",
-        "city": "Coimbatore",
-        "state": "Tamil Nadu",
-        "latitude": 11.0525166,
-        "longitude": 77.0671836
-      },
-      "order_details": {
-        "order_id": "GZ202603201800XPEF",
-        "actual_order_value": 90,
-        "paid": true,
-        "is_prepaid": true,
-        "cash_to_be_collected": 0,
-        "payment_mode": "prepaid",
-        "delivery_charge_to_be_collected_from_customer": 0
-      },
-      "validations": {
-        "pickup": {
-          "is_otp_required": true,
-          "otp": "1234"
-        },
-        "drop": {
-          "is_otp_required": true,
-          "otp": "5678"
-        }
-      },
-      "rider_details": {
-        "name": "Priya Sharma",
-        "contact_number": "+918302414119",
-        "latitude": 11.0525166,
-        "longitude": 77.0671836
-      },
-      "history": [
-        {
-          "status": "CREATED",
-          "timestamp": "2026-03-20T12:30:11.490Z",
-          "note": "Order created via Mock API"
-        },
-        {
-          "status": "ACCEPTED",
-          "timestamp": "2026-03-20T12:30:17.662Z",
-          "note": "Order accepted by rider Priya Sharma"
-        },
-        {
-          "status": "ARRIVED",
-          "timestamp": "2026-03-20T12:30:59.027Z",
-          "note": "Status updated via UI to ARRIVED"
-        },
-        {
-          "status": "COLLECTED",
-          "timestamp": "2026-03-20T12:31:38.542Z",
-          "note": "Status updated via UI to COLLECTED"
-        },
-        {
-          "status": "CUSTOMER_DOOR_STEP",
-          "timestamp": "2026-03-20T12:31:42.213Z",
-          "note": "Status updated via UI to CUSTOMER_DOOR_STEP"
-        },
-        {
-          "status": "DELIVERED",
-          "timestamp": "2026-03-20T12:31:45.693Z",
-          "note": "Status updated via UI to DELIVERED"
-        }
-      ]
-    }
-  ],
-  [
-    "SFX_MOCK_1774009955002_tr9nm9kig",
-    {
-      "shadowfax_id": "SFX_MOCK_1774009955002_tr9nm9kig",
-      "client_order_id": "GZ202603201802AOIP",
-      "status": "CREATED",
-      "awb_number": "SFX_MOCK_1774009955002_tr9nm9kig",
-      "created_at": "2026-03-20T12:32:35.002Z",
-      "updated_at": "2026-03-20T12:32:35.002Z",
-      "pickup_details": {
-        "name": "Coimbatore Cafe, SITRA",
-        "contact_number": "8903589068",
-        "address": "164/165, Avinashi Rd, Coimbatore, Tamil Nadu 641004",
-        "latitude": 11.0383350227169,
-        "longitude": 77.0381654512353
-      },
-      "drop_details": {
-        "contact_number": "+919003802398",
-        "address": "3328+XVJ, Teachers Colony, Chinniyampalayam, Coimbatore, Tamil Nadu 641062, India",
-        "city": "Coimbatore",
-        "state": "Tamil Nadu",
-        "latitude": 11.0525166,
-        "longitude": 77.0671836
-      },
-      "order_details": {
-        "order_id": "GZ202603201802AOIP",
-        "actual_order_value": 90,
-        "paid": true,
-        "is_prepaid": true,
-        "cash_to_be_collected": 0,
-        "payment_mode": "prepaid",
-        "delivery_charge_to_be_collected_from_customer": 0
-      },
-      "validations": {
-        "pickup": {
-          "is_otp_required": true,
-          "otp": "1234"
-        },
-        "drop": {
-          "is_otp_required": true,
-          "otp": "5678"
-        }
-      },
-      "rider_details": null,
-      "history": [
-        {
-          "status": "CREATED",
-          "timestamp": "2026-03-20T12:32:35.002Z",
-          "note": "Order created via Mock API"
         }
       ]
     }

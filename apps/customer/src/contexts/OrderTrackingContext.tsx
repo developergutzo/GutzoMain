@@ -16,6 +16,7 @@ interface TrackingState {
   rider_phone?: string;
   rider_coordinates?: { lat: number, lng: number };
   vendorName?: string;
+  vendorPhone?: string;
   vendorLocation?: string;
   orderNumber?: string;
   trackingData?: {

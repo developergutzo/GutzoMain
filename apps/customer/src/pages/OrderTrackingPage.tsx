@@ -258,9 +258,10 @@ export function OrderTrackingPage() {
         if (['searching_rider', 'preparing', 'accepted'].includes(status)) return 2;
         if (['allotted', 'driver_assigned', 'rider_assigned'].includes(status)) return 3;
         if (['arrived', 'reached_location', 'on_way'].includes(status)) return 4;
-        if (['picked_up', 'out_for_delivery', 'arrived_at_drop'].includes(status)) return 5;
-        if (['delivered', 'completed'].includes(status)) return 6;
-        if (['cancelled', 'rejected'].includes(status)) return 7; // Highest priority to override
+        if (['picked_up', 'out_for_delivery', 'collected'].includes(status)) return 5;
+        if (['arrived_at_drop', 'customer_door_step'].includes(status)) return 6;
+        if (['delivered', 'completed'].includes(status)) return 7;
+        if (['cancelled', 'rejected'].includes(status)) return 8; // Highest priority to override
         return 0;
     };
 
@@ -278,8 +279,9 @@ export function OrderTrackingPage() {
         ...activeDelivery,
         rider_name: (useLiveStatus ? liveTracking?.rider_details?.name : activeDelivery?.rider_name) || activeDelivery?.rider_name,
         rider_phone: (useLiveStatus ? liveTracking?.rider_details?.contact_number : activeDelivery?.rider_phone) || activeDelivery?.rider_phone,
-        rider_location: liveTracking?.rider_details?.current_location, // Always prefer live location
-        status: isCancelled ? 'cancelled' : (useLiveStatus ? liveStatus : dbStatus)
+        rider_location: liveTracking?.rider_details?.current_location || liveTracking?.rider_details?.last_location, // Always prefer live location
+        status: isCancelled ? 'cancelled' : (useLiveStatus ? liveStatus : dbStatus),
+        delivery_otp: liveTracking?.delivery_otp || liveTracking?.verification?.otp || activeDelivery?.delivery_otp || localOrder?.delivery_otp || contextOrder?.delivery_otp
     };
 
     const isFindingRider = !mergedDelivery.rider_name;
@@ -319,10 +321,10 @@ export function OrderTrackingPage() {
             case 'driver_assigned':
             case 'rider_assigned':
             case 'allotted':
-                return 'Driver Assigned';
+                return 'Delivery Partner Assigned';
             case 'arrived':
             case 'reached_location':
-                return 'Driver at Vendor';
+                return 'Delivery Partner at Vendor';
             case 'collected':
             case 'picked_up':
                 return 'Out for Delivery';
@@ -330,7 +332,7 @@ export function OrderTrackingPage() {
                 return 'Out for Delivery';
             case 'customer_door_step':
             case 'arrived_at_drop':
-                return 'Driver is Here!';
+                return 'Doorstep Reached';
             case 'delivered':
             case 'completed':
                 return 'Order Delivered';
@@ -500,7 +502,7 @@ export function OrderTrackingPage() {
                 {displayStatus !== 'delivered' && (
                     <motion.div 
                         initial={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
                         transition={{ duration: 0.4, ease: "easeIn" }}
                         className="flex-1 w-full h-full relative bg-gray-100 z-10"
                     >
@@ -520,7 +522,8 @@ export function OrderTrackingPage() {
                 status={displayStatus === 'searching_rider' ? 'searching_rider' : (displayStatus as any)}
                 vendorStatus={localOrder?.status}
                 vendorName={localOrder?.vendor?.name || liveTracking?.pickup_details?.name || contextOrder?.vendorName || "Active Order"}
-                deliveryOtp={mergedDelivery?.delivery_otp || activeDelivery?.delivery_otp || localOrder?.delivery_otp || contextOrder?.delivery_otp}
+                vendorPhone={localOrder?.vendor?.phone || contextOrder?.vendorPhone || liveTracking?.pickup_details?.contact_number}
+                deliveryOtp={mergedDelivery?.delivery_otp || liveTracking?.verification?.otp}
                 driver={(mergedDelivery?.rider_name || activeDelivery?.rider_name) ? {
                     name: mergedDelivery?.rider_name || activeDelivery?.rider_name || contextOrder?.rider_name,
                     phone: mergedDelivery?.rider_phone || activeDelivery?.rider_phone || contextOrder?.rider_phone || ""

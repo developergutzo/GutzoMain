@@ -13,7 +13,7 @@ interface OrderTrackingMapProps {
   storeLocation: Coordinates | null;
   userLocation: Coordinates | null;
   driverLocation?: Coordinates | null;
-  status: 'placed' | 'preparing' | 'ready' | 'picked_up' | 'on_way' | 'delivered' | 'arrived_at_drop' | 'reached_location' | 'driver_assigned' | 'searching_rider';
+  status: 'placed' | 'preparing' | 'ready' | 'picked_up' | 'on_way' | 'delivered' | 'arrived_at_drop' | 'reached_location' | 'driver_assigned' | 'searching_rider' | 'customer_door_step' | 'collected';
   fitBoundsPadding?: number; // Not used as much with DirectionsRenderer
   onDurationUpdate?: (duration: string) => void;
 }
@@ -40,6 +40,9 @@ export function OrderTrackingMap({
 
   // Internal driver location state for animation
   const animationFrameRef = useRef<number>();
+  const pulseFrameRef = useRef<number>();
+  const pulseCircleRef = useRef<google.maps.Circle | null>(null);
+  const pulseRiderCircleRef = useRef<google.maps.Circle | null>(null);
 
   // Guard: If critical locations are missing, we still run hooks but render fallback at the end.
 
@@ -58,6 +61,7 @@ export function OrderTrackingMap({
 
     return () => {
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      if (pulseFrameRef.current) cancelAnimationFrame(pulseFrameRef.current);
     };
   }, []);
 
@@ -131,7 +135,7 @@ export function OrderTrackingMap({
           scaledSize: new google.maps.Size(46, 46),
           anchor: new google.maps.Point(23, 23)
         },
-        title: "Driver",
+        title: "Delivery Partner",
         zIndex: 200, // Ensure driver is on top
         optimized: false // Required for some SVG data URIs
       });
@@ -374,6 +378,91 @@ export function OrderTrackingMap({
     }
 
   }, [isMapLoaded, status, driverLocation, storeLocation, userLocation, onDurationUpdate]);
+  
+  // 4. Doorstep Pulse Effect
+  useEffect(() => {
+    if (!isMapLoaded || !mapInstanceRef.current || !userLocation) return;
+
+    const isAtDoorstep = status === 'customer_door_step' || status === 'arrived_at_drop';
+
+    if (isAtDoorstep) {
+      // Circle at user doorstep
+      if (!pulseCircleRef.current) {
+        pulseCircleRef.current = new google.maps.Circle({
+          strokeColor: '#1BA672',
+          strokeOpacity: 0.5,
+          strokeWeight: 1,
+          fillColor: '#1BA672',
+          fillOpacity: 0.2,
+          map: mapInstanceRef.current,
+          center: userLocation,
+          radius: 30,
+          clickable: false,
+          zIndex: 10
+        });
+      }
+
+      // Circle at rider (follows marker)
+      if (!pulseRiderCircleRef.current && driverLocation) {
+        pulseRiderCircleRef.current = new google.maps.Circle({
+          strokeColor: '#1BA672',
+          strokeOpacity: 0.6,
+          strokeWeight: 1,
+          fillColor: '#1BA672',
+          fillOpacity: 0.25,
+          map: mapInstanceRef.current,
+          center: driverLocation,
+          radius: 20,
+          clickable: false,
+          zIndex: 250
+        });
+      }
+
+      let start: number | null = null;
+      const animatePulse = (timestamp: number) => {
+        if (!start) start = timestamp;
+        const elapsed = timestamp - start;
+        const period = 2000; // 2 seconds pulse
+        const progress = (elapsed % period) / period;
+        
+        // Pulse logic: scale from 0.8 to 1.5
+        const scale = 0.8 + Math.sin(progress * Math.PI) * 0.7;
+        const opacity = 0.3 - Math.sin(progress * Math.PI) * 0.2;
+
+        if (pulseCircleRef.current) {
+          pulseCircleRef.current.setRadius(30 * scale);
+          pulseCircleRef.current.setOptions({ fillOpacity: opacity });
+        }
+        if (pulseRiderCircleRef.current && driverLocation) {
+          pulseRiderCircleRef.current.setCenter(driverLocation);
+          pulseRiderCircleRef.current.setRadius(20 * scale);
+          pulseRiderCircleRef.current.setOptions({ fillOpacity: opacity });
+        }
+
+        pulseFrameRef.current = requestAnimationFrame(animatePulse);
+      };
+
+      pulseFrameRef.current = requestAnimationFrame(animatePulse);
+    } else {
+      // Cleanup
+      if (pulseFrameRef.current) {
+        cancelAnimationFrame(pulseFrameRef.current);
+        pulseFrameRef.current = undefined;
+      }
+      if (pulseCircleRef.current) {
+        pulseCircleRef.current.setMap(null);
+        pulseCircleRef.current = null;
+      }
+      if (pulseRiderCircleRef.current) {
+        pulseRiderCircleRef.current.setMap(null);
+        pulseRiderCircleRef.current = null;
+      }
+    }
+
+    return () => {
+      if (pulseFrameRef.current) cancelAnimationFrame(pulseFrameRef.current);
+    };
+  }, [isMapLoaded, status, userLocation, driverLocation]);
 
   // Render Loading/Error state if locations are missing
   if (!storeLocation || !userLocation) {

@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Phone, Utensils, ChevronRight, ShoppingBag } from 'lucide-react';
+import { Phone, Utensils, ChevronRight, ShoppingBag, User } from 'lucide-react';
 import { useState, useMemo } from 'react';
 
 interface OrderTrackingTimelineSheetProps {
@@ -14,25 +14,27 @@ interface OrderTrackingTimelineSheetProps {
   deliveryOtp?: string;
   orderId?: string;
   onGoHome?: () => void;
+  vendorPhone?: string;
 }
 
 import { useOrderTracking } from '../contexts/OrderTrackingContext';
 
-export function OrderTrackingTimelineSheet({ status, vendorStatus, driver, vendorName, deliveryOtp, orderId, onGoHome }: OrderTrackingTimelineSheetProps) {
+export function OrderTrackingTimelineSheet({ status, vendorStatus, driver, vendorName, deliveryOtp, orderId, onGoHome, vendorPhone }: OrderTrackingTimelineSheetProps) {
   const { activeOrder } = useOrderTracking();
   
-  const isCancelled = status === 'cancelled' || status === 'rejected';
-  const isDelivered = status === 'delivered' || status === 'completed';
+  const isCancelled = status.toLowerCase() === 'cancelled' || status.toLowerCase() === 'rejected';
+  const isDelivered = status.toLowerCase() === 'delivered' || status.toLowerCase() === 'completed';
+  const displayStatus = status.toLowerCase(); 
 
   // Helper: Get Shadowfax Card Content
-  const getShadowfaxConfig = () => {
+  const getShadowfaxConfig = (status: string) => {
     switch (status) {
       case 'searching_rider':
       case 'placed':
         return {
-          icon: <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center animate-spin text-[#1BA672]"><LoadingSpinner /></div>,
-          title: "Shadowfax Delivery",
-          text: "Waiting for driver assignment",
+          icon: <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-400"><User size={20} /></div>,
+          title: "Delivery Partner",
+          text: "Waiting for delivery partner",
           isActive: false
         };
       case 'accepted':
@@ -40,33 +42,36 @@ export function OrderTrackingTimelineSheet({ status, vendorStatus, driver, vendo
       case 'allotted':
         return {
           icon: <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-xl">👤</div>,
-          title: driver?.name || "Driver Assigned",
-          text: "Driver assigned",
-          isActive: true
+          title: driver?.name || "Delivery Partner Assigned",
+          text: "Delivery partner assigned",
+          isActive: true,
+          showCall: true
         };
       case 'arrived':
       case 'reached_location':
         return {
           icon: <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-xl">👤</div>,
-          title: driver?.name || "Driver",
+          title: driver?.name || "Delivery Partner",
           text: "Reached vendor location",
-          isActive: true
+          isActive: true,
+          showCall: true
         };
       case 'collected':
       case 'picked_up':
       case 'on_way':
         return {
           icon: <div className="w-10 h-10 rounded-full bg-[#E8F6F1] flex items-center justify-center text-xl">🛵</div>,
-          title: driver?.name || "Driver",
-          text: "Driver picked up the order",
-          isActive: true
+          title: driver?.name || "Delivery Partner",
+          text: "Delivery partner picked up the order",
+          isActive: true,
+          showCall: true
         };
       case 'customer_door_step':
       case 'arrived_at_drop':
         return {
           icon: <div className="w-10 h-10 rounded-full bg-[#E8F6F1] flex items-center justify-center text-xl">👤</div>,
-          title: driver?.name || "Driver",
-          text: "Driver reached your location",
+          title: driver?.name || "Delivery Partner",
+          text: "Delivery Partner reached your location",
           isActive: true,
           showCall: true
         };
@@ -76,54 +81,44 @@ export function OrderTrackingTimelineSheet({ status, vendorStatus, driver, vendo
   };
 
   // Helper: Get Vendor Card Content
-  const getVendorConfig = () => {
+  const getVendorConfig = (status: string) => {
     // Priority 1: Check if vendor marked as ready (Independent state)
     if (vendorStatus === 'ready' || vendorStatus === 'ready_for_pickup') {
         return {
           icon: <div className="w-10 h-10 rounded-full bg-[#E8F6F1] flex items-center justify-center text-xl">✅</div>,
-          text: "Order ready"
+          text: "Order ready",
+          showCall: true
         };
     }
 
-    // Priority 2: Follow delivery status enums
-    switch (status) {
-      case 'searching_rider':
-      case 'placed':
-        return {
-          icon: <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-xl">🏢</div>,
-          text: "Waiting for vendor to accept"
-        };
-      case 'accepted':
-      case 'driver_assigned':
-      case 'allotted':
-      case 'preparing':
+    // Priority 2: Check vendor preparation status specifically
+    if (vendorStatus === 'accepted' || vendorStatus === 'preparing') {
         return {
           icon: <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-xl">🍳</div>,
-          text: "Order preparing"
+          text: "Order preparing",
+          showCall: true
         };
-      case 'arrived':
-      case 'reached_location':
-      case 'ready':
-        return {
-          icon: <div className="w-10 h-10 rounded-full bg-[#E8F6F1] flex items-center justify-center text-xl">✅</div>,
-          text: "Order ready"
-        };
-      case 'collected':
-      case 'picked_up':
-      case 'on_way':
-      case 'customer_door_step':
-      case 'arrived_at_drop':
+    }
+
+    // Priority 3: Check if food handed over (collected/picked up)
+    if (['collected', 'picked_up', 'on_way', 'customer_door_step', 'arrived_at_drop'].includes(status.toLowerCase())) {
         return {
           icon: <div className="w-10 h-10 rounded-full bg-[#E8F6F1] flex items-center justify-center text-xl">📦</div>,
-          text: "Food handed over to driver"
+          text: "Food handed over to driver",
+          showCall: true
         };
-      default:
-        return null;
     }
+
+    // Default: Waiting for approval
+    return {
+      icon: <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-xl">🏢</div>,
+      text: "Still waiting for approval",
+      showCall: true
+    };
   };
 
-  const sfConfig = getShadowfaxConfig();
-  const vConfig = getVendorConfig();
+  const sfConfig = getShadowfaxConfig(displayStatus);
+  const vConfig = getVendorConfig(displayStatus);
 
   const [isDismissing, setIsDismissing] = useState(false);
 
@@ -275,66 +270,66 @@ export function OrderTrackingTimelineSheet({ status, vendorStatus, driver, vendo
         </div>
 
         <div className="px-5">
-            {/* Header with Title & ETA (Gutzo Style) */}
-            <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                   <div className="w-10 h-10 rounded-xl bg-[#1BA672] flex items-center justify-center text-white">
-                      <Utensils size={20} />
-                   </div>
-                   <div>
-                      <h3 className="font-bold text-gray-900 leading-tight">{vendorName || "Active Order"}</h3>
-                      <p className="text-[11px] text-gray-500 font-medium">#{orderId || "Order"}</p>
-                   </div>
-                </div>
-                {sfConfig?.showCall && (
-                   <button 
-                     onClick={() => window.open(`tel:${driver?.phone}`)}
-                     className="w-10 h-10 rounded-full bg-[#E8F6F1] flex items-center justify-center text-[#1BA672] shadow-sm"
-                   >
-                     <Phone size={18} fill="currentColor" />
-                   </button>
-                )}
-            </div>
-
             {/* DUAL CARD UI LAYOUT */}
             <div className="space-y-3 mb-6">
                 {/* Shadowfax Delivery Card */}
-                {sfConfig && (
-                   <div className={`p-4 rounded-2xl border flex items-center gap-4 transition-all duration-300 ${sfConfig.isActive ? 'bg-blue-50/50 border-blue-100 shadow-sm' : 'bg-gray-50/50 border-gray-100'}`}>
-                      {sfConfig.icon}
-                      <div className="flex-1">
-                         <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-0.5">Delivery Partner</p>
-                         <h4 className="font-bold text-gray-900 text-sm">{sfConfig.title}</h4>
-                         <p className="text-xs text-gray-500 font-medium">{sfConfig.text}</p>
-                      </div>
-                      {deliveryOtp && (status === 'picked_up' || status === 'on_way' || status === 'customer_door_step') && (
-                         <div className="bg-white px-2.5 py-1 rounded-lg border border-blue-200">
-                            <p className="text-[8px] text-blue-600 font-bold text-center mb-0.5">OTP</p>
-                            <p className="font-mono font-black text-sm tracking-widest text-gray-900">{deliveryOtp}</p>
-                         </div>
-                      )}
-                   </div>
-                )}
+                 {sfConfig && (
+                    <div className="p-4 rounded-2xl border border-gray-100 bg-gray-50/50 flex items-center gap-4 transition-all duration-300">
+                       {sfConfig.icon}
+                       <div className="flex-1">
+                          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-0.5">Delivery Partner</p>
+                          <h4 className="font-bold text-gray-900 text-sm">{sfConfig.title}</h4>
+                          <p className="text-xs text-gray-500 font-medium">{sfConfig.text}</p>
+                       </div>
+
+                       <div className="flex items-center gap-3">
+                          {sfConfig.showCall && driver?.phone && (
+                             <button 
+                               onClick={() => window.open(`tel:${driver.phone}`)}
+                               className="w-10 h-10 rounded-full bg-[#E8F6F1] flex items-center justify-center text-[#1BA672] shadow-sm active:scale-90 transition-transform"
+                             >
+                                <Phone size={18} stroke="#1BA672" />
+                             </button>
+                          )}
+                          
+                          {deliveryOtp && (['accepted', 'arrived', 'picked_up', 'on_way', 'customer_door_step', 'arrived_at_drop', 'driver_assigned', 'allotted'].includes(displayStatus)) && (
+                             <div className="bg-white px-2.5 py-1 rounded-lg border border-blue-200">
+                                <p className="text-[8px] text-blue-600 font-bold text-center mb-0.5">OTP</p>
+                                <p className="font-mono font-black text-sm tracking-widest text-gray-900">{deliveryOtp}</p>
+                             </div>
+                          )}
+                       </div>
+                    </div>
+                 )}
 
                 {/* Vendor Status Card */}
-                {vConfig && (
-                   <div className="p-4 rounded-2xl border border-gray-100 bg-gray-50/50 flex items-center gap-4">
-                      {vConfig.icon}
-                      <div className="flex-1">
-                         <p className="text-[10px] font-bold text-[#1BA672] uppercase tracking-widest mb-0.5">Merchant Status</p>
-                         <h4 className="font-bold text-gray-900 text-sm">{vendorName}</h4>
-                         <p className="text-xs text-gray-500 font-medium">{vConfig.text}</p>
-                      </div>
-                   </div>
-                )}
+                 {vConfig && (
+                    <div className="p-4 rounded-2xl border border-gray-100 bg-gray-50/50 flex items-center gap-4">
+                       {vConfig.icon}
+                       <div className="flex-1">
+                          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-0.5">Kitchen Status</p>
+                          <h4 className="font-bold text-gray-900 text-sm">{vendorName}</h4>
+                          <p className="text-xs text-gray-500 font-medium">{vConfig.text}</p>
+                       </div>
+
+                       {vConfig.showCall && vendorPhone && (
+                          <button 
+                            onClick={() => window.open(`tel:${vendorPhone}`)}
+                            className="w-10 h-10 rounded-full bg-[#E8F6F1] flex items-center justify-center text-[#1BA672] shadow-sm active:scale-95 transition-all shrink-0"
+                          >
+                             <Phone size={18} stroke="#1BA672" />
+                          </button>
+                       )}
+                    </div>
+                 )}
             </div>
 
-            {/* Action List */}
-            <div className="space-y-4">
-                <div className="flex items-center gap-4 text-gray-700">
-                    <Utensils size={20} className="text-gray-400" />
-                    <div className="flex-1 text-sm font-medium">We've asked the restaurant to not send cutlery</div>
-                </div>
+             {/* Action List */}
+             <div className="space-y-4 px-5">
+                 <div className="flex items-center gap-4 text-gray-700">
+                     <Utensils size={20} className="text-gray-400" />
+                     <div className="flex-1 text-sm font-medium">We've asked the restaurant to not send cutlery</div>
+                 </div>
 
                 <div className="w-full h-px bg-gray-100 my-2"></div>
 
