@@ -447,7 +447,9 @@ export function OrderTrackingPage() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: isMinimizing ? 0 : 1, scale: isMinimizing ? 0.9 : 1, y: isMinimizing ? '100%' : '0%' }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="fixed inset-0 w-full h-full bg-gray-50 flex flex-col z-[100] overflow-hidden"
+            className={`fixed inset-0 w-full h-full flex flex-col z-[100] overflow-hidden transition-colors duration-500 ${
+                (localOrder?.status === 'delivered' || (displayStatus as any) === 'delivered') ? 'bg-transparent' : 'bg-gray-50'
+            }`}
         >
             {/* Top Green Header Section - Dynamic Color */}
             <AnimatePresence>
