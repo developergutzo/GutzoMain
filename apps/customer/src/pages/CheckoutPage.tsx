@@ -5,7 +5,7 @@ import { useRouter } from '../components/Router';
 import { useLocation as useUserLocation } from '../contexts/LocationContext';
 import { nodeApiService as apiService } from '../utils/nodeApi';
 import { DistanceService } from '../utils/distanceService';
-import { ArrowLeft, Plus, ChevronRight, FileText, Percent, X, ChevronDown, Share, UtensilsCrossed, Clock, MapPin, Phone, Calendar, Utensils, Info } from 'lucide-react';
+import { ArrowLeft, Plus, ChevronRight, FileText, Percent, X, ChevronDown, Share, UtensilsCrossed, Clock, MapPin, Phone, Calendar, Utensils, Info, Loader2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { ImageWithFallback } from '../components/common/ImageWithFallback';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
@@ -380,7 +380,16 @@ export function CheckoutPage() {
     }, 0);
 
     const handleQuantityChange = async (productId: string, newQty: number) => {
-        if (newQty <= 0) return removeItem(productId);
+        if (newQty <= 0) {
+            // Proactive redirect if this is the last item being removed
+            if (cartItems.length === 1 && window.innerWidth < 1024) {
+                goBack();
+                // Delay removeItem slightly to allow navigation to start without immediate "Empty Cart" render
+                setTimeout(() => removeItem(productId), 100);
+                return;
+            }
+            return removeItem(productId);
+        }
         updateQuantityOptimistic(productId, newQty);
     };
 
@@ -637,14 +646,23 @@ export function CheckoutPage() {
             // Check viewport width - if mobile/tablet (<1024px), go back
             if (window.innerWidth < 1024) {
                 // To prevent immediate bounce back after a successful login (due to slight CartContext load lag)
-                // Add a small safety timer
-                const timer = setTimeout(() => {
-                    if (cartItems.length === 0 && !isLoading) {
-                        console.log('📱 Mobile/Tablet Empty Cart - Redirecting back...');
-                        goBack();
-                    }
-                }, 1000);
-                return () => clearTimeout(timer);
+                // Add a small safety timer ONLY if maybe we just logged in
+                const lastLoginTime = Number(window.localStorage.getItem('gutzo_last_login_time') || 0);
+                const isVeryRecentLogin = Date.now() - lastLoginTime < 5000;
+
+                if (isVeryRecentLogin) {
+                    const timer = setTimeout(() => {
+                        if (cartItems.length === 0 && !isLoading) {
+                            console.log('📱 Mobile/Tablet Empty Cart - Redirecting back (Safety)...');
+                            goBack();
+                        }
+                    }, 1000);
+                    return () => clearTimeout(timer);
+                } else {
+                    // Normal case: Last item removed, redirect IMMEDIATELY
+                    console.log('📱 Mobile/Tablet Empty Cart - Redirecting back IMMEDIATELY...');
+                    goBack();
+                }
             }
         }
     }, [cartItems.length, isLoading, isReplaceModalOpen, navigate, goBack]);
@@ -652,7 +670,11 @@ export function CheckoutPage() {
     const isAuthSyncing = window.localStorage.getItem('gutzo_cart_migrated') === 'pending';
     if (cartItems.length === 0 && !isLoading && !isReplaceModalOpen && !isAuthSyncing) {
         console.log('🛒 DEBUG: Cart is empty (checkout render)', { items: cartItems, isLoading, isReplaceModalOpen });
-        // Show explicit empty state
+        
+        // If on mobile/tablet, don't show the empty UI, just return null (while redirect happens)
+        if (window.innerWidth < 1024) return null;
+
+        // Show explicit empty state for Desktop
         return (
             <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
@@ -1244,7 +1266,8 @@ export function CheckoutPage() {
                                         </div>
                                     ) : loadingFee ? (
                                         <div className="flex items-center gap-2">
-                                            <span className="text-lg font-bold animate-pulse">Calculating fee... 🚚</span>
+                                            <Loader2 className="animate-spin h-5 w-5 opacity-70" />
+                                            <span className="text-lg font-bold">Calculating Total...</span>
                                         </div>
                                     ) : (
                                         <div className="flex items-center gap-2">
@@ -1282,12 +1305,13 @@ export function CheckoutPage() {
 
                 <div className="px-4 pt-4 pb-2">
                     {(loadingFee || loadingAddresses) ? (
-                        <div className="flex gap-4 items-center mb-2">
-                            <div className="flex-1">
-                                <span className="font-extrabold text-gray-400 text-[15px] animate-pulse">Calculating...</span>
+                        <div className="w-full h-[60px] bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between px-4 animate-pulse mb-3">
+                            <div className="space-y-2 flex-1">
+                                <div className="h-4 w-24 bg-gray-200 rounded-full" />
+                                <div className="h-3 w-16 bg-gray-100 rounded-full" />
                             </div>
-                            <div className="h-12 w-32 bg-gray-200 animate-pulse rounded-lg flex items-center justify-center">
-                                <span className="text-[14px] font-bold text-gray-500">Wait... 🚚</span>
+                            <div className="h-10 w-28 bg-gray-200 rounded-lg flex items-center justify-center gap-2">
+                                <div className="h-3 w-12 bg-gray-300/50 rounded-full" />
                             </div>
                         </div>
                     ) : (!isServiceable || !selectedAddress) ? (
