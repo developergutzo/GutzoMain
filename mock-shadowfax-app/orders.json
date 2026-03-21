@@ -4,10 +4,10 @@
     {
       "shadowfax_id": "SFX_MOCK_1774073661253_tddpq5bt2",
       "client_order_id": "GZ2026032111440JFM",
-      "status": "CUSTOMER_DOOR_STEP",
+      "status": "DELIVERED",
       "awb_number": "SFX_MOCK_1774073661253_tddpq5bt2",
       "created_at": "2026-03-21T06:14:21.253Z",
-      "updated_at": "2026-03-21T06:23:19.022Z",
+      "updated_at": "2026-03-21T06:34:37.199Z",
       "pickup_details": {
         "name": "Coimbatore Cafe, SITRA",
         "contact_number": "8903589068",
@@ -77,6 +77,11 @@
           "status": "CUSTOMER_DOOR_STEP",
           "timestamp": "2026-03-21T06:23:19.022Z",
           "note": "Status updated via UI to CUSTOMER_DOOR_STEP"
+        },
+        {
+          "status": "DELIVERED",
+          "timestamp": "2026-03-21T06:34:37.199Z",
+          "note": "Status updated via UI to DELIVERED"
         }
       ]
     }

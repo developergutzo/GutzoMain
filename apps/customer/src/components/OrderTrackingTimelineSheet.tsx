@@ -122,17 +122,7 @@ export function OrderTrackingTimelineSheet({ status, vendorStatus, driver, vendo
 
   const [isDismissing, setIsDismissing] = useState(false);
 
-  // Confetti particles state
-  const particles = useMemo(() => {
-    return Array.from({ length: 40 }).map((_, i) => ({
-      id: i,
-      x: Math.random() * 100 - 50, // -50 to 50
-      y: Math.random() * -100 - 50, // -150 to -50
-      rotation: Math.random() * 360,
-      scale: Math.random() * 0.5 + 0.5,
-      color: ['#FFD700', '#FF6347', '#00CED1', '#98FB98', '#FF69B4'][i % 5]
-    }));
-  }, []);
+  const [rating, setRating] = useState(0);
 
   const handleDismiss = () => {
     setIsDismissing(true);
@@ -146,59 +136,63 @@ export function OrderTrackingTimelineSheet({ status, vendorStatus, driver, vendo
       <motion.div 
         initial={{ y: 0 }}
         animate={{ y: isDismissing ? '100%' : 0 }}
-        transition={{ duration: 0.5, ease: [0.32, 0, 0.67, 0] }}
+        transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
         className="fixed inset-0 z-[200] flex flex-col items-center justify-center p-6 text-center overflow-hidden"
       >
+        {/* Absolute Container to escape flex-center */}
+        <div className="absolute inset-0 pointer-events-none z-[220]">
+          {/* Close Icon - Fixed at Top Right */}
+          <motion.button
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 0.4, scale: 1 }}
+            transition={{ delay: 0.8 }}
+            whileHover={{ opacity: 1, scale: 1.1 }}
+            whileTap={{ scale: 0.9, opacity: 0.8 }}
+            onClick={handleDismiss}
+            className="absolute pointer-events-auto w-9 h-9 flex items-center justify-center bg-transparent text-white cursor-pointer"
+            style={{ zIndex: 9999, top: 48, right: 32, left: 'auto', position: 'absolute' }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </motion.button>
+        </div>
         {/* Layer 2: Success Green - Expanding from center */}
         <motion.div 
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1.5, opacity: 1 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-          style={{ background: 'linear-gradient(135deg, #1BA672 0%, #14885E 100%)' }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          style={{ background: 'linear-gradient(180deg, #1D6B44 0%, #2EB271 100%)' }}
           className="absolute inset-0 rounded-full"
         />
 
-        {/* Confetti Celebration */}
-        <div className="absolute top-0 left-0 right-0 bottom-0 pointer-events-none overflow-hidden">
-          {particles.map((p: any) => (
-            <motion.div
-              key={p.id}
-              initial={{ x: '50%', y: '40%', opacity: 1, scale: 0, rotate: 0 }}
-              animate={{ 
-                x: `${50 + p.x}%`, 
-                y: `${110}%`, 
-                opacity: [1, 1, 0],
-                rotate: p.rotation + 720,
-                scale: p.scale 
-              }}
-              transition={{ 
-                duration: Math.random() * 2 + 1.5, 
-                ease: "easeOut",
-                delay: Math.random() * 0.2
-              }}
-              style={{ 
-                position: 'absolute',
-                width: '10px',
-                height: '10px',
-                backgroundColor: p.color,
-                borderRadius: '2px',
-                zIndex: 205
-              }}
-            />
-          ))}
+        {/* Simple Minimal Tick */}
+        <div className="absolute top-0 left-0 right-0 bottom-0 pointer-events-none flex items-center justify-center opacity-10">
+           <div className="w-[400px] h-[400px] bg-white rounded-full blur-3xl" />
         </div>
 
         <motion.div
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.3, duration: 0.5, type: 'spring' }}
+          transition={{ delay: 0.2, duration: 0.6, type: 'spring', damping: 15 }}
           className="relative z-[210] flex flex-col items-center"
         >
-          <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mb-6 text-5xl shadow-lg border border-white/30">
-            🎉
+          {/* Glass-morphic pulsing ring */}
+          <div className="relative mb-6">
+             <motion.div 
+                animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.1, 0.3] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute inset-0 bg-white rounded-full blur-xl"
+             />
+             <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center relative border border-white/30 shadow-2xl">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                   <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+             </div>
           </div>
-          <h2 className="text-3xl font-bold text-white mb-2">Order Delivered!</h2>
-          <p className="text-white/80 mb-8 text-lg font-medium">Hope you enjoy your meal from <br/><span className="text-white font-bold">{vendorName}</span></p>
+          <h2 className="text-3xl font-bold text-white mb-2 tracking-[1px]">Order Delivered!</h2>
+          <p className="text-white mb-8 text-lg font-medium opacity-100">Hope you enjoy your meal from <br/><span className="text-white font-black">{vendorName}</span></p>
         </motion.div>
         
         {/* Layer 3: Rating Card - Slide up with bounce */}
@@ -206,24 +200,36 @@ export function OrderTrackingTimelineSheet({ status, vendorStatus, driver, vendo
           initial={{ y: '100%', opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ 
-            delay: 0.5, 
-            duration: 0.6, 
+            delay: 0.4, 
+            duration: 0.7, 
             type: 'spring', 
-            damping: 20, 
-            stiffness: 100 
+            damping: 25, 
+            stiffness: 80 
           }}
-          className="w-full max-w-sm bg-white rounded-[32px] p-8 shadow-2xl border border-white/20 relative z-[210]"
+          className="w-full max-w-sm bg-white rounded-[32px] p-8 shadow-[0_20px_40px_rgba(0,0,0,0.15)] relative z-[210] border border-white/20 overflow-hidden"
         >
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[2px] mb-6">Rate your experience</p>
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-[2px] mb-6 text-center">Rate your experience</p>
           <div className="flex justify-center gap-3 mb-8">
             {[1, 2, 3, 4, 5].map((star) => (
               <motion.button 
                 key={star} 
+                onClick={() => setRating(star)}
                 whileTap={{ scale: 1.3 }}
                 whileHover={{ scale: 1.1 }}
-                className="hover:scale-110 active:scale-95 transition-all text-[#E0E0E0]"
+                className="hover:scale-110 active:scale-95 transition-all outline-none"
               >
-                <svg width="42" height="42" viewBox="0 0 24 24" style={{ fill: '#1BA672' }}>
+                <svg 
+                  width="42" 
+                  height="42" 
+                  viewBox="0 0 24 24" 
+                  fill={rating >= star ? '#1BA672' : 'none'}
+                  stroke={rating >= star ? '#1BA672' : '#E2E8F0'}
+                  strokeWidth="1.5"
+                  style={{ 
+                    filter: rating >= star ? 'drop-shadow(0 0 8px rgba(27, 166, 114, 0.2))' : 'none',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                  }}
+                >
                   <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
                 </svg>
               </motion.button>
@@ -232,33 +238,26 @@ export function OrderTrackingTimelineSheet({ status, vendorStatus, driver, vendo
           
           <div className="relative mb-6">
             <textarea 
-              placeholder="Tell us what you liked..."
-              className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:ring-4 focus:ring-[#1BA672]/10 focus:border-[#1BA672] transition-all resize-none"
+              placeholder="Share your feedback..."
+              className="w-full p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-[#1BA672]/10 focus:border-[#1BA672] transition-all resize-none placeholder:text-gray-500 placeholder:font-normal text-gray-800"
               rows={3}
-              onFocus={(e) => {
-                // Ensure the view is accessible when keyboard appears
-                e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              }}
             />
           </div>
 
-          <button 
+          <motion.button 
             onClick={handleDismiss}
+            initial={false}
+            animate={{ scale: rating > 0 ? [1, 1.02, 1] : 1 }}
+            transition={{ duration: 0.3 }}
             style={{ backgroundColor: '#1BA672' }}
-            className="w-full hover:brightness-95 active:brightness-90 text-white font-bold py-4 rounded-2xl shadow-xl shadow-green-900/10 active:scale-[0.98] transition-all text-base uppercase tracking-wider"
+            className="w-full hover:brightness-95 active:brightness-90 text-white font-bold py-4 rounded-xl shadow-xl shadow-green-900/10 active:scale-[0.98] transition-all text-sm uppercase tracking-wider h-[56px] flex items-center justify-center"
           >
-            Go to Home
-          </button>
+            Submit
+          </motion.button>
         </motion.div>
         
-        <motion.p 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.2 }}
-          className="mt-8 text-white/60 text-xs font-medium tracking-wide relative z-[210]"
-        >
-          SHADOWFAX DELIVERY PARTNER
-        </motion.p>
+        <div className="mt-8 opacity-0">.</div>
+
       </motion.div>
     );
   }
