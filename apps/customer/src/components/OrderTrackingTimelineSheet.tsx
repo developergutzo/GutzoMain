@@ -206,7 +206,8 @@ export function OrderTrackingTimelineSheet({ status, vendorStatus, driver, vendo
             damping: 25, 
             stiffness: 80 
           }}
-          className="w-full max-w-sm bg-white rounded-[32px] p-8 shadow-[0_20px_40px_rgba(0,0,0,0.15)] relative z-[210] border border-white/20 overflow-hidden"
+          className="w-full max-w-sm bg-white rounded-3xl p-8 shadow-[0_20px_40px_rgba(0,0,0,0.15)] relative z-[210] border border-white/20 overflow-hidden"
+          style={{ borderRadius: 32 }}
         >
           <p className="text-xs font-bold text-gray-500 uppercase tracking-[2px] mb-6 text-center">Rate your experience</p>
           <div className="flex justify-center gap-3 mb-8">
