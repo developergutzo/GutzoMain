@@ -467,8 +467,11 @@ export function OrderTrackingPage() {
                             {displayStatus === 'cancelled' ? (
                                 <div className="w-8 h-8" /> // Empty placeholder
                             ) : (
-                                <button onClick={handleMinimize} className="text-white p-1.5 hover:bg-white/10 rounded-full transition-colors relative z-50">
-                                    <Minimize2 size={20} />
+                                <button 
+                                    onClick={handleMinimize} 
+                                    className="text-white p-2.5 hover:bg-white/10 active:scale-90 rounded-full transition-all relative z-50 flex items-center justify-center min-w-[44px] min-h-[44px]"
+                                >
+                                    <Minimize2 size={22} />
                                 </button>
                             )}
 
@@ -478,9 +481,9 @@ export function OrderTrackingPage() {
                             {displayStatus === 'cancelled' ? (
                                 <button 
                                   onClick={() => routerNavigate('/')} 
-                                  className="text-white p-1.5 hover:bg-white/10 rounded-full transition-colors relative z-50 mt-2 mr-2"
+                                  className="text-white p-2.5 hover:bg-white/10 active:scale-90 rounded-full transition-all relative z-50 flex items-center justify-center min-w-[44px] min-h-[44px] mt-2 mr-2"
                                 >
-                                    <X size={20} />
+                                    <X size={22} />
                                 </button>
                             ) : (
                                 <button className="text-white p-1.5 opacity-60">

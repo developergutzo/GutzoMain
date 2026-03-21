@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Phone, Utensils, ChevronRight, ShoppingBag, User, Loader2 } from 'lucide-react';
+import { Phone, Utensils, ChevronRight, ShoppingBag, User, Loader2, X } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { nodeApiService } from '../utils/nodeApi';
@@ -242,19 +242,19 @@ export function OrderTrackingTimelineSheet({ status, vendorStatus, driver, vendo
                     <motion.button 
                       key={star} 
                       onClick={() => setRating(star)}
-                      whileTap={{ scale: 1.3 }}
-                      whileHover={{ scale: 1.1 }}
-                      className="hover:scale-110 active:scale-95 transition-all outline-none"
+                      whileTap={{ scale: 1.25 }}
+                      whileHover={{ scale: 1.15 }}
+                      className="hover:scale-115 active:scale-95 transition-all outline-none p-1"
                     >
                       <svg 
-                        width="42" 
-                        height="42" 
+                        width="44" 
+                        height="44" 
                         viewBox="0 0 24 24" 
                         fill={rating >= star ? '#1BA672' : 'none'}
                         stroke={rating >= star ? '#1BA672' : '#E2E8F0'}
                         strokeWidth="1.5"
                         style={{ 
-                          filter: rating >= star ? 'drop-shadow(0 0 8px rgba(27, 166, 114, 0.2))' : 'none',
+                          filter: rating >= star ? 'drop-shadow(0 0 12px rgba(27, 166, 114, 0.3))' : 'none',
                           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                         }}
                       >
@@ -320,25 +320,22 @@ export function OrderTrackingTimelineSheet({ status, vendorStatus, driver, vendo
         {/* Close Icon - High-Priority Interaction Layer */}
         <motion.button
           initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 0.8, scale: 1 }}
+          animate={{ opacity: 0.9, scale: 1 }}
           transition={{ delay: 0.8 }}
-          whileHover={{ opacity: 1, scale: 1.05, backgroundColor: 'rgba(0,0,0,0.4)' }}
-          whileTap={{ scale: 0.95 }}
+          whileHover={{ opacity: 1, scale: 1.1, backgroundColor: 'rgba(0,0,0,0.5)' }}
+          whileTap={{ scale: 0.9 }}
           onClick={(e) => {
             e.stopPropagation();
             handleDismiss();
           }}
-          className="absolute z-[300] w-12 h-12 flex items-center justify-center bg-black/20 backdrop-blur-xl rounded-full border border-white/20 text-white cursor-pointer transition-all"
+          className="absolute z-[300] w-14 h-14 flex items-center justify-center bg-black/30 backdrop-blur-xl rounded-full border border-white/30 text-white cursor-pointer transition-all shadow-2xl"
           style={{ 
             top: 48, 
-            right: 32, 
+            right: 24, 
             position: 'absolute' 
           }}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
+          <X size={28} strokeWidth={2.5} />
         </motion.button>
       </motion.div>
     );
@@ -374,9 +371,9 @@ export function OrderTrackingTimelineSheet({ status, vendorStatus, driver, vendo
                           {sfConfig.showCall && driver?.phone && (
                              <button 
                                onClick={() => window.open(`tel:${driver.phone}`)}
-                               className="w-10 h-10 rounded-full bg-[#E8F6F1] flex items-center justify-center text-[#1BA672] shadow-sm active:scale-90 transition-transform"
+                               className="w-12 h-12 rounded-full bg-[#E8F6F1] flex items-center justify-center text-[#1BA672] shadow-sm hover:brightness-95 active:scale-90 transition-all"
                              >
-                                <Phone size={18} stroke="#1BA672" />
+                                <Phone size={20} stroke="#1BA672" />
                              </button>
                           )}
                        </div>
@@ -396,9 +393,9 @@ export function OrderTrackingTimelineSheet({ status, vendorStatus, driver, vendo
                        {vConfig.showCall && vendorPhone && (
                           <button 
                             onClick={() => window.open(`tel:${vendorPhone}`)}
-                            className="w-10 h-10 rounded-full bg-[#E8F6F1] flex items-center justify-center text-[#1BA672] shadow-sm active:scale-95 transition-all shrink-0"
+                            className="w-12 h-12 rounded-full bg-[#E8F6F1] flex items-center justify-center text-[#1BA672] shadow-sm hover:brightness-95 active:scale-90 transition-all shrink-0"
                           >
-                             <Phone size={18} stroke="#1BA672" />
+                             <Phone size={20} stroke="#1BA672" />
                           </button>
                        )}
                     </div>

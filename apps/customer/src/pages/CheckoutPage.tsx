@@ -721,7 +721,7 @@ export function CheckoutPage() {
                 <div className="max-w-7xl mx-auto w-full">
                     <div className="flex items-center px-4 py-3 justify-between min-h-[56px]">
                         <div className="flex items-center gap-3 flex-1 overflow-hidden">
-                            <button onClick={goBack} className="p-1 -ml-1 flex-shrink-0">
+                            <button onClick={goBack} className="p-2 -ml-2 flex-shrink-0 hover:bg-gray-100 active:scale-90 rounded-full transition-all">
                                 <ArrowLeft className="w-6 h-6 text-gray-800" />
                             </button>
                             <div className="flex-1 flex flex-col justify-center overflow-hidden">
@@ -732,7 +732,7 @@ export function CheckoutPage() {
                                 {/* Address Selection in Header */}
                                 <div onClick={() => {
                                     setShowLocationSheet(true);
-                                }} className="flex items-center gap-1 flex-1 min-w-0 cursor-pointer leading-none group lg:hidden mt-0.5">
+                                }} className="flex items-center gap-1 flex-1 min-w-0 cursor-pointer leading-none group lg:hidden mt-0.5 active:opacity-70 transition-opacity">
                                     <span className="text-sm text-gray-600 truncate max-w-[280px]">
                                         <span className={`font-medium ${!isServiceable ? 'text-red-500' : 'text-gray-900'}`}>
                                             {!isServiceable ? (
@@ -773,7 +773,7 @@ export function CheckoutPage() {
                                             )}
                                         </span>
                                     </span>
-                                    <ChevronDown className="w-3.5 h-3.5 text-gray-500 mt-0.5 flex-shrink-0" />
+                                    <ChevronDown className="w-3.5 h-3.5 text-gray-500 mt-0.5 flex-shrink-0 group-active:translate-y-0.5 transition-transform" />
                                 </div>
                             </div>
                         </div>
@@ -942,15 +942,15 @@ export function CheckoutPage() {
                                                 </div>
 
                                                 {/* Quantity Control Pill */}
-                                                <div className="flex items-center justify-between px-1 bg-white border border-gray-200 rounded-lg shadow-sm h-[44px] min-w-[120px]">
+                                                <div className="flex items-center justify-between px-1 bg-white border border-gray-200 rounded-lg shadow-sm h-[44px] min-w-[120px] transition-all hover:border-[#1BA672]/30 hover:shadow-md">
                                                     <button
                                                         onClick={() => handleQuantityChange(item.productId, item.quantity - 1)}
-                                                        className="w-12 h-full flex items-center justify-center text-2xl transition-colors pb-1 text-[#1BA672] hover:text-green-700 font-bold"
+                                                        className="w-12 h-full flex items-center justify-center text-2xl transition-all pb-1 text-[#1BA672] hover:text-green-700 active:scale-75 font-bold"
                                                     >−</button>
                                                     <span className="text-[16px] font-bold text-gray-900">{item.quantity}</span>
                                                     <button
                                                         onClick={() => handleQuantityChange(item.productId, item.quantity + 1)}
-                                                        className="w-12 h-full flex items-center justify-center text-[#1BA672] hover:text-green-700 text-2xl transition-colors pb-1"
+                                                        className="w-12 h-full flex items-center justify-center text-[#1BA672] hover:text-green-700 active:scale-75 text-2xl transition-all pb-1"
                                                     >+</button>
                                                 </div>
                                             </div>
@@ -971,15 +971,15 @@ export function CheckoutPage() {
 
                                     <div className="flex flex-col items-end gap-1 flex-shrink-0">
                                         {/* Stepper */}
-                                        <div className="flex items-center justify-between px-1 bg-white border border-gray-200 rounded-lg shadow-sm h-[44px] min-w-[120px]">
+                                        <div className="flex items-center justify-between px-1 bg-white border border-gray-200 rounded-lg shadow-sm h-[44px] min-w-[120px] transition-all hover:border-[#1BA672]/30 hover:shadow-md">
                                             <button
                                                 onClick={() => handleQuantityChange(item.productId, item.quantity - 1)}
-                                                className="w-12 h-full flex items-center justify-center text-2xl transition-colors pb-1 text-[#1BA672] hover:text-green-700 font-bold"
+                                                className="w-12 h-full flex items-center justify-center text-2xl transition-all pb-1 text-[#1BA672] hover:text-green-700 active:scale-75 font-bold"
                                             >−</button>
                                             <span className="text-[16px] font-bold text-gray-900">{item.quantity}</span>
                                             <button
                                                 onClick={() => handleQuantityChange(item.productId, item.quantity + 1)}
-                                                className="w-12 h-full flex items-center justify-center text-[#1BA672] hover:text-green-700 text-2xl transition-colors pb-1"
+                                                className="w-12 h-full flex items-center justify-center text-[#1BA672] hover:text-green-700 active:scale-75 text-2xl transition-all pb-1"
                                             >+</button>
                                         </div>
                                         {/* Price */}
@@ -999,10 +999,10 @@ export function CheckoutPage() {
                             <div>
                                 <button
                                     onClick={() => navigate(`/vendor/${vendor?.id}`)}
-                                    className="font-medium text-sm flex items-center gap-2 hover:bg-green-50 px-2 py-1 rounded transition-colors -ml-2"
-                                    style={{ color: '#1ba672' }}
+                                    className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-gray-300 rounded-xl text-gray-600 font-bold text-sm transition-all hover:bg-gray-50 hover:border-gray-400 active:scale-[0.98]"
                                 >
-                                    <Plus className="w-4 h-4" /> Add more items
+                                    <Plus className="w-4 h-4" />
+                                    <span>Add more items</span>
                                 </button>
                             </div>
                         )}
@@ -1076,7 +1076,7 @@ export function CheckoutPage() {
                             <div className="flex-1 transition-all duration-300">
                                 {/* Header: Click to Toggle */}
                                 <div
-                                    className="flex justify-between items-center cursor-pointer select-none"
+                                    className="flex justify-between items-center cursor-pointer select-none hover:bg-gray-50/80 active:scale-[0.99] transition-all -mx-2 px-2 py-1 rounded-lg"
                                     onClick={() => setExpandedBill(!expandedBill)}
                                 >
                                     <div className="flex items-center gap-2 h-6">
