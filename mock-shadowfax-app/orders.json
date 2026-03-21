@@ -583,5 +583,88 @@
         }
       ]
     }
+  ],
+  [
+    "SFX_MOCK_1774086889338_jzc4kie07",
+    {
+      "shadowfax_id": "SFX_MOCK_1774086889338_jzc4kie07",
+      "client_order_id": "GZ202603211524A7KL",
+      "status": "DELIVERED",
+      "awb_number": "SFX_MOCK_1774086889338_jzc4kie07",
+      "created_at": "2026-03-21T09:54:49.338Z",
+      "updated_at": "2026-03-21T09:55:48.675Z",
+      "pickup_details": {
+        "name": "Coimbatore Cafe, SITRA",
+        "contact_number": "8903589068",
+        "address": "164/165, Avinashi Rd, Coimbatore, Tamil Nadu 641004",
+        "latitude": 11.0383350227169,
+        "longitude": 77.0381654512353
+      },
+      "drop_details": {
+        "contact_number": "+919003802398",
+        "address": "3328+XVJ, Teachers Colony, Chinniyampalayam, Coimbatore, Tamil Nadu 641062, India",
+        "city": "Coimbatore",
+        "state": "Tamil Nadu",
+        "latitude": 11.0525166,
+        "longitude": 77.0671836
+      },
+      "order_details": {
+        "order_id": "GZ202603211524A7KL",
+        "actual_order_value": 90,
+        "paid": true,
+        "is_prepaid": true,
+        "cash_to_be_collected": 0,
+        "payment_mode": "prepaid",
+        "delivery_charge_to_be_collected_from_customer": 0
+      },
+      "validations": {
+        "pickup": {
+          "is_otp_required": true,
+          "otp": "1234"
+        },
+        "drop": {
+          "is_otp_required": true,
+          "otp": "5678"
+        }
+      },
+      "rider_details": {
+        "name": "Vikram Patel",
+        "contact_number": "+918262662863",
+        "latitude": 11.0525166,
+        "longitude": 77.0671836
+      },
+      "history": [
+        {
+          "status": "CREATED",
+          "timestamp": "2026-03-21T09:54:49.338Z",
+          "note": "Order created via Mock API"
+        },
+        {
+          "status": "ACCEPTED",
+          "timestamp": "2026-03-21T09:55:02.345Z",
+          "note": "Order accepted by rider Vikram Patel"
+        },
+        {
+          "status": "ARRIVED",
+          "timestamp": "2026-03-21T09:55:15.249Z",
+          "note": "Status updated via UI to ARRIVED"
+        },
+        {
+          "status": "COLLECTED",
+          "timestamp": "2026-03-21T09:55:36.393Z",
+          "note": "Status updated via UI to COLLECTED"
+        },
+        {
+          "status": "CUSTOMER_DOOR_STEP",
+          "timestamp": "2026-03-21T09:55:40.358Z",
+          "note": "Status updated via UI to CUSTOMER_DOOR_STEP"
+        },
+        {
+          "status": "DELIVERED",
+          "timestamp": "2026-03-21T09:55:48.675Z",
+          "note": "Status updated via UI to DELIVERED"
+        }
+      ]
+    }
   ]
 ]

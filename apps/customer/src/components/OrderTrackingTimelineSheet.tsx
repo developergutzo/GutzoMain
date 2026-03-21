@@ -127,27 +127,42 @@ export function OrderTrackingTimelineSheet({ status, vendorStatus, driver, vendo
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const handleDismiss = async () => {
     if (isDismissing || isSubmitting) return;
 
     // Submit rating if available and we have an orderId
     const effectiveOrderId = orderId || activeOrder?.orderId;
-    if (rating > 0 && effectiveOrderId && user?.phone) {
+    if (rating > 0 && effectiveOrderId && user?.phone && !isSubmitted) {
       setIsSubmitting(true);
       try {
         await nodeApiService.rateOrder(user.phone, effectiveOrderId, {
           rating,
           feedback: feedback.trim()
         });
+        
+        // Show success state
+        setIsSubmitted(true);
+        
+        // Wait for 2.5 seconds before automatically dismissing
+        setTimeout(() => {
+          setIsDismissing(true);
+          setTimeout(() => {
+            onGoHome?.();
+          }, 500);
+        }, 2500);
+        
+        return; // Don't proceed to immediate dismiss
       } catch (error) {
         console.error("Failed to submit rating:", error);
-        // We continue to dismiss anyway to not trap the user
+        // Fallback: dismiss anyway if API fails
       } finally {
         setIsSubmitting(false);
       }
     }
 
+    // Direct dismiss (if no rating or already submitted/errored)
     setIsDismissing(true);
     setTimeout(() => {
       onGoHome?.();
@@ -213,58 +228,91 @@ export function OrderTrackingTimelineSheet({ status, vendorStatus, driver, vendo
           className="w-full max-w-sm bg-white rounded-3xl p-8 shadow-[0_20px_40px_rgba(0,0,0,0.15)] relative z-[210] border border-white/20 overflow-hidden"
           style={{ borderRadius: 32 }}
         >
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-[2px] mb-6 text-center">Rate your experience</p>
-          <div className="flex justify-center gap-3 mb-8">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <motion.button 
-                key={star} 
-                onClick={() => setRating(star)}
-                whileTap={{ scale: 1.3 }}
-                whileHover={{ scale: 1.1 }}
-                className="hover:scale-110 active:scale-95 transition-all outline-none"
+          <AnimatePresence mode="wait">
+            {!isSubmitted ? (
+              <motion.div 
+                key="rating-form"
+                initial={{ opacity: 1 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
               >
-                <svg 
-                  width="42" 
-                  height="42" 
-                  viewBox="0 0 24 24" 
-                  fill={rating >= star ? '#1BA672' : 'none'}
-                  stroke={rating >= star ? '#1BA672' : '#E2E8F0'}
-                  strokeWidth="1.5"
-                  style={{ 
-                    filter: rating >= star ? 'drop-shadow(0 0 8px rgba(27, 166, 114, 0.2))' : 'none',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-                  }}
-                >
-                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-                </svg>
-              </motion.button>
-            ))}
-          </div>
-          
-          <div className="relative mb-6">
-            <textarea 
-              placeholder="Share your feedback..."
-              value={feedback}
-              onChange={(e) => setFeedback(e.target.value)}
-              disabled={isSubmitting}
-              className="w-full p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-[#1BA672]/10 focus:border-[#1BA672] transition-all resize-none placeholder:text-gray-500 placeholder:font-normal text-gray-800 disabled:opacity-50"
-              rows={3}
-            />
-          </div>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-[2px] mb-6 text-center">Rate your experience</p>
+                <div className="flex justify-center gap-3 mb-8">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <motion.button 
+                      key={star} 
+                      onClick={() => setRating(star)}
+                      whileTap={{ scale: 1.3 }}
+                      whileHover={{ scale: 1.1 }}
+                      className="hover:scale-110 active:scale-95 transition-all outline-none"
+                    >
+                      <svg 
+                        width="42" 
+                        height="42" 
+                        viewBox="0 0 24 24" 
+                        fill={rating >= star ? '#1BA672' : 'none'}
+                        stroke={rating >= star ? '#1BA672' : '#E2E8F0'}
+                        strokeWidth="1.5"
+                        style={{ 
+                          filter: rating >= star ? 'drop-shadow(0 0 8px rgba(27, 166, 114, 0.2))' : 'none',
+                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                        }}
+                      >
+                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                      </svg>
+                    </motion.button>
+                  ))}
+                </div>
+                
+                <div className="relative mb-6">
+                  <textarea 
+                    placeholder="Share your feedback..."
+                    value={feedback}
+                    onChange={(e) => setFeedback(e.target.value)}
+                    disabled={isSubmitting}
+                    className="w-full p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-[#1BA672]/10 focus:border-[#1BA672] transition-all resize-none placeholder:text-gray-500 placeholder:font-normal text-gray-800 disabled:opacity-50"
+                    rows={3}
+                  />
+                </div>
 
-          <motion.button 
-            onClick={handleDismiss}
-            initial={false}
-            animate={{ scale: (rating > 0 && !isSubmitting) ? [1, 1.02, 1] : 1 }}
-            transition={{ duration: 0.3 }}
-            style={{ backgroundColor: '#1BA672' }}
-            disabled={isSubmitting}
-            className="w-full hover:brightness-95 active:brightness-90 text-white font-bold py-4 rounded-xl shadow-xl shadow-green-900/10 active:scale-[0.98] transition-all text-sm uppercase tracking-wider h-[56px] flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : "Submit"}
-          </motion.button>
+                <motion.button 
+                  onClick={handleDismiss}
+                  initial={false}
+                  animate={{ scale: (rating > 0 && !isSubmitting) ? [1, 1.02, 1] : 1 }}
+                  transition={{ duration: 0.3 }}
+                  style={{ backgroundColor: '#1BA672' }}
+                  disabled={isSubmitting}
+                  className="w-full hover:brightness-95 active:brightness-90 text-white font-bold py-4 rounded-xl shadow-xl shadow-green-900/10 active:scale-[0.98] transition-all text-sm uppercase tracking-wider h-[56px] flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : "Submit"}
+                </motion.button>
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="success-message"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, type: 'spring' }}
+                className="flex flex-col items-center justify-center py-4"
+              >
+                <motion.div 
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+                  className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mb-4 border border-green-100"
+                >
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1BA672" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </motion.div>
+                <h3 className="text-xl font-bold text-gray-800 mb-1">Thank You!</h3>
+                <p className="text-gray-500 text-sm font-medium">Feedback submitted successfully.</p>
+                <p className="text-gray-400 text-[10px] mt-4 uppercase tracking-widest">Closing shortly...</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
         
         <div className="mt-8 opacity-0">.</div>
