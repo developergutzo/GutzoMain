@@ -1079,15 +1079,15 @@ export function CheckoutPage() {
                                     className="flex justify-between items-center cursor-pointer select-none"
                                     onClick={() => setExpandedBill(!expandedBill)}
                                 >
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 h-6">
                                         <span className="font-bold text-gray-900 text-[15px]">Total Bill</span>
                                         {loadingFee ? (
-                                            <span className="text-sm text-gray-400 font-medium animate-pulse">Calculating...</span>
+                                            <span className="text-[15px] text-gray-400 font-medium animate-pulse">Calculating...</span>
                                         ) : (
                                             <>
                                                 {savings > 0 && (
                                                     <span
-                                                        className="text-sm text-gray-400 font-medium"
+                                                        className="text-[13px] text-gray-400 font-medium"
                                                         style={{ textDecoration: 'line-through', textDecorationColor: '#9CA3AF' }}
                                                     >
                                                         ₹{(grandTotal + savings).toFixed(2)}
@@ -1305,14 +1305,21 @@ export function CheckoutPage() {
 
                 <div className="px-4 pt-4 pb-2">
                     {(loadingFee || loadingAddresses) ? (
-                        <div className="w-full h-[60px] bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between px-4 animate-pulse mb-3">
-                            <div className="space-y-2 flex-1">
-                                <div className="h-4 w-24 bg-gray-200 rounded-full" />
-                                <div className="h-3 w-16 bg-gray-100 rounded-full" />
+                        <div className="flex flex-col gap-3 animate-pulse">
+                            {/* Dev Tools Placeholder */}
+                            <div className="flex flex-col gap-1.5 px-1">
+                                <div className="h-3 w-32 bg-gray-100 rounded-full" />
+                                <div className="h-10 w-full bg-gray-50 border border-gray-100 rounded-lg" />
                             </div>
-                            <div className="h-10 w-28 bg-gray-200 rounded-lg flex items-center justify-center gap-2">
-                                <div className="h-3 w-12 bg-gray-300/50 rounded-full" />
+                            
+                            {/* Main CTA Placeholder */}
+                            <div className="w-full h-[56px] bg-gray-100 rounded-lg flex items-center justify-center gap-2">
+                                <div className="h-5 w-5 bg-gray-200 rounded-full" />
+                                <div className="h-4 w-32 bg-gray-200 rounded-full" />
                             </div>
+
+                            {/* Security Badge Placeholder */}
+                            <div className="h-3 w-32 bg-gray-50 rounded-full mx-auto" />
                         </div>
                     ) : (!isServiceable || !selectedAddress) ? (
                         <div className="w-full flex flex-col gap-3">
