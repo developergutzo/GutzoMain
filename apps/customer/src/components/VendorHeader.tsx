@@ -156,7 +156,7 @@ const VendorHeader: React.FC<VendorHeaderProps> = ({ name, rating, reviews, loca
         {/* Free Delivery Strip */}
         <div style={{ background: '#FFF0E8', color: '#E85A1C', fontWeight: 700, fontSize: '0.95rem', borderRadius: '0 0 20px 20px', padding: '10px 16px', margin: '12px -16px -16px -16px', display: 'flex', alignItems: 'center' }}>
           <span style={{ marginRight: 6 }}>🛵</span>
-          Free delivery on orders above ₹99
+          Placeholder for offer details.
         </div>
       </div>
       </div>
