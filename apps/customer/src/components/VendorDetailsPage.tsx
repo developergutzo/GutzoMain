@@ -271,6 +271,7 @@ const VendorDetailsPage: React.FC<VendorDetailsPageProps> = ({ vendorId, vendors
             onBack={handleClose}
             isOpen={vendor.isOpen}
             nextOpenTime={vendor.nextOpenTime}
+            vendorId={vendor.id}
           />
           {/* Weekly Meal Plans section replaces Select your plans section */}
           <WeeklyMealPlansSection

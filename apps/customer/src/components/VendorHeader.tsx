@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import StarIcon from "./StarIcon";
-import { MapPin } from "lucide-react";
+import { MapPin, Share } from "lucide-react";
+import { toast } from "sonner";
 
 interface VendorHeaderProps {
   name: string;
@@ -16,10 +17,11 @@ interface VendorHeaderProps {
   onBack?: () => void;
   isOpen?: boolean;
   nextOpenTime?: string;
+  vendorId?: string;
 }
 
 
-const VendorHeader: React.FC<VendorHeaderProps> = ({ name, rating, reviews, location, deliveryTime, tags, cuisineType, userAddressLabel, isLoadingEta, onAddressClick, onBack, isOpen = true, nextOpenTime }) => {
+const VendorHeader: React.FC<VendorHeaderProps> = ({ name, rating, reviews, location, deliveryTime, tags, cuisineType, userAddressLabel, isLoadingEta, onAddressClick, onBack, isOpen = true, nextOpenTime, vendorId }) => {
   // Construct dynamic tagline: "Cuisine · First Tag"
   const tagline = [
     cuisineType,
@@ -46,6 +48,33 @@ const VendorHeader: React.FC<VendorHeaderProps> = ({ name, rating, reviews, loca
 
   const displayLocation = formatVendorLocation(location);
 
+  const handleShare = async () => {
+    if (!vendorId) return;
+
+    const shareData = {
+      title: name,
+      text: `Check out ${name} on Gutzo!`,
+      url: `${window.location.origin}/vendor/${vendorId}`
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        // User cancelled or share failed, ignore
+        console.log('Share cancelled');
+      }
+    } else {
+      // Fallback
+      try {
+        await navigator.clipboard.writeText(shareData.url);
+        toast.success('Link copied to clipboard!');
+      } catch (err) {
+        toast.error('Failed to copy link');
+      }
+    }
+  };
+
   return (
     <>
       {/* Header Section (outside card) */}
@@ -58,20 +87,23 @@ const VendorHeader: React.FC<VendorHeaderProps> = ({ name, rating, reviews, loca
             &larr;
           </button>
           <div style={{ flex: 1 }} />
-          {/*
           <button
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginLeft: 8 }}
+            onClick={handleShare}
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              cursor: 'pointer', 
+              padding: '8px', 
+              marginRight: '-8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#1A1A1A'
+            }}
             aria-label="Share"
           >
-            <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
-              <circle cx="8" cy="16" r="3" stroke="#1A1A1A" strokeWidth="2" fill="none" />
-              <circle cx="24" cy="8" r="3" stroke="#1A1A1A" strokeWidth="2" fill="none" />
-              <circle cx="24" cy="24" r="3" stroke="#1A1A1A" strokeWidth="2" fill="none" />
-              <line x1="10.7" y1="14.7" x2="21.3" y2="9.3" stroke="#1A1A1A" strokeWidth="2" />
-              <line x1="10.7" y1="17.3" x2="21.3" y2="22.7" stroke="#1A1A1A" strokeWidth="2" />
-            </svg>
+            <Share className="w-5 h-5" />
           </button>
-          */}
         </div>
         <h1 style={{ fontFamily: 'Poppins, sans-serif', fontSize: '2rem', fontWeight: 700, color: '#1A1A1A', margin: '8px 0 0 0', lineHeight: 1.2, textAlign: 'left', background: 'transparent' }}>{name}</h1>
       </div>

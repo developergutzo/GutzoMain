@@ -5,7 +5,7 @@ import { useRouter } from '../components/Router';
 import { useLocation as useUserLocation } from '../contexts/LocationContext';
 import { nodeApiService as apiService } from '../utils/nodeApi';
 import { DistanceService } from '../utils/distanceService';
-import { ArrowLeft, Plus, ChevronRight, FileText, Percent, X, ChevronDown, Share, UtensilsCrossed, Clock, MapPin, Phone, Calendar, Utensils, Info, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, ChevronRight, FileText, Percent, X, ChevronDown, UtensilsCrossed, Clock, MapPin, Phone, Calendar, Utensils, Info, Loader2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { ImageWithFallback } from '../components/common/ImageWithFallback';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
@@ -559,32 +559,6 @@ export function CheckoutPage() {
         }
     };
 
-    const handleShare = async () => {
-        if (!vendor) return;
-
-        const shareData = {
-            title: vendor.name,
-            text: `Check out ${vendor.name} on Gutzo!`,
-            url: `${window.location.origin}/vendor/${vendor.id}`
-        };
-
-        if (navigator.share) {
-            try {
-                await navigator.share(shareData);
-            } catch (err) {
-                // User cancelled or share failed, ignore
-                console.log('Share cancelled');
-            }
-        } else {
-            // Fallback
-            try {
-                await navigator.clipboard.writeText(shareData.url);
-                toast.success('Link copied to clipboard!');
-            } catch (err) {
-                toast.error('Failed to copy link');
-            }
-        }
-    };
 
     // Redirect if cart is empty
     /*
@@ -778,12 +752,6 @@ export function CheckoutPage() {
                             </div>
                         </div>
 
-                        <button
-                            onClick={handleShare}
-                            className="p-2 -mr-2 flex-shrink-0 lg:hidden text-gray-700 active:scale-95 transition-transform"
-                        >
-                            <Share className="w-5 h-5" />
-                        </button>
                     </div>
                 </div>
             </div>
