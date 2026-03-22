@@ -1,8 +1,10 @@
-import { Search, Clock, X } from "lucide-react";
-import { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useMemo } from "react";
+import { Search, X, Clock, MapPin, ChevronRight, Utensils } from "lucide-react";
 import { useRecentSearches } from "../hooks/useRecentSearches";
 import { useCategories } from "../hooks/useCategories";
+import { useVendors } from "../hooks/useVendors";
 import { useRouter } from "./Router";
+import { Vendor } from "../types";
 
 interface SearchDropdownProps {
   isOpen: boolean;
@@ -14,8 +16,9 @@ interface SearchDropdownProps {
 export function SearchDropdown({ isOpen, onClose, searchQuery, onSearchChange }: SearchDropdownProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { navigate } = useRouter();
-  const { recentSearches, clearSearches, addSearch } = useRecentSearches();
+  const { recentSearches, addSearch } = useRecentSearches();
   const { categories, loading: categoriesLoading } = useCategories();
+  const { vendors, loading: vendorsLoading } = useVendors();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -34,8 +37,6 @@ export function SearchDropdown({ isOpen, onClose, searchQuery, onSearchChange }:
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
-
   const handleSearchSelect = (query: string) => {
     addSearch(query);
     onSearchChange(query);
@@ -43,148 +44,104 @@ export function SearchDropdown({ isOpen, onClose, searchQuery, onSearchChange }:
     navigate(`/search?q=${encodeURIComponent(query)}`);
   };
 
-  const handleClearSearch = () => {
-    onSearchChange('');
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && searchQuery.trim()) {
+      addSearch(searchQuery.trim());
+      onClose();
+      window.dispatchEvent(new CustomEvent('save-recent-search', { detail: searchQuery.trim() }));
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
   };
 
-  const todayMoodCategories = categories; // Display all categories
+  // Live filtering logic
+  const filteredVendors = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase();
+    return vendors.filter(v => 
+      v.name.toLowerCase().includes(q) || 
+      (v.cuisineType && v.cuisineType.toLowerCase().includes(q)) ||
+      (v.products && v.products.some(p => p.name.toLowerCase().includes(q)))
+    ).slice(0, 5); // Limit to top 5 for the overlay
+  }, [vendors, searchQuery]);
+
+  const filteredCategories = useMemo(() => {
+    if (!searchQuery.trim()) return categories;
+    const q = searchQuery.toLowerCase();
+    return categories.filter(c => c.name.toLowerCase().includes(q));
+  }, [categories, searchQuery]);
+
+  if (!isOpen) return null;
 
   return (
     <div
       ref={dropdownRef}
-      className="absolute top-full mt-2 bg-white rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-gray-100 overflow-hidden z-[100] max-h-[85vh] overflow-y-auto w-[500px]"
-      style={{
-        left: '-17px', // Extend to align with separator line
-        width: '560px', // Wider to fit the horizontal scrolls nicely
-      }}
+      className="absolute top-full left-0 mt-3 w-full min-w-[480px] bg-white rounded-2xl shadow-[0_10px_50px_rgba(0,0,0,0.15)] border border-gray-100 z-[100] max-h-[60vh] overflow-y-auto scrollbar-hide animate-in fade-in slide-in-from-top-2 duration-200"
     >
-      {/* Search input visible when typing */}
-      {searchQuery && (
-        <div className="p-4 border-b border-gray-100 sticky top-0 bg-white z-10">
-          <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl border border-gray-200">
-            <Search className="h-5 w-5 text-gray-400 flex-shrink-0" />
-            <span className="flex-1 text-gray-900">{searchQuery}</span>
-            <button
-              onClick={handleClearSearch}
-              className="p-1 hover:bg-gray-200 rounded-full transition-colors"
-            >
-              <X className="h-4 w-4 text-gray-500" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Empty State: Recent Searches & Today's Mood */}
-      {!searchQuery && (
-        <div className="p-4">
-          
-          {/* Recent Searches Section */}
-          {recentSearches.length > 0 && (
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-[13px] font-semibold tracking-wider text-gray-500 uppercase">Your Recent Searches</h3>
-                <button 
-                  onClick={clearSearches}
-                  className="text-sm font-medium text-gutzo-error hover:text-gutzo-error/80 transition-colors"
+      <div className="p-4 sm:p-6 pb-8">
+        {/* Live Search Results (When typing) */}
+        {searchQuery && filteredVendors.length > 0 && (
+          <div className="mb-2">
+            <h3 className="text-[11px] font-bold tracking-widest text-gray-400 uppercase mb-4 px-1">Best Matches</h3>
+            <div className="space-y-1">
+              {filteredVendors.map((vendor) => (
+                <button
+                  key={vendor.id}
+                  onClick={() => handleSearchSelect(vendor.name)}
+                  className="w-full flex items-center gap-4 p-3 hover:bg-gray-50 rounded-2xl transition-all group"
                 >
-                  Clear
+                  <div className="w-12 h-12 rounded-xl bg-gray-100 overflow-hidden flex-shrink-0 border border-gray-50">
+                    {vendor.image ? (
+                      <img src={vendor.image} alt={vendor.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center"><Utensils className="h-5 w-5 text-gray-300" /></div>
+                    )}
+                  </div>
+                  <div className="flex-1 text-left min-w-0">
+                    <h4 className="text-[15px] font-bold text-gray-900 truncate group-hover:text-brand transition-colors">{vendor.name}</h4>
+                    <p className="text-[13px] text-gray-500 truncate">{vendor.cuisineType || 'Restaurant'}</p>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-gray-300 group-hover:text-brand transition-colors" />
                 </button>
-              </div>
-              
-              <div className="flex flex-wrap gap-2">
-                {recentSearches.map((item, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleSearchSelect(item)}
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-100 rounded-xl transition-colors text-left"
-                  >
-                    <Clock className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                    <span className="text-[14px] font-medium text-gray-700 whitespace-nowrap">{item}</span>
-                  </button>
-                ))}
-              </div>
+              ))}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Today's Mood Section */}
-          {todayMoodCategories.length > 0 && (
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <h3 className="text-[13px] font-semibold tracking-wider text-gray-500 uppercase">What's on your mind?</h3>
-              </div>
-              
-              {categoriesLoading ? (
-                 <div className="flex overflow-x-auto scrollbar-hide gap-4 pb-2">
-                   {[...Array(5)].map((_, i) => (
-                      <div key={i} className="flex flex-col items-center flex-shrink-0 animate-pulse">
-                        <div className="w-[70px] h-[70px] rounded-full bg-gray-100 mb-2"></div>
-                        <div className="w-12 h-3 rounded bg-gray-100"></div>
-                      </div>
-                   ))}
-                 </div>
-              ) : (
-                <div className="flex flex-wrap gap-y-6 justify-start pt-2 pb-4">
-                  {todayMoodCategories.map((cat) => (
-                    <button
-                      key={cat.id}
-                      onClick={() => handleSearchSelect(cat.name)}
-                      className="flex flex-col items-center group focus:outline-none shrink-0"
-                      style={{ width: '20%' }}
-                    >
-                      <span
-                        className="block rounded-full flex items-center justify-center overflow-hidden mb-2 transition-transform group-hover:scale-105 bg-gray-50 border border-gray-100 shadow-sm shrink-0"
-                        style={{ width: '70px', height: '70px' }}
-                      >
-                        {cat.image_url ? (
-                          <img
-                            src={cat.image_url}
-                            alt={cat.name}
-                            className="w-full h-full object-cover rounded-full"
-                            style={{ aspectRatio: 1, display: 'block' }}
-                            loading="lazy"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gray-100 flex items-center justify-center text-[10px] text-gray-400">Img</div>
-                        )}
-                      </span>
-                      <span className="text-[12px] font-medium text-gray-700 truncate w-full text-center group-hover:text-gutzo-primary transition-colors px-1">
-                        {cat.name}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
+        {/* Recent Searches (Only when no query) */}
+        {!searchQuery && recentSearches.length > 0 && (
+          <div>
+            <div className="mb-4 px-1 text-left">
+               <h3 className="text-[11px] font-bold tracking-widest text-gray-400 uppercase">Your Recent Searches</h3>
             </div>
-          )}
-
-          {recentSearches.length === 0 && todayMoodCategories.length === 0 && !categoriesLoading && (
-            <div className="text-center py-6 text-gray-500 text-sm">
-              Type above to start searching
+            
+            <div className="flex flex-wrap gap-2">
+              {recentSearches.map((item, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleSearchSelect(item)}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-100 rounded-full transition-all active:scale-95 group"
+                >
+                  <Clock className="h-3.5 w-3.5 text-gray-400 group-hover:text-brand transition-colors" />
+                  <span className="text-[14px] font-semibold text-gray-700">{item}</span>
+                </button>
+              ))}
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
 
-      {/* Search Results Preview Info (when typing but before enter) */}
-      {searchQuery && (
-        <div className="p-8 text-center flex-1 flex flex-col items-center justify-center min-h-[200px]">
-          <Search className="h-10 w-10 text-gray-200 mx-auto mb-3" />
-          <p className="text-sm font-medium text-gray-600">
-            Press Enter or click the Search icon
-          </p>
-          <p className="text-xs text-gray-400 mt-1">
-            to see results for "{searchQuery}"
-          </p>
-        </div>
-      )}
-
-      {/* Mask Edges CSS injection for smooth scroll fading */}
-      <style>{`
-        .mask-edges-horizontal {
-          -webkit-mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
-          mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
-        }
-      `}</style>
+        {/* Empty State / No Results */}
+        {searchQuery && filteredVendors.length === 0 && !vendorsLoading && (
+          <div className="text-center py-12 px-8">
+            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 mx-auto">
+              <Search className="h-8 w-8 text-gray-300 opacity-50" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-1">No results found</h3>
+            <p className="text-sm text-gray-500 max-w-[200px] leading-relaxed mx-auto">
+              We couldn't find matches for <span className="text-gray-900 font-semibold italic">"{searchQuery}"</span>.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

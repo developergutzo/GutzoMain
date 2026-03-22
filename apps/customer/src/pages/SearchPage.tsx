@@ -3,7 +3,7 @@ import { useVendors } from "../hooks/useVendors";
 import { VendorCard } from "../components/VendorCard";
 import { VendorSkeleton } from "../components/VendorSkeleton";
 import { useRouter } from "../components/Router";
-import { MapPin, ArrowLeft } from "lucide-react";
+import { MapPin, ArrowLeft, X, Search } from "lucide-react";
 import { Vendor } from "../types";
 
 export function SearchPage() {
@@ -17,6 +17,26 @@ export function SearchPage() {
     const q = params.get("q") || "";
     setSearchQuery(q);
   }, []);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    // Update URL without full page reload to keep it in sync
+    const newUrl = new URL(window.location.href);
+    if (query) {
+      newUrl.searchParams.set("q", query);
+    } else {
+      newUrl.searchParams.delete("q");
+    }
+    window.history.replaceState({}, '', newUrl);
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.delete("q");
+    window.history.replaceState({}, '', newUrl);
+  };
 
   const handleVendorClick = (vendor: Vendor, productId?: string) => {
     const url = productId ? `/vendor/${vendor.id}?productId=${productId}` : `/vendor/${vendor.id}`;
@@ -45,29 +65,58 @@ export function SearchPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-8 pb-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-6">
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={goBack}
-              className="p-2 -ml-2 rounded-full hover:bg-gray-200 transition-colors text-gray-700"
-              aria-label="Go back"
-            >
-               <ArrowLeft className="w-6 h-6" />
-            </button>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight" style={{ fontFamily: 'Poppins' }}>
-              {loading ? (
-                <span className="animate-pulse bg-gray-200 text-transparent rounded w-1/3 block h-8">Searching...</span>
-              ) : (
-                <span>
-                  Search results for <span className="text-gutzo-primary">"{searchQuery}"</span>
-                </span>
+    <div className="min-h-screen bg-white">
+      {/* Sticky Search Header (Mobile Only) */}
+      <div className="md:hidden sticky top-0 z-50 bg-white border-b border-gray-100 px-4 py-4 sm:px-6">
+        <div className="max-w-7xl mx-auto flex items-center gap-3">
+          <button 
+            onClick={goBack}
+            className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors text-gray-700 shrink-0"
+            aria-label="Go back"
+          >
+             <ArrowLeft className="w-6 h-6" />
+          </button>
+          
+          <div className="flex-1">
+            <div className="flex items-center gap-3 px-4 py-4 bg-gray-50 rounded-2xl border border-gray-100 focus-within:border-brand/30 focus-within:bg-white focus-within:shadow-sm transition-all group">
+              <Search className="h-5 w-5 text-gray-400 group-focus-within:text-brand transition-colors" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                placeholder="Search kitchens or dishes..."
+                className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-lg font-primary text-main font-medium placeholder:text-gray-400"
+                autoFocus
+              />
+              {searchQuery && (
+                <button
+                  onClick={clearSearch}
+                  className="p-1 hover:bg-gray-200 rounded-full transition-colors"
+                  aria-label="Clear search"
+                >
+                  <X className="h-4 w-4 text-gray-500" />
+                </button>
               )}
-            </h2>
+            </div>
           </div>
-          {!loading && (
-             <p className="text-sm text-gray-500 mt-2 ml-11">
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16">
+        <div className="mb-8">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight flex items-center gap-2" style={{ fontFamily: 'Poppins' }}>
+            {loading ? (
+              <span className="animate-pulse bg-gray-100 text-transparent rounded w-1/3 block h-8">Searching...</span>
+            ) : searchQuery ? (
+              <span>
+                Search results for <span className="text-brand">"{searchQuery}"</span>
+              </span>
+            ) : (
+              <span>Search for something delicious</span>
+            )}
+          </h2>
+          {!loading && searchQuery && (
+             <p className="text-sm md:text-base text-gray-500 mt-2">
                Found {filteredVendors.length} {filteredVendors.length === 1 ? 'kitchen' : 'kitchens'}
              </p>
           )}

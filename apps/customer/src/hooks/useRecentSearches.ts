@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 const RECENT_SEARCHES_KEY = "gutzo_recent_searches";
-const MAX_RECENT_SEARCHES = 10;
+const MAX_RECENT_SEARCHES = 8;
 
 export function useRecentSearches() {
     const [recentSearches, setRecentSearches] = useState<string[]>([]);

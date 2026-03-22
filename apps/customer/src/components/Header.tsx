@@ -21,9 +21,9 @@ import { ImageWithFallback } from "./common/ImageWithFallback";
 import { useRouter } from "../components/Router";
 import colors from "../styles/colors";
 // LocationBottomSheet moved to App.tsx
-import { SearchBottomSheet } from "./SearchBottomSheet";
-import { LocationDropdown } from "./LocationDropdown";
+import { SearchTopSheet } from "./SearchTopSheet";
 import { SearchDropdown } from "./SearchDropdown";
+import { LocationDropdown } from "./LocationDropdown";
 import gutzoLogo from 'figma:asset/dd6aa5fc791890562276e586be507ca46d14f4ee.png';
 
 export interface HeaderProps {
@@ -58,8 +58,8 @@ export function Header({ onShowLogin, onLogout, onShowProfile, onShowCart, onSho
   // showLocationSheet state moved to App.tsx
   // showLocationSheet state moved to App.tsx
   const [showSearchSheet, setShowSearchSheet] = useState(false);
-  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // Get display name from AuthContext
@@ -214,14 +214,15 @@ export function Header({ onShowLogin, onLogout, onShowProfile, onShowCart, onSho
                         </button>
                       )}
                     </div>
-
-                    {/* Search Dropdown */}
-                    <SearchDropdown
-                      isOpen={showSearchDropdown}
-                      onClose={() => setShowSearchDropdown(false)}
-                      searchQuery={searchQuery}
-                      onSearchChange={onSearchChange || (() => { })}
-                    />
+                    {/* Desktop Search Dropdown */}
+                    {showSearchDropdown && (
+                      <SearchDropdown
+                        isOpen={showSearchDropdown}
+                        onClose={() => setShowSearchDropdown(false)}
+                        searchQuery={searchQuery}
+                        onSearchChange={onSearchChange || (() => { })}
+                      />
+                    )}
                   </div>
                 </div>
               </div>
@@ -391,7 +392,7 @@ export function Header({ onShowLogin, onLogout, onShowProfile, onShowCart, onSho
 
       {/* Bottom Sheets for Mobile */}
 
-      <SearchBottomSheet
+      <SearchTopSheet
         isOpen={showSearchSheet}
         onClose={() => setShowSearchSheet(false)}
         searchQuery={searchQuery}
