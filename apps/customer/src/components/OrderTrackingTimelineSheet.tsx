@@ -423,7 +423,6 @@ export function OrderTrackingTimelineSheet({ status, vendorStatus, driver, vendo
                                 )}
                             </div>
                         </div>
-                        <ChevronRight size={20} className="text-gray-400" />
                     </div>
                 </div>
             </div>
