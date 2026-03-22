@@ -12,6 +12,7 @@ import { AddressApi } from '../../utils/addressApi';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLocation } from '../../contexts/LocationContext';
 import { useOrderTracking } from '../../contexts/OrderTrackingContext';
+import { validateEmail } from '../../utils/validation';
 
 type ProfilePanelContent = 'profile' | 'orders' | 'address';
 
@@ -96,6 +97,7 @@ export function ProfilePanel({ isOpen, onClose, onLogout, content, userInfo, onV
   const [editingEmail, setEditingEmail] = useState(false);
   const [tempName, setTempName] = useState('');
   const [tempEmail, setTempEmail] = useState('');
+  const [emailError, setEmailError] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
 
   // Address modal state
@@ -258,7 +260,15 @@ export function ProfilePanel({ isOpen, onClose, onLogout, content, userInfo, onV
 
   const handleSaveEmail = async () => {
     if (!tempEmail.trim() || !userData.phone) return;
+    
+    const validation = validateEmail(tempEmail.trim());
+    if (!validation.valid) {
+      setEmailError(validation.message || 'Please enter a valid email address');
+      return;
+    }
+
     setIsUpdating(true);
+    setEmailError('');
     try {
       await apiService.updateProfile(userData.phone, { email: tempEmail.trim() });
       setRealUserData((prev: typeof realUserData) => ({ ...prev, email: tempEmail.trim() }));
@@ -285,6 +295,7 @@ export function ProfilePanel({ isOpen, onClose, onLogout, content, userInfo, onV
   const handleCancelEmail = () => {
     setTempEmail(displayEmail || '');
     setEditingEmail(false);
+    setEmailError('');
   };
 
   const handleSaveAddress = async () => {
@@ -482,12 +493,18 @@ export function ProfilePanel({ isOpen, onClose, onLogout, content, userInfo, onV
               <div className="space-y-3">
                 <Input
                   value={tempEmail}
-                  onChange={(e) => setTempEmail(e.target.value)}
+                  onChange={(e) => {
+                    setTempEmail(e.target.value);
+                    if (emailError) setEmailError('');
+                  }}
                   type="email"
-                  className="w-full"
+                  className={`w-full ${emailError ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                   placeholder="Enter your email address"
                   disabled={isUpdating}
                 />
+                {emailError && (
+                  <p className="text-xs text-red-500 mt-1 ml-1">{emailError}</p>
+                )}
                 <div className="flex space-x-2">
                   <Button
                     onClick={handleSaveEmail}

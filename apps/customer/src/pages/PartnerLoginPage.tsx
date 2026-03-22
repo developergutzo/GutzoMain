@@ -8,6 +8,7 @@ import { useRouter } from "../components/Router";
 import { nodeApiService as apiService } from "../utils/nodeApi";
 import { toast } from "sonner";
 import { ImageWithFallback } from "../components/common/ImageWithFallback";
+import { validateEmail } from "../utils/validation";
 
 type ViewState = 'login' | 'forgot-email' | 'verify-otp' | 'reset-password';
 
@@ -30,7 +31,6 @@ export function PartnerLoginPage() {
   const [resendTimer, setResendTimer] = useState(0);
 
   // Helpers
-  const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   // Handlers
   const handleLoginSubmit = async (e: React.FormEvent) => {
@@ -38,8 +38,9 @@ export function PartnerLoginPage() {
     setIsLoading(true);
     setErrorMsg('');
 
-    if (!validateEmail(email)) {
-      setErrorMsg("Please enter a valid email address");
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.valid) {
+      setErrorMsg(emailValidation.message || "Please enter a valid email address");
       setIsLoading(false);
       return;
     }
@@ -79,8 +80,9 @@ export function PartnerLoginPage() {
     setIsLoading(true);
     setErrorMsg('');
 
-    if (!validateEmail(email)) {
-      setErrorMsg("Please enter a valid email address");
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.valid) {
+      setErrorMsg(emailValidation.message || "Please enter a valid email address");
       setIsLoading(false);
       return;
     }

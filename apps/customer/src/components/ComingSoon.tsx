@@ -3,23 +3,20 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { toast } from "sonner";
 import { nodeApiService as apiService } from "../utils/nodeApi";
+import { validateEmail } from "../utils/validation";
 
 export function ComingSoon() {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [emailError, setEmailError] = useState("");
 
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setEmail(value);
     
-    if (value && !validateEmail(value)) {
-      setEmailError("Please enter a valid email address");
+    const emailValidation = validateEmail(value);
+    if (value && !emailValidation.valid) {
+      setEmailError(emailValidation.message || "Please enter a valid email address");
     } else {
       setEmailError("");
     }
@@ -33,8 +30,9 @@ export function ComingSoon() {
       return;
     }
     
-    if (!validateEmail(email)) {
-      setEmailError("Please enter a valid email address");
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.valid) {
+      setEmailError(emailValidation.message || "Please enter a valid email address");
       return;
     }
 

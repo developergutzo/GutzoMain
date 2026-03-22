@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { AuthInput } from "./AuthInput";
 import { AuthButton } from "./AuthButton";
 import { MessageCircle } from "lucide-react";
+import { validateEmail } from "../../utils/validation";
 
 interface SignUpProps {
   onSignUp: (data: { phoneNumber: string; name: string; email: string }) => void;
@@ -68,11 +69,6 @@ export function SignUp({
 
 
 
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
   const validatePhoneNumber = (phone: string) => {
     const cleanPhone = phone.replace(/\D/g, '');
     return cleanPhone.length === 10;
@@ -108,10 +104,11 @@ export function SignUp({
       }
 
       // Validate email
+      const emailValidation = validateEmail(formData.email);
       if (!formData.email.trim()) {
         newErrors.email = "Please enter your email";
-      } else if (!validateEmail(formData.email)) {
-        newErrors.email = "Please enter a valid email address";
+      } else if (!emailValidation.valid) {
+        newErrors.email = emailValidation.message || "Please enter a valid email address";
       }
 
       setErrors(newErrors);
