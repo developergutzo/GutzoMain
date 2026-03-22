@@ -224,7 +224,7 @@ export function SearchBottomSheet({ isOpen, onClose, searchQuery, onSearchChange
 
           {/* No Results Found (Marketplace style) */}
           {searchQuery && !categoriesLoading && categories.every(cat => !cat.name.toLowerCase().includes(searchQuery.toLowerCase())) && (
-            <div className="text-center py-16 px-8 animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col items-center">
+            <div className="text-center py-20 px-10 animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col items-center">
               <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6">
                 <Search className="h-10 w-10 text-gray-300 opacity-50" />
               </div>

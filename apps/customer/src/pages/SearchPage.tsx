@@ -92,13 +92,13 @@ export function SearchPage() {
             })}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-2xl shadow-sm border border-gray-100">
-             <div className="bg-gray-50 p-6 rounded-full mb-4">
-                <MapPin className="h-10 w-10 text-gray-400" />
+          <div className="flex flex-col items-center justify-center py-20 text-center animate-in fade-in duration-500">
+             <div className="bg-gray-100 p-8 rounded-full mb-6">
+                <MapPin className="h-12 w-12 text-gray-400 opacity-60" />
              </div>
-             <h3 className="text-xl font-bold text-gray-900 mb-2" style={{ fontFamily: 'Poppins' }}>No kitchens found</h3>
-             <p className="text-gray-500 max-w-sm">
-                We couldn't find any results matching "{searchQuery}". Try searching for something else like "bowl" or "salad".
+             <h3 className="text-2xl font-bold text-gray-900 mb-3" style={{ fontFamily: 'Poppins' }}>No kitchens found</h3>
+             <p className="text-[15px] text-gray-500 max-w-sm leading-relaxed px-4">
+                We couldn't find any results matching <span className="text-gray-900 font-semibold italic">"{searchQuery}"</span>. Try searching for something else like "bowl" or "salad".
              </p>
           </div>
         )}
