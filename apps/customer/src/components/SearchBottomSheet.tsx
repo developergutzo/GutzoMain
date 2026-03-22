@@ -111,7 +111,7 @@ export function SearchBottomSheet({ isOpen, onClose, searchQuery, onSearchChange
             <input
               ref={inputRef}
               type="text"
-              placeholder="Search for restaurant, salads or meals"
+              placeholder="Find your next favorite meal..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -131,12 +131,12 @@ export function SearchBottomSheet({ isOpen, onClose, searchQuery, onSearchChange
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 pb-24">
           
-          {/* Empty State: Recent Searches & Today's Mood */}
-          {!searchQuery && (
-            <div className="pb-8">
+          {/* Default Content: Recent Searches & Categories */}
+          {(!searchQuery || categories.some(cat => cat.name.toLowerCase().includes(searchQuery.toLowerCase()))) && (
+            <div className="pb-8 animate-in fade-in duration-300">
               
-              {/* Recent Searches Section */}
-              {recentSearches.length > 0 && (
+              {/* Recent Searches Section (Only when no query or matching query) */}
+              {!searchQuery && recentSearches.length > 0 && (
                 <div className="mb-8">
                   <div className="flex items-center justify-between mb-4">
                      <h3 className="text-[13px] font-semibold tracking-wider text-gray-500 uppercase">Your Recent Searches</h3>
@@ -163,35 +163,31 @@ export function SearchBottomSheet({ isOpen, onClose, searchQuery, onSearchChange
                 </div>
               )}
 
-              {/* Today's Mood Section */}
+              {/* Live Categories Selection (Filtered when typing) */}
               {todayMoodCategories.length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 mb-5">
-                     <h3 className="text-[13px] font-semibold tracking-wider text-gray-500 uppercase">What's on your mind?</h3>
+                     <h3 className="text-[13px] font-semibold tracking-wider text-gray-500 uppercase">
+                       {searchQuery ? `Matching Categories` : "What's on your mind?"}
+                     </h3>
                   </div>
                   
                   {categoriesLoading ? (
                      <div className="flex flex-col min-w-max pb-2 -mx-4 px-4 mask-edges-horizontal">
-                       <div className="flex overflow-x-auto scrollbar-hide gap-3 mb-3">
-                         {[...Array(5)].map((_, i) => (
-                            <div key={`row1-${i}`} className="flex flex-col items-center shrink-0 w-[80px] animate-pulse">
-                              <div className="w-[74px] h-[74px] rounded-full bg-gray-100 mb-2"></div>
-                              <div className="w-12 h-3 rounded bg-gray-100"></div>
-                            </div>
-                         ))}
-                       </div>
-                       <div className="flex overflow-x-auto scrollbar-hide gap-3">
-                         {[...Array(5)].map((_, i) => (
-                            <div key={`row2-${i}`} className="flex flex-col items-center shrink-0 w-[80px] animate-pulse">
-                              <div className="w-[74px] h-[74px] rounded-full bg-gray-100 mb-2"></div>
-                              <div className="w-12 h-3 rounded bg-gray-100"></div>
-                            </div>
-                         ))}
-                       </div>
+                        <div className="flex overflow-x-auto scrollbar-hide gap-3 mb-3">
+                          {[...Array(5)].map((_, i) => (
+                             <div key={`row1-${i}`} className="flex flex-col items-center shrink-0 w-[80px] animate-pulse">
+                               <div className="w-[74px] h-[74px] rounded-full bg-gray-100 mb-2"></div>
+                               <div className="w-12 h-3 rounded bg-gray-100"></div>
+                             </div>
+                          ))}
+                        </div>
                      </div>
                   ) : (
                     <div className="flex flex-wrap gap-y-6 justify-start pt-2 pb-6 px-1">
-                      {todayMoodCategories.map((cat) => (
+                      {todayMoodCategories
+                        .filter(cat => !searchQuery || cat.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                        .map((cat) => (
                         <button
                           key={cat.id}
                           onClick={() => handleSearchSelect(cat.name)}
@@ -214,7 +210,7 @@ export function SearchBottomSheet({ isOpen, onClose, searchQuery, onSearchChange
                               <div className="w-full h-full bg-gray-100 flex items-center justify-center text-[10px] text-gray-400">Img</div>
                             )}
                           </span>
-                          <span className="text-[12px] font-medium text-gray-700 truncate w-full text-center group-hover:text-gutzo-primary transition-colors px-1">
+                          <span className="text-[12px] font-medium text-gray-700 truncate w-full text-center group-hover:text-gutzo-brand transition-colors px-1">
                             {cat.name}
                           </span>
                         </button>
@@ -223,24 +219,18 @@ export function SearchBottomSheet({ isOpen, onClose, searchQuery, onSearchChange
                   )}
                 </div>
               )}
-
-              {recentSearches.length === 0 && todayMoodCategories.length === 0 && !categoriesLoading && (
-                <div className="text-center py-10 text-gray-500 text-sm">
-                  Type above to start searching
-                </div>
-              )}
             </div>
           )}
 
-          {/* Search Results Info (when typing but before enter) */}
-          {searchQuery && (
-            <div className="text-center py-12 flex flex-col items-center justify-center min-h-[200px]">
-              <Search className="h-12 w-12 text-gray-200 mx-auto mb-4" />
-              <p className="text-sm font-medium text-gray-600">
-                Press Enter or click the Search icon
-              </p>
-              <p className="text-xs text-gray-400 mt-2">
-                to see results for "{searchQuery}" on the main screen
+          {/* No Results Found (Marketplace style) */}
+          {searchQuery && !categoriesLoading && categories.every(cat => !cat.name.toLowerCase().includes(searchQuery.toLowerCase())) && (
+            <div className="text-center py-16 px-8 animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col items-center">
+              <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6">
+                <Search className="h-10 w-10 text-gray-300 opacity-50" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">No results found</h3>
+              <p className="text-[15px] text-gray-500 max-w-[260px] leading-relaxed">
+                We couldn't find any categories matching <span className="text-gray-900 font-semibold italic">"{searchQuery}"</span>. Try searching for something else!
               </p>
             </div>
           )}
