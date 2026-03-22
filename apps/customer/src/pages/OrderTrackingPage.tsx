@@ -486,9 +486,10 @@ export function OrderTrackingPage() {
                                     <X size={22} />
                                 </button>
                             ) : (
-                                <button className="text-white p-1.5 opacity-60">
+                                <div className="w-8 h-8" /> // Empty placeholder to maintain layout
+                                /* <button className="text-white p-1.5 opacity-60">
                                     <Share2 size={18} />
-                                </button>
+                                </button> */
                             )}
                         </div>
 
