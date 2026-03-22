@@ -567,7 +567,7 @@ router.post('/:id/rate', asyncHandler(async (req, res) => {
 
   let query = supabaseAdmin
     .from('orders')
-    .select('*');
+    .select('*, items:order_items(id, product_id, vendor_id)');
 
   if (isUUID) {
     query = query.eq('id', id);
@@ -581,10 +581,11 @@ router.post('/:id/rate', asyncHandler(async (req, res) => {
 
   if (error || !order) throw new ApiError(404, 'Order not found');
 
-  if (order.status !== 'delivered' && order.status !== 'completed') {
+  if (order.status !== 'delivered' && order.status !== 'completed' && order.status !== 'DELIVERED') {
     throw new ApiError(400, 'Can only rate delivered orders');
   }
 
+  // 1. Update order rating
   const { data: updated, error: updateError } = await supabaseAdmin
     .from('orders')
     .update({
@@ -597,6 +598,53 @@ router.post('/:id/rate', asyncHandler(async (req, res) => {
     .single();
 
   if (updateError) throw new ApiError(500, 'Failed to submit rating');
+
+  // 2. Propagate rating to individual order items
+  await supabaseAdmin
+    .from('order_items')
+    .update({ rating })
+    .eq('order_id', order.id);
+
+  // 3. Update Product Ratings
+  const productIds = [...new Set(order.items?.map(item => item.product_id) || [])];
+  
+  for (const productId of productIds) {
+    // Calculate new average for this product
+    const { data: itemRatings } = await supabaseAdmin
+      .from('order_items')
+      .select('rating')
+      .eq('product_id', productId)
+      .not('rating', 'is', null);
+
+    if (itemRatings && itemRatings.length > 0) {
+      const avg = itemRatings.reduce((sum, r) => sum + r.rating, 0) / itemRatings.length;
+      await supabaseAdmin
+        .from('products')
+        .update({ 
+          rating: Number(avg.toFixed(1)),
+          review_count: itemRatings.length 
+        })
+        .eq('id', productId);
+    }
+  }
+
+  // 4. Update Vendor Rating (Average of its products that have real ratings)
+  const vendorId = order.vendor_id;
+  const { data: productRatings } = await supabaseAdmin
+    .from('products')
+    .select('rating')
+    .eq('vendor_id', vendorId)
+    .gt('rating', 0);
+
+  if (productRatings && productRatings.length > 0) {
+    const avg = productRatings.reduce((sum, p) => sum + p.rating, 0) / productRatings.length;
+    await supabaseAdmin
+      .from('vendors')
+      .update({ 
+        rating: Number(avg.toFixed(1))
+      })
+      .eq('id', vendorId);
+  }
 
   successResponse(res, updated, 'Thank you for your feedback!');
 }));

@@ -46,7 +46,7 @@ const InstantPicksItem: React.FC<{ product: Product; isLast: boolean; noPadding:
           </div>
           <div className="instant-picks-rating">
             <StarIcon size={16} color="#43A047" className="instant-picks-star" />
-            <span className="instant-picks-rating-value">{product.rating}</span>
+            <span className="instant-picks-rating-value">{product.rating || 4.5}</span>
             <span className="instant-picks-rating-count">({product.review_count || product.ratingCount || 0})</span>
           </div>
           <div className="instant-picks-desc">{product.description}</div>

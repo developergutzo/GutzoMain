@@ -77,6 +77,29 @@ router.get('/', optionalAuth, asyncHandler(async (req, res) => {
 
   if (error) throw new ApiError(500, 'Failed to fetch vendors');
 
+  // Enrich vendors with dynamic ratings
+  if (vendors && vendors.length > 0) {
+    const vendorIds = vendors.map(v => v.id);
+    const { data: allProductStats } = await supabaseAdmin
+      .from('products')
+      .select('vendor_id, rating, review_count')
+      .in('vendor_id', vendorIds)
+      .gt('rating', 0);
+
+    if (allProductStats) {
+      vendors.forEach(vendor => {
+        const stats = allProductStats.filter(p => p.vendor_id === vendor.id);
+        if (stats.length > 0) {
+          const totalRating = stats.reduce((sum, p) => sum + p.rating, 0);
+          const totalReviews = stats.reduce((sum, p) => sum + (p.review_count || 0), 0);
+          const calculatedAvg = (totalRating / stats.length).toFixed(1);
+          vendor.rating = parseFloat(calculatedAvg);
+          vendor.review_count = totalReviews;
+        }
+      });
+    }
+  }
+
   paginatedResponse(res, vendors, page, limit, count);
 }));
 
@@ -97,6 +120,29 @@ router.get('/featured', asyncHandler(async (req, res) => {
     .limit(limit);
 
   if (error) throw new ApiError(500, 'Failed to fetch featured vendors');
+
+  // Enrich vendors with dynamic ratings
+  if (vendors && vendors.length > 0) {
+    const vendorIds = vendors.map(v => v.id);
+    const { data: allProductStats } = await supabaseAdmin
+      .from('products')
+      .select('vendor_id, rating, review_count')
+      .in('vendor_id', vendorIds)
+      .gt('rating', 0);
+
+    if (allProductStats) {
+      vendors.forEach(vendor => {
+        const stats = allProductStats.filter(p => p.vendor_id === vendor.id);
+        if (stats.length > 0) {
+          const totalRating = stats.reduce((sum, p) => sum + p.rating, 0);
+          const totalReviews = stats.reduce((sum, p) => sum + (p.review_count || 0), 0);
+          const calculatedAvg = (totalRating / stats.length).toFixed(1);
+          vendor.rating = parseFloat(calculatedAvg);
+          vendor.review_count = totalReviews;
+        }
+      });
+    }
+  }
 
   successResponse(res, vendors);
 }));
@@ -125,17 +171,23 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
 
   if (error || !vendor) throw new ApiError(404, 'Vendor not found');
 
-  // Get reviews summary
-  const { data: reviewStats } = await supabaseAdmin
-    .from('reviews')
-    .select('rating')
+  // Get reviews summary (based on product ratings as per user request)
+  const { data: productStats } = await supabaseAdmin
+    .from('products')
+    .select('rating, review_count')
     .eq('vendor_id', id)
-    .eq('status', 'published');
+    .gt('rating', 0);
 
-  if (reviewStats && reviewStats.length > 0) {
-    const totalRating = reviewStats.reduce((sum, r) => sum + r.rating, 0);
-    vendor.calculated_rating = (totalRating / reviewStats.length).toFixed(1);
-    vendor.review_count = reviewStats.length;
+  if (productStats && productStats.length > 0) {
+    const totalRating = productStats.reduce((sum, p) => sum + p.rating, 0);
+    const totalReviews = productStats.reduce((sum, p) => sum + (p.review_count || 0), 0);
+    const calculatedAvg = (totalRating / productStats.length).toFixed(1);
+    
+    // console.log(`[Rating Debug] Vendor: ${vendor.name}, Total: ${totalRating}, Count: ${productStats.length}, Avg: ${calculatedAvg}`);
+    
+    vendor.rating = parseFloat(calculatedAvg); // Keeping it as number for consistency but ensure precision
+    vendor.calculated_rating = calculatedAvg; // String variant
+    vendor.review_count = totalReviews;
   }
 
   successResponse(res, vendor);

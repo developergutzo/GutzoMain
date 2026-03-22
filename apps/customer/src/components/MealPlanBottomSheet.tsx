@@ -178,7 +178,15 @@ const MealPlanBottomSheet: React.FC<MealPlanBottomSheetProps> = ({ plan, onClose
              <div className="flex items-start justify-between px-6 pt-4 pb-0 flex-shrink-0">
                <div>
                   <h2 className="text-2xl font-bold text-gray-900 leading-tight">{plan.title}</h2>
-                  <p className="text-xs text-gray-500 mt-0.5">by {plan.vendor}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                     <p className="text-xs text-gray-500">by {plan.vendor}</p>
+                     <span className="text-gray-300">•</span>
+                     <div className="flex items-center gap-1">
+                        <Star className="h-3.5 w-3.5 text-[#1BA672] fill-[#1BA672]" />
+                        <span className="text-[13px] font-bold text-gray-900">{plan.rating}</span>
+                        <span className="text-[11px] text-gray-400">({(plan as any).review_count || 0})</span>
+                     </div>
+                  </div>
                </div>
                <div className="flex items-center gap-3">
                   {/* Veg Toggle */}

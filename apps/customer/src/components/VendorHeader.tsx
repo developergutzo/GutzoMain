@@ -122,7 +122,7 @@ const VendorHeader: React.FC<VendorHeaderProps> = ({ name, rating, reviews, loca
               flexShrink: 0
            }}>
               <StarIcon size={14} color="white" className="mr-1 font-sans" />
-              <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{rating}</span>
+              <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{Number(rating).toFixed(1)}</span>
            </div>
         </div>
         

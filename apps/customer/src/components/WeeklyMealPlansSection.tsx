@@ -213,7 +213,14 @@ export default function WeeklyMealPlansSection({ noPadding = false, onMealPlanCl
 									{plan.title}
 								</h3>
 								{!hideVendorName && <p className="text-[11px] text-gray-500 mb-0.5">by {plan.vendor}</p>}
-								<p className="text-[12px] text-gray-600 mb-1" style={{ fontSize: '12px' }}>{plan.schedule}</p>
+								<p className="text-[12px] text-gray-600 mb-0.5" style={{ fontSize: '12px' }}>{plan.schedule}</p>
+								<div className="flex items-center gap-1 mb-1">
+									<svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+										<path d="M8 1L10.163 5.382L15 6.088L11.5 9.5L12.326 14.382L8 12.115L3.674 14.382L4.5 9.5L1 6.088L5.837 5.382L8 1Z" fill="#1BA672" stroke="#1BA672" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
+									</svg>
+									<span className="text-[12px] font-semibold text-gray-900">{plan.rating}</span>
+									<span className="text-[11px] text-gray-400">({(plan as any).review_count || 0})</span>
+								</div>
 								<p className="text-[13px] font-semibold text-gray-900 mb-2">{plan.price}</p>
 								<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', marginTop: 4, marginBottom: 10, cursor: disabled ? 'not-allowed' : 'pointer' }}>
 									<span style={{ color: disabled ? '#9CA3AF' : '#1BA672', fontFamily: 'Poppins', fontWeight: 400, fontSize: 14, letterSpacing: '-0.01em', marginRight: 4 }}>
