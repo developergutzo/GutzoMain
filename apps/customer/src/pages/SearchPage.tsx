@@ -65,9 +65,9 @@ export function SearchPage() {
   });
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white w-full overflow-x-hidden flex flex-col">
       {/* Sticky Search Header (Mobile Only) */}
-      <div className="md:hidden sticky top-0 z-50 bg-white border-b border-gray-100 px-4 py-4 sm:px-6">
+      <div className="md:hidden sticky top-0 z-50 bg-white border-b border-gray-100 px-4 py-3 sm:px-6">
         <div className="max-w-7xl mx-auto flex items-center gap-3">
           <button 
             onClick={goBack}
@@ -77,8 +77,8 @@ export function SearchPage() {
              <ArrowLeft className="w-6 h-6" />
           </button>
           
-          <div className="flex-1">
-            <div className="flex items-center gap-3 px-4 py-4 bg-gray-50 rounded-2xl border border-gray-100 focus-within:border-brand/30 focus-within:bg-white focus-within:shadow-sm transition-all group">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-2xl border border-gray-100 focus-within:border-brand/30 focus-within:bg-white focus-within:shadow-sm transition-all group min-w-0">
               <Search className="h-5 w-5 text-gray-400 group-focus-within:text-brand transition-colors" />
               <input
                 type="text"
@@ -103,8 +103,8 @@ export function SearchPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16">
-        <div className="mb-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight flex items-center gap-2" style={{ fontFamily: 'Poppins' }}>
+        <div className="mb-8 overflow-hidden">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight flex flex-wrap items-center gap-2" style={{ fontFamily: 'Poppins' }}>
             {loading ? (
               <span className="animate-pulse bg-gray-100 text-transparent rounded w-1/3 block h-8">Searching...</span>
             ) : searchQuery ? (
