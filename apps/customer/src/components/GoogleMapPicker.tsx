@@ -45,6 +45,7 @@ export function GoogleMapPicker({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const intersectionObserverRef = useRef<IntersectionObserver | null>(null);
   const componentIdRef = useRef<string>(`gmp${Math.random().toString(36).substr(2, 9)}`); // Removed hyphens
+  const currentZoomRef = useRef<number>(initialLocation ? (isMobileDevice() ? 14 : 15) : 5);
 
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [isMapLoading, setIsMapLoading] = useState(false);
@@ -287,7 +288,7 @@ export function GoogleMapPicker({
       // Initialize map with mobile-optimized settings
       mapInstanceRef.current = new google.maps.Map(mapRef.current, {
         center: mapCenter,
-        zoom: currentLocation ? (isMobile ? 14 : 15) : 5, // Zoomed out if no location
+        zoom: currentZoomRef.current,
         disableDefaultUI: true,
         zoomControl: false,
         mapTypeControl: false,
@@ -304,6 +305,17 @@ export function GoogleMapPicker({
           streetViewControlOptions: { position: google.maps.ControlPosition.TOP_RIGHT },
           zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_BOTTOM }
         })
+      });
+      
+      // Track zoom changes to persist user's preference
+      mapInstanceRef.current.addListener('zoom_changed', () => {
+        if (mapInstanceRef.current) {
+          const zoom = mapInstanceRef.current.getZoom();
+          if (typeof zoom === 'number') {
+            currentZoomRef.current = zoom;
+            // console.log('🔍 Map zoom changed to:', zoom);
+          }
+        }
       });
 
       // Add center change listener with mobile debouncing
@@ -407,7 +419,10 @@ export function GoogleMapPicker({
           // Update map center (which will trigger center_changed event)
           if (mapInstanceRef.current) {
             mapInstanceRef.current.setCenter({ lat, lng });
-            mapInstanceRef.current.setZoom(16);
+            // SMART ZOOM: If user is already zoomed in more than 16, keep it. 
+            // Otherwise, zoom into 16 for better visibility of the search result.
+            const targetZoom = Math.max(currentZoomRef.current, 16);
+            mapInstanceRef.current.setZoom(targetZoom);
           }
           
           setSearchValue(address);
@@ -538,7 +553,9 @@ export function GoogleMapPicker({
         // Update map if loaded
         if (mapInstanceRef.current) {
           mapInstanceRef.current.setCenter({ lat, lng });
-          mapInstanceRef.current.setZoom(isMobile ? 14 : 16);
+          // Preserve zoom if already zoomed in, otherwise use default
+          const targetZoom = Math.max(currentZoomRef.current, isMobile ? 14 : 16);
+          mapInstanceRef.current.setZoom(targetZoom);
           if (markerRef.current) {
             markerRef.current.setPosition({ lat, lng });
           }
@@ -609,7 +626,8 @@ export function GoogleMapPicker({
         
         if (mapInstanceRef.current) {
           mapInstanceRef.current.setCenter({ lat, lng });
-          mapInstanceRef.current.setZoom(16);
+          const targetZoom = Math.max(currentZoomRef.current, 16);
+          mapInstanceRef.current.setZoom(targetZoom);
         }
       },
       (error) => {
@@ -767,7 +785,9 @@ export function GoogleMapPicker({
         // Center map and zoom to current location
         if (mapInstanceRef.current) {
           mapInstanceRef.current.setCenter({ lat, lng });
-          mapInstanceRef.current.setZoom(17); // Closer zoom for current location
+          // Preserve user preference if already deep-zoomed
+          const targetZoom = Math.max(currentZoomRef.current, 17);
+          mapInstanceRef.current.setZoom(targetZoom); 
         }
         
         // console.log('✅ Map centered to current location');

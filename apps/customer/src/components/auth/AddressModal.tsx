@@ -160,7 +160,7 @@ const AddressForm = ({
     };
 
     placesServiceRef.current.getDetails(request, (place: any, status: any) => {
-      if (status === google.maps.places.PlacesServiceStatus.OK && place && place.geometry && place.geometry.location) {
+      if (status === "OK" && place && place.geometry && place.geometry.location) {
         const lat = place.geometry.location.lat();
         const lng = place.geometry.location.lng();
         const address = place.formatted_address || place.name || '';
@@ -278,7 +278,6 @@ const AddressForm = ({
           <>
             {/* Google Maps Location Picker */}
             <GoogleMapPicker
-              key={`${newAddress.latitude}-${newAddress.longitude}`}
               onLocationSelect={(locationData) =>
                 onLocationSelect(
                   { lat: locationData.lat, lng: locationData.lng },
