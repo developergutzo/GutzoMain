@@ -66,12 +66,12 @@ export function SearchPage() {
 
   return (
     <div className="min-h-screen bg-white w-full overflow-x-hidden flex flex-col">
-      {/* Sticky Search Header (Mobile Only) */}
-      <div className="md:hidden sticky top-0 z-50 bg-white border-b border-gray-100 px-4 py-3 sm:px-6">
-        <div className="max-w-7xl mx-auto flex items-center gap-3">
+      {/* Sticky Search Header (All Devices) */}
+      <div className="sticky top-0 z-50 bg-white border-b border-gray-100 w-full inset-x-0">
+        <div className="max-w-7xl mx-auto flex items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
           <button 
             onClick={goBack}
-            className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors text-gray-700 shrink-0"
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-700 shrink-0"
             aria-label="Go back"
           >
              <ArrowLeft className="w-6 h-6" />
@@ -102,7 +102,7 @@ export function SearchPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16">
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-8 pb-16">
         <div className="mb-8 overflow-hidden">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight flex flex-wrap items-center gap-2" style={{ fontFamily: 'Poppins' }}>
             {loading ? (
