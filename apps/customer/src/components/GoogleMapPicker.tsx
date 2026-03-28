@@ -271,7 +271,7 @@ export function GoogleMapPicker({
       // Mobile-specific container preparation
       if (isMobile && mapRef.current) {
         // Force layout calculation
-        mapRef.current.style.height = '384px';
+        mapRef.current.style.height = '200px';
         mapRef.current.style.width = '100%';
         mapRef.current.getBoundingClientRect(); // Force reflow
         
@@ -942,12 +942,12 @@ export function GoogleMapPicker({
             {/* Google Maps Container */}
             <div 
               ref={mapRef}
-              className="w-full h-96 sm:h-96 md:h-[28rem] rounded-xl border border-gray-300 bg-gray-100 shadow-lg shadow-gray-200/50 overflow-hidden touch-manipulation"
+              className="w-full h-[200px] rounded-xl border border-gray-300 bg-gray-100 shadow-lg shadow-gray-200/50 overflow-hidden touch-manipulation"
               style={{
                 background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
                 boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.1)',
-                minHeight: '384px',
-                height: '384px',
+                minHeight: '200px',
+                height: '200px',
                 width: '100%',
                 position: 'relative',
                 display: 'block',
@@ -1014,10 +1014,6 @@ export function GoogleMapPicker({
                 </div>
               </div>
               
-              {/* Instruction text */}
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-md">
-                <p className="text-xs text-gray-700 font-medium">Move map to pin your location</p>
-              </div>
             </div>
           )}
           
