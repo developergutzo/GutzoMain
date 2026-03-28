@@ -240,6 +240,12 @@ export function startDeliveryCron() {
         return;
     }
 
+    // MULTI-INSTANCE CHECK: Run only on instance 0 if in cluster mode (standard PM2 variable)
+    if (process.env.NODE_APP_INSTANCE && process.env.NODE_APP_INSTANCE !== '0') {
+        console.log(`[Delivery Cron] ⏸️ Cron instance lock: Skipping start on instance ${process.env.NODE_APP_INSTANCE}`);
+        return;
+    }
+
     // Cron expression: every N seconds
     const cronExpression = `*/${CRON_INTERVAL} * * * * *`;
 

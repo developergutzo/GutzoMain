@@ -11,14 +11,14 @@ export const authenticate = async (req, res, next) => {
     }
 
     // Verify user exists and is verified
-    const { data: user, error } = await supabaseAdmin
-      .from('users')
-      .select('*')
-      .eq('phone', phone)
-      .eq('verified', true)
-      .single();
-
-    if (error || !user) {
+    if (error) {
+      if (error.code === 'PGRST003') {
+        throw new ApiError(503, 'Global: Database busy. Please try again in 5 seconds.');
+      }
+      throw new ApiError(401, 'User not found or not verified. Please login first.');
+    }
+    
+    if (!user) {
       throw new ApiError(401, 'User not found or not verified. Please login first.');
     }
 

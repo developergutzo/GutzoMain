@@ -213,6 +213,9 @@ router.post('/verify-otp', validate(schemas.verifyOtp), asyncHandler(async (req,
     user = newUser;
   } else if (userError) {
     console.error('Database error checking user:', userError);
+    if (userError.code === 'PGRST003') {
+      throw new ApiError(503, 'Database busy. Please try again in 5 seconds.');
+    }
     throw new ApiError(500, 'Database error');
   } else {
     // Update existing user
@@ -255,6 +258,9 @@ router.post('/check-user', asyncHandler(async (req, res) => {
 
   if (error && error.code !== 'PGRST116') {
     console.error('Database error checking user:', error);
+    if (error.code === 'PGRST003') {
+      throw new ApiError(503, 'Database busy. Please try again in 5 seconds.');
+    }
     throw new ApiError(500, 'Failed to check user');
   }
 
@@ -290,6 +296,9 @@ router.post('/validate-user', asyncHandler(async (req, res) => {
     if (error.code === 'PGRST116') {
       // console.log(`❌ User not found for phone: ${phone}`);
       return successResponse(res, { userExists: false, verified: false });
+    }
+    if (error.code === 'PGRST003') {
+      throw new ApiError(503, 'Database busy. Please try again in 5 seconds.');
     }
     throw new ApiError(500, 'Database validation failed');
   }
