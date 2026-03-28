@@ -298,6 +298,7 @@ export function GoogleMapPicker({
         fullscreenControl: false,
         gestureHandling: isMobile ? 'greedy' : 'cooperative',
         clickableIcons: false,
+        keyboardShortcuts: false,
         // Mobile-specific optimizations
         ...(isMobile && {
           backgroundColor: '#f8fafc',
@@ -984,6 +985,14 @@ export function GoogleMapPicker({
               onTouchStart={handleContainerTouch}
               onClick={handleContainerTouch}
             />
+            
+            {/* CSS override to hide map attributions for a cleaner UI while keeping logo visible */}
+            <style dangerouslySetInnerHTML={{ __html: `
+              .gm-style-cc { display: none !important; }
+              .gm-style-cc:last-child { display: none !important; }
+              a[href*="maps.google.com/help/terms"] { display: none !important; }
+              .gmnoprint div[style*="z-index: 1000001"] { display: none !important; }
+            `}} />
 
             {/* Recenter Button - Outside Map Container */}
             <button
