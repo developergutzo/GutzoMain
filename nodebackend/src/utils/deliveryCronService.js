@@ -10,7 +10,7 @@ const supabase = createClient(
 // Configuration
 const CRON_INTERVAL = process.env.DELIVERY_CRON_INTERVAL || 60; // seconds
 const ENABLE_CRON = process.env.ENABLE_DELIVERY_CRON !== 'false'; // default enabled
-const MAX_ORDERS_PER_RUN = 50;
+const MAX_ORDERS_PER_RUN = 20;
 const API_CALL_DELAY = 100; // ms between API calls
 
 // Helper: Sleep function
@@ -26,9 +26,17 @@ const mapShadowfaxStatus = (apiStatus) => {
     return apiStatus.toLowerCase();
 };
 
+let isSyncing = false;
+
 // Main sync function
 async function syncActiveOrders() {
+    if (isSyncing) {
+        console.log('[Delivery Cron] ⏸️ Previous sync still in progress, skipping this cycle.');
+        return;
+    }
+
     try {
+        isSyncing = true;
         console.log('[Delivery Cron] 🔄 Starting sync cycle...');
 
         // 1. Query active orders
@@ -170,24 +178,21 @@ async function syncActiveOrders() {
                         console.log(`[Delivery Cron] 📧 Notifying vendor for ${order.order_number}`);
 
                         // Send email
-                        import('./emailService.js').then(({ sendVendorOrderNotification }) => {
-                            // Fetch full order with items
-                            supabase.from('orders')
-                                .select('*, items:order_items(*), vendor:vendors(*)')
-                                .eq('id', order.id)
-                                .single()
-                                .then(({ data: fullOrder }) => {
-                                    if (fullOrder) {
-                                        sendVendorOrderNotification(fullOrder.vendor.email, fullOrder);
-                                    }
-                                });
-                        });
+                        const { sendVendorOrderNotification } = await import('./emailService.js');
+                        // Fetch full order with items
+                        const { data: fullOrder } = await supabase.from('orders')
+                            .select('*, items:order_items(*), vendor:vendors(*)')
+                            .eq('id', order.id)
+                            .single();
+                        
+                        if (fullOrder && fullOrder.vendor) {
+                            await sendVendorOrderNotification(fullOrder.vendor.email, fullOrder);
+                        }
 
                         // Send push
-                        import('./pushService.js').then(({ sendVendorPush }) => {
-                            const msg = `Rider Assigned! ${trackingInfo.rider_details?.name || 'Partner'} is on the way.`;
-                            sendVendorPush(order.vendor.id, 'Order Update 🔔', msg);
-                        });
+                        const { sendVendorPush } = await import('./pushService.js');
+                        const msg = `Rider Assigned! ${trackingInfo.rider_details?.name || 'Partner'} is on the way.`;
+                        await sendVendorPush(order.vendor.id, 'Order Update 🔔', msg);
                     }
                 } else if (dbStatus === 'accepted' && (apiStatus === 'SEARCHING_RIDER' || apiStatus === 'PENDING' || apiStatus === 'CANCELLED')) {
                     // Reverse scenario: Order was ALLOTTED but now is SEARCHING (Rider cancelled/unassigned)
@@ -225,10 +230,9 @@ async function syncActiveOrders() {
                         // Actually, looking at the request "send order cancel reqyuest also", it often means "Cancel the order entirely".
 
                         // Sending cancel request to Shadowfax:
-                        import('./shadowfax.js').then(({ cancelShadowfaxOrder }) => {
-                            cancelShadowfaxOrder(delivery.external_order_id, "Rider Unassigned/Dropped - System Auto Cancel", order.mock_shadowfax)
-                                .then(res => console.log(`[Cron] Cancelled ${order.mock_shadowfax ? 'MOCK' : 'REAL'} Shadowfax Order:`, res));
-                        });
+                        const { cancelShadowfaxOrder } = await import('./shadowfax.js');
+                        const res = await cancelShadowfaxOrder(delivery.external_order_id, "Rider Unassigned/Dropped - System Auto Cancel", order.mock_shadowfax);
+                        console.log(`[Cron] Cancelled ${order.mock_shadowfax ? 'MOCK' : 'REAL'} Shadowfax Order:`, res);
                     }
                 }
 
@@ -248,6 +252,8 @@ async function syncActiveOrders() {
 
     } catch (error) {
         console.error('[Delivery Cron] ❌ Fatal error:', error);
+    } finally {
+        isSyncing = false;
     }
 }
 
@@ -267,9 +273,4 @@ export function startDeliveryCron() {
 
     // Run once immediately on startup
     syncActiveOrders();
-}
-
-// Auto-start if imported
-if (ENABLE_CRON) {
-    startDeliveryCron();
 }
