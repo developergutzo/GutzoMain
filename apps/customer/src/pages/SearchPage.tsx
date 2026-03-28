@@ -68,7 +68,7 @@ export function SearchPage() {
     <div className="min-h-screen bg-white w-full overflow-x-hidden flex flex-col">
       {/* Sticky Search Header (All Devices) */}
       <div className="sticky top-0 z-50 bg-white border-b border-gray-100 w-full inset-x-0">
-        <div className="max-w-7xl mx-auto flex items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto flex items-center gap-2 px-3 py-3 sm:gap-3 sm:px-6 lg:px-8">
           <button 
             onClick={goBack}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-700 shrink-0"
@@ -78,14 +78,14 @@ export function SearchPage() {
           </button>
           
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-2xl border border-gray-100 focus-within:border-brand/30 focus-within:bg-white focus-within:shadow-sm transition-all group min-w-0">
+            <div className="flex items-center gap-2 px-3 py-3 bg-gray-50 rounded-2xl border border-gray-100 focus-within:border-brand/30 focus-within:bg-white focus-within:shadow-sm transition-all group min-w-0 sm:gap-3 sm:px-4">
               <Search className="h-5 w-5 text-gray-400 group-focus-within:text-brand transition-colors" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={handleSearchChange}
                 placeholder="Search kitchens or dishes..."
-                className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-lg font-primary text-main font-medium placeholder:text-gray-400"
+                className="flex-1 min-w-0 w-full bg-transparent border-none focus:outline-none focus:ring-0 text-lg font-primary text-main font-medium placeholder:text-gray-400"
                 autoFocus
               />
               {searchQuery && (
