@@ -45,7 +45,7 @@ import mealCalendarRoutes from './routes/mealCalendar.js'; // [NEW]
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 
 // Import and start cron services
-import { startDeliveryCron } from './utils/deliveryCronService.js';
+import './utils/deliveryCronService.js'; // Auto-starts delivery status sync cron
 
 const app = express();
 const PORT = process.env.PORT;
@@ -186,9 +186,6 @@ app.listen(PORT, '0.0.0.0', () => {
 ║  Health:      http://localhost:${PORT}/api/health   ║
 ╚═══════════════════════════════════════════════╝
   `);
-
-  // Start Delivery Status Sync Cron
-  startDeliveryCron();
 });
 
 export default app;
