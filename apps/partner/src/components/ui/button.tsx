@@ -10,7 +10,9 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: `bg-[${colors.brandOrange}] text-[${colors.white}] hover:bg-[${colors.brandOrange}]/90`,
+        default: "bg-gutzo-brand text-white hover:bg-gutzo-brand-hover",
+        primary: "bg-gutzo-brand text-white hover:bg-gutzo-brand-hover",
+        cta: "bg-gutzo-cta text-white hover:bg-gutzo-cta-hover shadow-gutzo-float",
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:

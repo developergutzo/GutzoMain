@@ -85,70 +85,56 @@ const categoryMatches = (
     selectedCategory.trim().toLowerCase();
 };
 
-// Filter vendors based on category - SIMPLIFIED FOR MVP
+// Filter vendors based on category and goal - ENHANCED FOR DYNAMIC FILTERING
 export const filterVendors = (
   vendors: Vendor[],
   selectedCategory: string,
+  selectedGoal: string = "All",
 ): Vendor[] => {
-  const hasFiltersActive = selectedCategory !== "All";
+  const hasCategoryFilter = selectedCategory !== "All";
+  const hasGoalFilter = selectedGoal !== "All";
+  const hasFiltersActive = hasCategoryFilter || hasGoalFilter;
 
   console.log("🔍 FILTERING VENDORS:", {
     total: vendors.length,
     category: selectedCategory,
+    goal: selectedGoal,
     filtersActive: hasFiltersActive,
   });
 
   const filteredVendors = vendors.filter((vendor) => {
-    // If vendor has no products, only show when "All" is selected
-    if (!vendor.products || vendor.products.length === 0) {
-      const showVendor = selectedCategory === "All";
-      if (!showVendor && hasFiltersActive) {
-        console.log(
-          `❌ "${vendor.name}" - No products, hiding due to active filters`,
-        );
-      }
-      return showVendor;
-    }
-
-    // CATEGORY FILTERING: Must have products in the selected category
-    let categoryMatch = false;
-    if (selectedCategory === "All") {
-      categoryMatch = true;
-    } else {
-      // Vendor must have at least one product in the selected category
-      categoryMatch = vendor.products.some((product) => {
-        return categoryMatches(product.category || "", selectedCategory);
-      });
-
-      if (!categoryMatch) {
-        console.log(
-          `❌ "${vendor.name}" - No products in category "${selectedCategory}"`,
-        );
-        console.log(
-          `   Product categories: ${
-            vendor.products.map((p) => p.category).filter(Boolean).join(", ")
-          }`,
-        );
+    // 1. CATEGORY FILTERING: Must have products in the selected category
+    let categoryMatch = true;
+    if (hasCategoryFilter) {
+      if (!vendor.products || vendor.products.length === 0) {
+        categoryMatch = false;
+      } else {
+        categoryMatch = vendor.products.some((product) => {
+          return categoryMatches(product.category || "", selectedCategory);
+        });
       }
     }
 
-    if (categoryMatch && hasFiltersActive) {
-      console.log(`✅ "${vendor.name}" - MATCHES category filter`);
+    // 2. GOAL FILTERING: Vendor or its products must match the goal tag
+    let goalMatch = true;
+    if (hasGoalFilter) {
+      const vendorTags = vendor.tags || [];
+      const productTags = vendor.products?.flatMap(p => [...(p.diet_tags || []), ...(p.tags || [])]) || [];
+      const allTags = [...new Set([...vendorTags, ...productTags])].map(t => t.toLowerCase());
+      
+      goalMatch = allTags.some(tag => tag.includes(selectedGoal.toLowerCase()));
     }
 
-    return categoryMatch;
+    if (hasFiltersActive && categoryMatch && goalMatch) {
+      console.log(`✅ "${vendor.name}" - MATCHES filters`);
+    }
+
+    return categoryMatch && goalMatch;
   });
 
   console.log(
     `🎯 VENDOR FILTER RESULT: ${filteredVendors.length}/${vendors.length} vendors shown`,
   );
-  if (hasFiltersActive) {
-    console.log(
-      `📋 Filtered vendors: ${
-        filteredVendors.map((v) => v.name).join(", ") || "None"
-      }`,
-    );
-  }
 
   return filteredVendors;
 };

@@ -301,6 +301,7 @@ html {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 /* Enhanced backdrop blur support */
@@ -616,4 +617,53 @@ a[href]:focus-visible {
 /* Provide a lightweight utility developers can use to enforce accessible focus rings */
 .focus-visible-ring:focus-visible {
   box-shadow: 0 0 0 4px rgba(2,98,84,0.14);
+}
+/* Gutzo Custom UI Utility Classes */
+.gutzo-input {
+  background-color: #F9F9F9;
+  border: 0.5px solid #E5E7EB;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.gutzo-input:hover {
+  border-color: #D1D5DB;
+  background-color: #F3F4F6;
+}
+
+.gutzo-input:focus {
+  background-color: #FFFFFF;
+  border-color: #1BA672;
+  box-shadow: 0 0 0 4px rgba(27, 166, 114, 0.1);
+  outline: none;
+}
+
+.gutzo-tab-pill {
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.gutzo-tab-pill:hover:not(.active) {
+  background-color: #F3F4F6;
+  border-color: #D1D5DB;
+  transform: translateY(-1px);
+}
+
+.gutzo-tab-pill:active {
+  transform: scale(0.96);
+}
+
+.gutzo-button-ghost {
+  border: 0.5px solid #E5E7EB;
+  transition: all 0.2s ease;
+}
+
+.gutzo-button-ghost:hover {
+  background-color: #F9FAFB;
+  border-color: #D1D5DB;
+  transform: translateY(-1px);
+}
+
+.gutzo-button-ghost:active {
+  transform: scale(0.96);
 }

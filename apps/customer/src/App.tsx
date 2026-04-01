@@ -98,6 +98,7 @@ function AppContent() {
   const { currentRoute } = useRouter();
   const { isAuthenticated, isLoading: authLoading, user, login, logout } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedGoal, setSelectedGoal] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [showLocationGate, setShowLocationGate] = useState(false);
   const [showLoginPanel, setShowLoginPanel] = useState(false);
@@ -266,7 +267,7 @@ function AppContent() {
   const availableCategories = extractCategoriesFromVendors(vendors);
   // Custom vendor data for Explore Delicious Choices
   // Use vendors fetched from API
-  let filteredVendors = vendors;
+  let filteredVendors = filterVendors(vendors, selectedCategory, selectedGoal);
   const isNoService = !loading && filteredVendors.length === 0;
 
   const handleCategoryChange = (category: string) => {
@@ -525,7 +526,14 @@ function AppContent() {
         onSearchChange={setSearchQuery}
         onShowLocationSheet={handleShowLocationSheet}
       />
-      {!isNoService && <Inspiration onOptionClick={(category) => navigate(`/search?q=${encodeURIComponent(category)}`)} loading={loading} />}
+      {!isNoService && (
+        <Inspiration 
+          onOptionClick={(category) => navigate(`/search?q=${encodeURIComponent(category)}`)} 
+          selectedGoal={selectedGoal}
+          onGoalChange={setSelectedGoal}
+          loading={loading} 
+        />
+      )}
       {!isNoService && (
         <WeeklyMealPlansSection
           onMealPlanClick={plan => setSelectedMealPlan(plan)}

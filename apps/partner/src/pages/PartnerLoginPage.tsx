@@ -250,7 +250,6 @@ export function PartnerLoginPage() {
                 <Button
                   type="submit"
                   className="w-full text-white"
-                  style={{ backgroundColor: '#1BA672' }}
                   disabled={isLoading}
                 >
                   {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Login"}
@@ -277,7 +276,6 @@ export function PartnerLoginPage() {
                 <Button
                   type="submit"
                   className="w-full text-white"
-                  style={{ backgroundColor: '#1BA672' }}
                   disabled={isLoading}
                 >
                   {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send OTP"}
@@ -305,7 +303,6 @@ export function PartnerLoginPage() {
                 <Button
                   type="submit"
                   className="w-full text-white"
-                  style={{ backgroundColor: '#1BA672' }}
                   disabled={isLoading}
                 >
                   {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify OTP"}
@@ -360,7 +357,6 @@ export function PartnerLoginPage() {
                 <Button
                   type="submit"
                   className="w-full text-white"
-                  style={{ backgroundColor: '#1BA672' }}
                   disabled={isLoading}
                 >
                   {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Reset Password"}

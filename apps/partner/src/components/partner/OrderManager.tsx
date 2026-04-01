@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from "../ui/card";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
-import { RefreshCw, ChefHat, Check, X, Clock, MapPin, ChevronDown, ChevronRight } from 'lucide-react';
+import { RefreshCw, ChefHat, Check, X, Clock, MapPin, ChevronDown, ChevronRight, ShoppingBag } from 'lucide-react';
 import { nodeApiService } from '../../utils/nodeApi';
 import { supabase } from '../../utils/supabase/client';
 import { toast } from 'sonner';
@@ -46,6 +46,7 @@ export function OrderManager({ vendorId, isDashboard = false }: { vendorId: stri
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
     const [tab, setTab] = useState<'active' | 'history'>(isDashboard ? 'active' : 'active');
+    const [statusFilter, setStatusFilter] = useState<'All' | 'New' | 'Preparing' | 'Ready'>('All');
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({ 'Today': true });
 
     const toggleGroup = (group: string) => {
@@ -73,10 +74,10 @@ export function OrderManager({ vendorId, isDashboard = false }: { vendorId: stri
             if (orders.length === 0) setLoading(true);
 
             // EXCLUDE: searching_rider, placed, paid (Wait for ACCEPTED/confirmed)
-            const statuses = tab === 'active' 
+            const statuses = tab === 'active'
                 ? 'confirmed,preparing,ready,handover_pending,allotted,accepted,arrived,reached_location'
                 : 'collected,picked_up,on_way,customer_door_step,arrived_at_drop,delivered,completed,cancelled,rejected';
-                
+
             const response = await nodeApiService.getVendorOrders(vendorId, statuses);
             // console.log('📦 Orders API Response:', response);
 
@@ -112,14 +113,14 @@ export function OrderManager({ vendorId, isDashboard = false }: { vendorId: stri
             .on('broadcast', { event: 'status-update' }, (payload: any) => {
                 const data = payload.payload;
                 console.log('📡 Realtime Order Broadcast Received:', data);
-                
+
                 if (data.status === 'ARRIVED') {
                     toast.info(`Driver arrived for #${data.order_number}!`, {
                         description: `Handover OTP: ${data.pickup_otp || '---'}`,
                         duration: 10000,
                     });
                 }
-                
+
                 // Simple refresh for now to avoid complex merge
                 fetchOrders();
             })
@@ -146,12 +147,13 @@ export function OrderManager({ vendorId, isDashboard = false }: { vendorId: stri
 
     const getStatusBadge = (status: string) => {
         switch (status) {
-            case 'placed': return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200">New</Badge>;
+            case 'placed': 
             case 'confirmed':
-            case 'paid': return <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">New</Badge>;
-            case 'preparing': return <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-200">Preparing</Badge>;
-            case 'ready': return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">Ready</Badge>;
-            default: return <Badge variant="outline">{status}</Badge>;
+            case 'paid': return <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FAEEDA] text-[#854F0B] font-medium">New</span>;
+            case 'preparing': return <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#E6F1FB] text-[#185FA5] font-medium">Preparing</span>;
+            case 'ready': 
+            case 'handover_pending': return <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#E1F5EE] text-[#0F6E56] font-medium">Ready</span>;
+            default: return <Badge variant="outline" className="text-[10px]">{status}</Badge>;
         }
     };
 
@@ -160,24 +162,24 @@ export function OrderManager({ vendorId, isDashboard = false }: { vendorId: stri
             {!isDashboard && (
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
-                        <h2 className="text-xl font-bold text-gray-900">{tab === 'active' ? 'Incoming Orders' : 'Order History'}</h2>
-                        <p className="text-sm text-gray-500">
+                        <h2 className="text-[18px] font-medium text-gray-900">Incoming orders</h2>
+                        <p className="text-[11px] text-gray-400 mt-0.5">
                             {tab === 'active' ? 'View and manage customer orders' : 'View all completed and cancelled orders'}
                         </p>
                     </div>
                     <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg self-stretch sm:self-auto">
-                        <Button 
-                            variant={tab === 'active' ? 'default' : 'ghost'} 
-                            size="sm" 
+                        <Button
+                            variant={tab === 'active' ? 'default' : 'ghost'}
+                            size="sm"
                             onClick={() => setTab('active')}
                             className={`flex-1 sm:flex-none ${tab === 'active' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                             style={tab === 'active' ? { backgroundColor: 'white' } : {}}
                         >
                             Active
                         </Button>
-                        <Button 
-                            variant={tab === 'history' ? 'default' : 'ghost'} 
-                            size="sm" 
+                        <Button
+                            variant={tab === 'history' ? 'default' : 'ghost'}
+                            size="sm"
                             onClick={() => setTab('history')}
                             className={`flex-1 sm:flex-none ${tab === 'history' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                             style={tab === 'history' ? { backgroundColor: 'white' } : {}}
@@ -185,20 +187,45 @@ export function OrderManager({ vendorId, isDashboard = false }: { vendorId: stri
                             History
                         </Button>
                         <div className="w-px h-4 bg-gray-300 mx-1 hidden sm:block"></div>
-                        <Button variant="ghost" size="icon" onClick={fetchOrders} disabled={loading} className="text-gray-500">
-                            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                        <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={fetchOrders} 
+                            disabled={loading} 
+                            className="flex items-center gap-2 text-gray-500 font-normal h-8 px-3 border-[0.5px] border-gray-200 rounded-lg hover:bg-gray-50 transition-all ml-2"
+                        >
+                            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
                         </Button>
                     </div>
                 </div>
             )}
 
             {isDashboard && (
-                <div className="flex justify-between items-center mb-2">
-                    <h2 className="text-xl font-bold text-gray-900">Incoming Orders</h2>
-                    <Button variant="ghost" size="sm" onClick={fetchOrders} disabled={loading} className="text-[#1BA672] gap-2">
-                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                        Refresh
-                    </Button>
+                <div className="flex flex-col gap-4 mb-6">
+                    <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                            <h2 className="text-xl font-medium text-gray-900">Incoming orders</h2>
+                            {orders.length > 0 && (
+                                <span className="text-[10px] bg-gutzo-brand-light text-gutzo-brand px-2 py-0.5 rounded-full border border-gutzo-brand-light font-medium">
+                                    {orders.filter(o => ['placed', 'confirmed', 'paid', 'preparing', 'ready'].includes(o.status)).length} active
+                                </span>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+                            {(['All', 'New', 'Preparing', 'Ready'] as const).map(f => (
+                                <button
+                                    key={f}
+                                    onClick={() => setStatusFilter(f)}
+                                    className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all duration-200 ${statusFilter === f
+                                        ? 'bg-white text-gray-900 shadow-sm'
+                                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200 active:scale-95'
+                                        }`}
+                                >
+                                    {f}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -207,11 +234,13 @@ export function OrderManager({ vendorId, isDashboard = false }: { vendorId: stri
                     {[1, 2, 3].map(i => <div key={i} className="h-32 bg-gray-100 rounded-lg animate-pulse" />)}
                 </div>
             ) : orders.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 bg-white border border-dashed rounded-xl">
-                    <img src={tab === 'active' ? "https://cdn-icons-png.flaticon.com/512/10839/10839485.png" : "https://cdn-icons-png.flaticon.com/512/3503/3503694.png"} alt="Empty" className="w-24 h-24 opacity-20 mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900">{tab === 'active' ? 'No Active Orders' : 'No Order History'}</h3>
-                    <p className="text-gray-500 text-sm max-w-sm text-center">
-                        {tab === 'active' ? 'New orders will appear here automatically. Make sure your kitchen status is "Online".' : 'You haven\'t completed or cancelled any orders yet.'}
+                <div className="flex flex-col items-center justify-center py-20 bg-white border border-dashed rounded-xl section-spacing">
+                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                        <ShoppingBag className="w-8 h-8 text-gray-300" />
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900">{tab === 'active' ? 'No active orders' : 'No order history'}</h3>
+                    <p className="text-gray-400 text-sm max-w-sm text-center mt-1">
+                        {tab === 'active' ? 'New orders will appear here automatically' : 'You haven\'t completed or cancelled any orders yet.'}
                     </p>
                 </div>
             ) : (
@@ -261,121 +290,146 @@ export function OrderManager({ vendorId, isDashboard = false }: { vendorId: stri
                                     <span className="text-xs text-gray-400 font-medium">{groupOrders.length} orders</span>
                                 </div>
 
-                                {isExpanded && (
-                                    <div className="space-y-4 animate-in slide-in-from-top-2 duration-200">
-                                        {groupOrders.map(order => (
-                                            <Card key={order.id} className="overflow-hidden border-l-4 border-l-gutzo-primary">
-                                                <CardContent className="p-6">
-                                                    <div className="flex justify-between items-start mb-4">
-                                                        <div>
-                                                            <div className="flex items-center gap-3 mb-1">
-                                                                <h3 className="font-bold text-lg">#{order.order_number}</h3>
-                                                                {getStatusBadge(order.status)}
-                                                            </div>
-                                                            <div className="text-sm text-gray-500 flex items-center gap-2">
-                                                                <Clock className="w-4 h-4" />
-                                                                {new Date(order.created_at).toLocaleTimeString()}
-                                                            </div>
-                                                        </div>
-                                                        <div className="text-right">
-                                                            <div className="font-bold text-lg">₹{order.total_amount}</div>
-                                                            <div className="text-xs text-gray-500 uppercase">{order.user?.name || 'Guest'}</div>
-                                                            {order.delivery_status && (
-                                                                <div className="mt-1 text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full inline-block">
-                                                                    {order.delivery_status.replace('_', ' ')}
-                                                                </div>
-                                                            )}
-                                                            {/* Show Shadowfax Request Status / Details */}
-                                                            {(order.delivery_partner_details || (order.delivery && (Array.isArray(order.delivery) ? order.delivery[0] : order.delivery))) && (
-                                                                <div className="mt-2 text-right space-y-1">
-                                                                    <div className="text-xs text-xs font-semibold text-gray-500">
-                                                                        via {(order.delivery_partner_details?.provider) || 'Shadowfax'}
-                                                                    </div>
-                                                                    {(order.delivery && (Array.isArray(order.delivery) ? order.delivery[0]?.external_order_id : order.delivery?.external_order_id)) && (
-                                                                        <div className="text-[10px] text-blue-600 font-mono mb-1">
-                                                                            SFX #{(Array.isArray(order.delivery) ? order.delivery[0]?.external_order_id : order.delivery?.external_order_id)}
-                                                                        </div>
-                                                                    )}
-                                                                    {(order.delivery_partner_details?.pickup_otp || (order.delivery && (Array.isArray(order.delivery) ? order.delivery[0]?.pickup_otp : order.delivery?.pickup_otp))) && (
-                                                                        <div className="flex flex-col items-end">
-                                                                            <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Pickup OTP</span>
-                                                                            <div className="font-mono font-bold text-xl text-gutzo-primary bg-green-50 px-3 py-1 rounded-md border border-green-200 shadow-sm">
-                                                                                {order.delivery_partner_details?.pickup_otp || (order.delivery && (Array.isArray(order.delivery) ? order.delivery[0]?.pickup_otp : order.delivery?.pickup_otp))}
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
+                {isExpanded && (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                        {groupOrders
+                                            .filter(order => {
+                                                if (statusFilter === 'All') return true;
+                                                const newStatuses = ['placed', 'confirmed', 'paid', 'accepted'];
+                                                if (statusFilter === 'New') return newStatuses.includes(order.status);
+                                                if (statusFilter === 'Preparing') return order.status === 'preparing';
+                                                if (statusFilter === 'Ready') return order.status === 'ready';
+                                                return true;
+                                            })
+                                            .map(order => {
+                                                const getStatusColor = (status: string) => {
+                                                    if (['placed', 'confirmed', 'paid', 'accepted'].includes(status)) return 'border-l-[#BA7517]';
+                                                    if (status === 'preparing') return 'border-l-[#185FA5]';
+                                                    if (status === 'ready') return 'border-l-[#1D9E75]';
+                                                    return 'border-l-gray-300';
+                                                };
 
-                                                    <div className="bg-gray-50 p-4 rounded-lg mb-4 space-y-2">
-                                                        {order.items.map((item, idx) => (
-                                                            <div key={idx} className="flex justify-between text-sm">
+                                                return (
+                                                    <Card key={order.id} className={`overflow-hidden border-l-[4px] shadow-sm hover:shadow-md hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 cursor-pointer flex flex-col h-full bg-white ${getStatusColor(order.status)}`}>
+                                                        <CardContent className="p-6 flex flex-col h-full">
+                                                            <div className="flex justify-between items-start mb-4">
                                                                 <div>
-                                                                    <span className="font-medium mr-2">{item.quantity}x</span>
-                                                                    {item.product_name}
-                                                                    {item.customizations && <div className="text-xs text-gray-500 ml-6">{item.customizations}</div>}
+                                                                    <div className="flex items-center gap-2 mb-2">
+                                                                        <h3 className="font-medium text-[14px] text-gray-900">Order #{order.order_number}</h3>
+                                                                        <span className="text-[11px] text-gray-400 font-normal">
+                                                                            {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="text-right flex flex-col items-end gap-2">
+                                                                    {getStatusBadge(order.status)}
+                                                                    <div className="font-medium text-[16px] text-gray-900">₹{order.total_amount}</div>
+                                                                    <div className="text-xs text-gray-500 uppercase">{order.user?.name || 'Guest'}</div>
+                                                                    {order.delivery_status && (
+                                                                        <div className="mt-1 text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full inline-block">
+                                                                            {order.delivery_status.replace('_', ' ')}
+                                                                        </div>
+                                                                    )}
+                                                                    {/* Show Shadowfax Request Status / Details */}
+                                                                    {(order.delivery_partner_details || (order.delivery && (Array.isArray(order.delivery) ? order.delivery[0] : order.delivery))) && (
+                                                                        <div className="mt-2 text-right space-y-1">
+                                                                            <div className="text-xs text-xs font-semibold text-gray-500">
+                                                                                via {(order.delivery_partner_details?.provider) || 'Shadowfax'}
+                                                                            </div>
+                                                                            {(order.delivery && (Array.isArray(order.delivery) ? order.delivery[0]?.external_order_id : order.delivery?.external_order_id)) && (
+                                                                                <div className="text-[10px] text-blue-600 font-mono mb-1">
+                                                                                    SFX #{(Array.isArray(order.delivery) ? order.delivery[0]?.external_order_id : order.delivery?.external_order_id)}
+                                                                                </div>
+                                                                            )}
+                                                                            {(order.delivery_partner_details?.pickup_otp || (order.delivery && (Array.isArray(order.delivery) ? order.delivery[0]?.pickup_otp : order.delivery?.pickup_otp))) && (
+                                                                                <div className="flex flex-col items-end">
+                                                                                    <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Pickup OTP</span>
+                                                                                    <div className="font-mono font-bold text-xl text-gutzo-primary bg-green-50 px-3 py-1 rounded-md border border-green-200 shadow-sm">
+                                                                                        {order.delivery_partner_details?.pickup_otp || (order.delivery && (Array.isArray(order.delivery) ? order.delivery[0]?.pickup_otp : order.delivery?.pickup_otp))}
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             </div>
-                                                        ))}
-                                                                                               {/* Action Buttons */}
-                                                    <div className="flex justify-end gap-3">
-                                                        {(() => {
-                                                            const delObj = Array.isArray(order.delivery) ? order.delivery[0] : order.delivery;
-                                                            const sfStatus = delObj?.status;
-                                                            
-                                                            // If status is 'searching_rider' (placed in our system), or if it's 'accepted' in Shadowfax
-                                                            if (['placed', 'paid', 'confirmed', 'searching_rider'].includes(order.status)) {
-                                                                const label = sfStatus === 'accepted' ? 'Accept Order' : 'Start Preparing';
-                                                                return (
-                                                                    <Button
-                                                                        onClick={async (e) => {
-                                                                            e.stopPropagation();
-                                                                            try {
-                                                                                await nodeApiService.updateVendorOrderStatus(vendorId, order.id, 'preparing');
-                                                                                toast.success(`Order marked as ${label.toLowerCase()}`);
-                                                                                fetchOrders();
-                                                                            } catch (e) { toast.error("Failed to update status"); }
-                                                                        }}
-                                                                        className="bg-gutzo-primary hover:bg-gutzo-primary-hover text-white gap-2">
-                                                                        <ChefHat className="w-4 h-4" /> {label}
-                                                                    </Button>
-                                                                );
-                                                            } else if (order.status === 'preparing') {
-                                                                // Show "Food Prepared" or "Ready"
-                                                                return (
-                                                                    <div className="flex gap-2">
-                                                                        <Button
-                                                                            onClick={async (e) => {
-                                                                                e.stopPropagation();
-                                                                                try {
-                                                                                    await nodeApiService.updateVendorOrderStatus(vendorId, order.id, 'ready');
-                                                                                    toast.success("Order marked as ready for delivery");
-                                                                                    fetchOrders();
-                                                                                } catch (e) { toast.error("Failed to update status"); }
-                                                                            }}
-                                                                            className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
-                                                                            <Check className="w-4 h-4" /> Ready for Delivery
-                                                                        </Button>
+
+                                                            <div className="bg-gray-50/80 p-5 rounded-xl mb-6 space-y-3">
+                                                                {order.items.map((item, idx) => (
+                                                                    <div key={idx} className="flex justify-between text-sm">
+                                                                        <div>
+                                                                            <span className="font-medium text-gray-900 mr-2">{item.quantity}x</span>
+                                                                            <span className="text-gray-700">{item.product_name}</span>
+                                                                            {item.customizations && <div className="text-xs text-gray-500 ml-6 mt-1">{item.customizations}</div>}
+                                                                        </div>
                                                                     </div>
-                                                                );
-                                                            } else if (order.status === 'ready' && sfStatus === 'reached_location') {
-                                                                // Driver arrived, waiting for handover/OTP
-                                                                return (
-                                                                    <div className="bg-yellow-50 border border-yellow-200 px-4 py-2 rounded-lg flex items-center gap-2 animate-pulse">
-                                                                        <span className="text-yellow-700 font-bold text-sm">Driver at Location - Handover Food</span>
-                                                                        <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                                                                ))}
+                                                            </div>
+                                                            <div className="flex items-center justify-between mt-4">
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-xs font-normal text-gray-400 uppercase tracking-tight">Total Amount</span>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="text-lg font-medium text-gray-900">₹{order.total_amount}</span>
+                                                                        <span className="text-xs text-gray-400">• {order.items.reduce((sum, item) => sum + item.quantity, 0)} items</span>
                                                                     </div>
-                                                                );
-                                                            }
-                                                            return null;
-                                                        })()}
-                                                    </div>
-          </div>
-                                                </CardContent>
-                                            </Card>
-                                        ))}
+                                                                </div>
+                                                                {/* Action Buttons */}
+                                                                <div className="flex justify-end gap-3">
+                                                                    {(() => {
+                                                                        const delObj = Array.isArray(order.delivery) ? order.delivery[0] : order.delivery;
+                                                                        const sfStatus = delObj?.status;
+
+                                                                        // If status is 'searching_rider' (placed in our system), or if it's 'accepted' in Shadowfax
+                                                                        if (['placed', 'paid', 'confirmed', 'searching_rider'].includes(order.status)) {
+                                                                            const label = sfStatus === 'accepted' ? 'Accept Order' : 'Start Preparing';
+                                                                            return (
+                                                                                <Button
+                                                                                    onClick={async (e) => {
+                                                                                        e.stopPropagation();
+                                                                                        try {
+                                                                                            await nodeApiService.updateVendorOrderStatus(vendorId, order.id, 'preparing');
+                                                                                            toast.success(`Order marked as ${label.toLowerCase()}`);
+                                                                                            fetchOrders();
+                                                                                        } catch (e) { toast.error("Failed to update status"); }
+                                                                                    }}
+                                                                                    className="bg-gutzo-brand hover:bg-gutzo-brand-hover active:scale-95 transition-all duration-200 text-white gap-2 font-medium px-6 h-10 shadow-sm rounded-lg flex items-center justify-center">
+                                                                                    <ChefHat className="w-4 h-4" /> {label}
+                                                                                </Button>
+                                                                            );
+                                                                        } else if (order.status === 'preparing') {
+                                                                            // Show "Food Prepared" or "Ready"
+                                                                            return (
+                                                                                <div className="flex gap-2">
+                                                                                    <Button
+                                                                                        onClick={async (e) => {
+                                                                                            e.stopPropagation();
+                                                                                            try {
+                                                                                                await nodeApiService.updateVendorOrderStatus(vendorId, order.id, 'ready');
+                                                                                                toast.success("Order marked as ready for delivery");
+                                                                                                fetchOrders();
+                                                                                            } catch (e) { toast.error("Failed to update status"); }
+                                                                                        }}
+                                                                                        className="bg-[#185FA5] hover:bg-[#0C447C] text-white text-[11px] font-medium h-8 px-4 rounded-lg">
+                                                                                        Mark ready
+                                                                                    </Button>
+                                                                                </div>
+                                                                            );
+                                                                        } else if (order.status === 'ready' && sfStatus === 'reached_location') {
+                                                                            // Driver arrived, waiting for handover/OTP
+                                                                            return (
+                                                                                <div className="bg-yellow-50 border border-yellow-200 px-4 py-2 rounded-lg flex items-center gap-2 animate-pulse">
+                                                                                    <span className="text-yellow-700 font-bold text-sm">Driver at Location - Handover Food</span>
+                                                                                    <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                                                                                </div>
+                                                                            );
+                                                                        }
+                                                                    })()}
+                                                                </div>
+                                                            </div>
+                                                        </CardContent>
+                                                    </Card>
+                                                );
+                                            })}
                                     </div>
                                 )}
                             </div>

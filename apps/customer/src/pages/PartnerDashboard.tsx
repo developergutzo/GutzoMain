@@ -135,8 +135,8 @@ export function PartnerDashboard() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors w-auto md:w-full whitespace-nowrap ${activeTab === tab.id
-                  ? 'bg-[#E8F6F1] text-[#1BA672]'
-                  : 'text-gray-600 hover:bg-gray-50'
+                ? 'bg-[#E8F6F1] text-[#1BA672]'
+                : 'text-gray-600 hover:bg-gray-50'
                 }`}
             >
               <tab.icon className="w-5 h-5 flex-shrink-0" />
