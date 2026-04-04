@@ -11,13 +11,27 @@ import { Checkbox } from "../ui/checkbox";
 import { 
   Loader2, Plus, Pencil, Trash2, X, 
   Image as ImageIcon, Check, ChevronsUpDown, 
-  ShoppingBag, Calendar, Info, Settings, Calculator, IndianRupee 
+  ShoppingBag, Calendar, Info, Settings, Calculator, IndianRupee,
+  Search, ChevronRight, Edit, ChevronDown, LayoutGrid, List, Settings2
 } from "lucide-react";
 import { nodeApiService as apiService } from "../../utils/nodeApi";
 import { toast } from "sonner";
 import { ImageWithFallback } from "../common/ImageWithFallback";
 import { ImageUpload } from "../common/ImageUpload";
 import { cn } from "../ui/utils";
+import { MenuTable } from "./MenuTable";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 import {
   Sheet,
   SheetContent,
@@ -49,6 +63,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "../ui/alert-dialog";
+
 
 interface Product {
   id: string;
@@ -90,6 +105,10 @@ export function MenuManager({ vendorId }: { vendorId: string }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState("items");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
   const [categories, setCategories] = useState<Category[]>([
     { id: '1', name: 'Main Course' },
     { id: '2', name: 'Breakfast' },
@@ -141,12 +160,39 @@ export function MenuManager({ vendorId }: { vendorId: string }) {
     try {
       await apiService.deleteVendorProduct(vendorId, productToDelete);
       setProducts(prev => prev.filter(p => p.id !== productToDelete));
+      setSelectedIds(prev => {
+        const next = new Set(prev);
+        next.delete(productToDelete);
+        return next;
+      });
       toast.success('Product deleted successfully');
     } catch (error: any) {
       toast.error(error.message || 'Failed to delete product');
     } finally {
       setProductToDelete(null);
     }
+  };
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleToggleSelectAll = (ids: string[]) => {
+    setSelectedIds(prev => {
+      const allSelected = ids.every(id => prev.has(id));
+      const next = new Set(prev);
+      if (allSelected) {
+        ids.forEach(id => next.delete(id));
+      } else {
+        ids.forEach(id => next.add(id));
+      }
+      return next;
+    });
   };
 
   if (loading) {
@@ -158,128 +204,181 @@ export function MenuManager({ vendorId }: { vendorId: string }) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-[24px] font-bold text-gray-900">Your Menu</h1>
-          <p className="text-[12px] text-gray-400 mt-0.5">Manage your dishes and prices</p>
-        </div>
-        <Button 
-          onClick={handleAddProduct}
-          className="bg-gutzo-brand hover:bg-gutzo-brand-hover text-white h-10 px-6 rounded-xl text-[13px] font-semibold active:scale-95 transition-all shadow-lg shadow-gutzo-brand/20"
-        >
-          <Plus className="w-4 h-4 mr-2" /> Add New Item
-        </Button>
+    <div className="flex flex-col gap-0 -mt-2">
+      <div className="flex items-center justify-between mb-8 px-1">
+        <h2 className="text-[28px] font-black text-gray-900 tracking-tight">PHASE 4: LIVE</h2>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {products.map((product) => {
-          const { cleanDescription, tags } = parseTagsFromDescription(product.description);
-          return (
-            <Card key={product.id} className="overflow-hidden border-[0.5px] border-gray-100 shadow-sm hover:shadow-md transition-all rounded-2xl group flex flex-col h-full bg-white">
-              <div 
-                className="relative overflow-hidden w-full flex items-center justify-center bg-gray-50 h-[220px]"
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        {/* Top Navigation Bar - High Density */}
+        <div className="bg-white border-b border-gray-100 -mx-8 px-8 py-2 sticky top-[64px] z-50 shadow-sm">
+          <TabsList className="bg-transparent p-0 h-auto gap-8">
+            {['items', 'categories', 'variants', 'addons', 'discounts'].map((tab) => (
+              <TabsTrigger 
+                key={tab}
+                value={tab} 
+                className="bg-transparent border-none p-0 h-10 text-[13px] font-bold uppercase tracking-widest text-gray-400 data-[state=active]:text-gutzo-brand data-[state=active]:shadow-none relative rounded-none after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gutzo-brand after:transform after:scale-x-0 data-[state=active]:after:scale-x-100 transition-all"
               >
-                 <ImageWithFallback 
-                    src={product.image_url} 
-                    alt={product.name} 
-                    className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-500" 
-                 />
-                 <div className="absolute top-3 left-3 flex gap-1.5 flex-wrap">
-                    {product.is_veg ? (
-                        <span className="bg-white/90 backdrop-blur-sm p-1 rounded border border-green-200">
-                            <div className="w-2.5 h-2.5 border-[1.5px] border-green-600 rounded-[2px] flex items-center justify-center">
-                                <div className="w-1 h-1 bg-green-600 rounded-full" />
-                            </div>
-                        </span>
-                    ) : (
-                        <span className="bg-white/90 backdrop-blur-sm p-1 rounded border border-red-200">
-                            <div className="w-2.5 h-2.5 border-[1.5px] border-red-600 rounded-[2px] flex items-center justify-center">
-                                <div className="w-1 h-1 bg-red-600 rounded-full" />
-                            </div>
-                        </span>
-                    )}
-                 </div>
-                 {product.discount_pct && product.discount_pct > 0 && (
-                     <div className="absolute top-3 right-3 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
-                        {product.discount_pct}% OFF
-                     </div>
-                 )}
+                {tab}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
+
+        <TabsContent value="items" className="mt-0 pt-4">
+          <div className="flex flex-col md:flex-row gap-8 items-start min-h-[calc(100vh-200px)]">
+            {/* Left Column: Persistent Category Sidebar */}
+            <div className="hidden md:flex flex-col w-[260px] flex-shrink-0 sticky top-[120px] h-[calc(100vh-160px)] overflow-y-auto border-r border-gray-100 pr-8 pb-32 scrollbar-hide">
+              <div className="flex items-center justify-between mb-8 px-1">
+                <div className="flex flex-col">
+                   <h3 className="text-[16px] font-black text-gray-900 uppercase tracking-widest leading-none">Categories</h3>
+                   <span className="text-[10px] text-gray-400 font-bold mt-2.5 uppercase tracking-widest opacity-80">{Object.keys(products.reduce((acc, p) => ({...acc, [p.category || 'Other']: true}), {})).length} Sections Live</span>
+                </div>
+                <button className="p-2.5 hover:bg-gray-100/80 rounded-2xl text-gray-400 hover:text-gutzo-brand transition-all shadow-sm bg-white border border-gray-100 active:scale-90 flex-shrink-0">
+                   <Settings2 className="w-5 h-5" />
+                </button>
               </div>
               
-              <CardContent className="p-5 flex-1 flex flex-col">
-                <div className="flex justify-between items-start mb-2">
-                   <h3 className="font-semibold text-gray-900 text-[16px] group-hover:text-[#1BA672] transition-colors">{product.name}</h3>
-                   <div className="flex flex-col items-end gap-1">
-                    <span className="text-[15px] font-bold text-gray-900">₹{product.price}</span>
-                    {product.original_price && product.original_price > product.price && (
-                        <span className="text-[11px] text-gray-400 line-through">₹{product.original_price}</span>
-                    )}
-                   </div>
-                </div>
-                
-                <p className="text-[12px] text-gray-500 line-clamp-2 leading-relaxed mb-4 flex-1">
-                  {cleanDescription || 'No description provided'}
-                </p>
-
-                <div className="flex flex-wrap gap-2 mb-5">
-                   {tags.map((tag: string, idx: number) => {
-                       const isInstant = tag.includes('Instant');
-                       const isSub = tag.includes('Subscription');
-                       return (
-                           <span 
-                                key={idx} 
-                                className={`text-[10px] font-medium px-2 py-0.5 rounded-full border-[0.5px] h-6 flex items-center transition-all ${
-                                    isInstant ? 'bg-blue-50 text-blue-700 border-blue-100' : 
-                                    isSub ? 'bg-purple-50 text-purple-700 border-purple-100' : 
-                                    'bg-gutzo-brand-light text-gutzo-brand border-gutzo-brand-light'
-                                }`}
-                           >
-                               {tag.replace('Type:', '')}
+              <div className="space-y-1">
+                {Object.keys(
+                    products.reduce((acc, p) => {
+                        const cat = p.category || 'Other';
+                        if (!acc[cat]) acc[cat] = true;
+                        return acc;
+                    }, {} as Record<string, boolean>)
+                ).map((cat) => (
+                    <button
+                        key={cat}
+                        onClick={() => {
+                            const el = document.getElementById(`category-${cat}`);
+                            if (el) {
+                                const offset = 180;
+                                const bodyRect = document.body.getBoundingClientRect().top;
+                                const elementRect = el.getBoundingClientRect().top;
+                                const elementPosition = elementRect - bodyRect;
+                                const offsetPosition = elementPosition - offset;
+                                window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+                            }
+                        }}
+                        className="w-full text-left pl-6 pr-4 py-4 rounded-2xl text-[14px] font-extrabold text-gray-500 hover:text-gutzo-brand hover:bg-[#F0F9F6] transition-all active:scale-95 group flex items-center justify-between border border-transparent hover:border-gutzo-brand/10 relative overflow-hidden h-14"
+                    >
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-7 bg-gutzo-brand rounded-r-full transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300" />
+                        <span className="truncate group-hover:pl-1 transition-all flex-1">{cat}</span>
+                        <div className="flex items-center gap-3">
+                           <span className="text-[11px] text-gray-300 group-hover:text-gutzo-brand/70 font-black tabular-nums">
+                              {products.filter(p => p.category === cat).length}
                            </span>
-                       )
-                   })}
+                           <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                        </div>
+                    </button>
+                ))}
+              </div>
+
+              <div className="mt-auto pb-40 px-2">
+                 <p className="text-[11px] font-black text-gray-300 uppercase tracking-widest mb-2 px-1">Menu Summary</p>
+                 <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100 text-gray-500 font-medium text-[13px]">
+                   {products.filter(p => p.is_available).length} products active in store
+                 </div>
+              </div>
+            </div>
+
+
+            <div className="flex-1 min-w-0 w-full space-y-6">
+              {/* Sticky Action Bar - Inside Right Column */}
+              <div className="sticky top-[120px] z-40 bg-[#FAFAFA]/95 backdrop-blur-md py-4 border-b border-gray-100 flex flex-col gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="relative group flex-1">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
+                       <Search className="w-4 h-4 text-gray-400 group-focus-within:text-gutzo-brand transition-colors stroke-[2px]" />
+                    </div>
+                    <input 
+                      type="search" 
+                      placeholder="Search items, categories or codes..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full bg-white border border-gray-200 rounded-xl text-[14px] font-normal focus:ring-4 focus:ring-gutzo-brand/5 focus:border-gutzo-brand transition-all outline-none shadow-sm placeholder:text-[#9CA3AF]"
+                      style={{ 
+                        height: '48px', 
+                        paddingLeft: '48px',
+                        fontSize: '14px'
+                      }}
+                    />
+                  </div>
+                  
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-12 px-4 rounded-xl text-gray-400 hover:text-gray-600 gap-2 font-bold text-[13px] transition-all">
+                        Bulk Ops {selectedIds.size > 0 && <span className="bg-gutzo-brand text-white text-[10px] px-1.5 py-0.5 rounded-full ml-1">{selectedIds.size}</span>} <ChevronDown className="w-3.5 h-3.5 opacity-40" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-60 rounded-xl shadow-2xl border-gray-100 p-1.5 focus:outline-none">
+                      <DropdownMenuItem className="rounded-lg py-2.5 px-4 cursor-pointer gap-3 text-gray-600 font-semibold focus:bg-gutzo-brand-light focus:text-gutzo-brand transition-colors text-[13px]">
+                        <Settings2 className="w-4 h-4" /> Standardize Pricing
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="rounded-lg py-2.5 px-4 cursor-pointer gap-3 text-gray-600 font-semibold focus:bg-gutzo-brand-light focus:text-gutzo-brand transition-colors text-[13px]">
+                        <List className="w-4 h-4" /> Manage Sections
+                      </DropdownMenuItem>
+                      <div className="h-px bg-gray-50 my-1" />
+                      <DropdownMenuItem className="rounded-lg py-2.5 px-4 cursor-pointer gap-3 text-red-500 font-semibold focus:bg-red-50 focus:text-red-600 transition-colors text-[13px]">
+                        <Trash2 className="w-4 h-4" /> Clear Stock
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
 
-                <div className="flex items-center justify-between pt-4 border-t-[0.5px] border-gray-100">
-                   <div className="flex items-center gap-2">
-                    <Switch 
-                        checked={product.is_available} 
-                        onCheckedChange={() => toggleAvailability(product.id, product.is_available)} 
-                        className="data-[state=checked]:bg-gutzo-brand"
-                    />
-                    <span className="text-[11px] font-medium text-gray-500">Available</span>
-                   </div>
-                   <div className="flex gap-2">
-                    <button 
-                        onClick={() => handleEditProduct(product)}
-                        className="p-2 text-gray-400 hover:text-[#1BA672] hover:bg-[#E8F6F1] rounded-lg transition-all"
-                    >
-                        <Pencil className="w-4 h-4" />
-                    </button>
-                    <button 
-                        onClick={() => setProductToDelete(product.id)}
-                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                    >
-                        <Trash2 className="w-4 h-4" />
-                    </button>
-                   </div>
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg cursor-pointer">
+                    <span className="text-[12px] font-bold text-gray-400">Show available only</span>
+                    <Switch className="scale-[0.7] data-[state=checked]:bg-gutzo-brand" />
+                  </div>
+                  <Button 
+                    onClick={handleAddProduct}
+                    className="bg-gutzo-brand hover:bg-[#14885E] text-white h-10 px-5 rounded-xl text-[13px] font-bold active:scale-[0.98] transition-all shadow-lg shadow-gutzo-brand/10 gap-2"
+                  >
+                    <Plus className="w-4 h-4 stroke-[2.5px]" /> New Product
+                  </Button>
                 </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-        <button 
-          onClick={handleAddProduct}
-          className="border-[0.5px] border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center p-8 bg-gray-50/20 hover:bg-gray-50 hover:border-[#1BA672]/30 transition-all group h-full min-h-[280px]"
-        >
-          <div className="w-12 h-12 rounded-full bg-white shadow-sm border-[0.5px] border-gray-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-            <Plus className="w-6 h-6 text-gutzo-brand" />
+              </div>
+
+              {/* Unified Table Area */}
+              <div className="pb-40">
+                <MenuTable 
+                  products={products.filter(p => !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase()))}
+                  onEdit={handleEditProduct}
+                  onDelete={(id) => setProductToDelete(id)}
+                  onToggleAvailability={toggleAvailability}
+                  showCategoryHeaders={true}
+                  selectedIds={selectedIds}
+                  onToggleSelect={handleToggleSelect}
+                  onToggleSelectAll={handleToggleSelectAll}
+                />
+                
+                <div className="mt-8 flex justify-center">
+                  <button 
+                    onClick={handleAddProduct}
+                    className="flex flex-col items-center gap-2 group p-8 rounded-[2rem] border-2 border-dashed border-gray-200 hover:border-gutzo-brand hover:bg-gutzo-brand-light/20 transition-all w-full max-w-[400px]"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-gutzo-brand-light transition-colors">
+                       <Plus className="w-6 h-6 text-gray-400 group-hover:text-gutzo-brand transition-colors" />
+                    </div>
+                    <span className="text-[14px] font-extrabold text-gray-400 group-hover:text-gutzo-brand tracking-tight">Add Another Item to Inventory</span>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-          <p className="text-[13px] font-semibold text-gray-900 mb-1">Add New Item</p>
-          <span className="text-[11px] text-gray-400">Expand your kitchen's offerings</span>
-        </button>
-      </div>
+        </TabsContent>
+
+
+        <TabsContent value="categories" className="py-20 text-center text-gray-400 italic">
+          Category management coming soon in the next update.
+        </TabsContent>
+        
+        <TabsContent value="variants" className="py-20 text-center text-gray-400 italic">
+          Variants coming soon in the next update.
+        </TabsContent>
+      </Tabs>
+
 
       <Sheet open={isEditing} onOpenChange={setIsEditing}>
         <SheetContent side="right" className="w-[500px] sm:max-w-[500px] p-0 overflow-hidden flex flex-col border-l-[0.5px] border-gray-100 shadow-2xl">
